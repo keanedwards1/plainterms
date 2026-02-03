@@ -1,0 +1,25 @@
+{
+  "yaml.customTags": [
+    "!Ref scalar",
+    "!Sub scalar",
+    "!GetAtt scalar",
+    "!FindInMap scalar",
+    "!Join sequence",
+    "!Select sequence",
+    "!Split sequence",
+    "!If sequence",
+    "!Equals sequence",
+    "!And sequence",
+    "!Or sequence",
+    "!Not sequence",
+    "!Condition scalar",
+    "!ImportValue scalar",
+    "!Base64 scalar",
+    "!Cidr sequence"
+  ],
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/aws/serverless-application-model/main/samtranslator/schema/schema.json": [
+      "services/api/plainterms-api/template.yaml"
+    ]
+  }
+}

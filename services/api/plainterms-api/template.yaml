@@ -1,52 +1,80 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  plainterms-api
-
-  Sample SAM Template for plainterms-api
+Description: PlainTerms API
 
 Globals:
   Function:
-    Timeout: 3
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
 
 Resources:
-  HelloWorldFunction:
+  PlainTermsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      BinaryMediaTypes:
+        - multipart/form-data
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'content-type'"
+        AllowOrigin: "'*'"
+
+  UploadBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireUploads
+            Status: Enabled
+            ExpirationInDays: 1
+
+  UploadUrlFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: hello-world/
-      Handler: app.lambdaHandler
-      Runtime: nodejs20.x
-      Architectures:
-        - x86_64
+      CodeUri: lambdas/
+      Handler: uploadUrl.handler
+      Environment:
+        Variables:
+          UPLOAD_BUCKET: !Ref UploadBucket
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref UploadBucket
       Events:
-        HelloWorld:
+        UploadUrl:
           Type: Api
           Properties:
-            Path: /hello
-            Method: get
+            RestApiId: !Ref PlainTermsApi
+            Path: /upload-url
+            Method: POST
+
+  AnalyzeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: analyze.handler
+      Events:
+        Analyze:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /analyze
+            Method: POST
 
   GetResultFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: hello-world/
+      CodeUri: lambdas/
       Handler: getResult.handler
-      Runtime: nodejs20.x
-      Architectures:
-        - x86_64
       Events:
         GetResult:
           Type: Api
           Properties:
+            RestApiId: !Ref PlainTermsApi
             Path: /result/{id}
-            Method: get
+            Method: GET
 
 Outputs:
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${PlainTermsApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

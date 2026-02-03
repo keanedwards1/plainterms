@@ -1,0 +1,527 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plainterms.app/schemas/analysis-result.v1.json",
+  "title": "PlainTermsAnalysisResultV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "result_id",
+    "created_at",
+    "document",
+    "sections",
+    "flags",
+    "notices",
+    "source_map"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "pt.v1"
+    },
+    "result_id": {
+      "type": "string",
+      "description": "Stable identifier for GET /result/{id} and DynamoDB PK/SK use."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_type",
+        "title",
+        "jurisdiction_hint",
+        "page_count",
+        "word_count",
+        "confidence_notes"
+      ],
+      "properties": {
+        "contract_type": {
+          "type": "string",
+          "enum": ["independent_contractor_services_agreement", "unknown"]
+        },
+        "title": { "type": "string" },
+        "jurisdiction_hint": {
+          "type": "string",
+          "description": "If a governing law/state/country is detected; otherwise 'not_found'."
+        },
+        "page_count": { "type": "integer", "minimum": 0 },
+        "word_count": { "type": "integer", "minimum": 0 },
+        "confidence_notes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Short notes about parsing limits, missing pages, scans, etc."
+        }
+      }
+    },
+    "sections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "document_overview",
+        "parties",
+        "term_and_termination",
+        "scope_of_services",
+        "payment",
+        "independent_contractor_status",
+        "expenses",
+        "confidentiality",
+        "intellectual_property",
+        "non_solicit_non_compete",
+        "liability_indemnity_insurance",
+        "dispute_resolution_and_governing_law",
+        "data_privacy_and_security",
+        "operational_details",
+        "signatures_and_execution",
+        "flags_and_clarifications",
+        "notices_and_disclaimers",
+        "source_map_section"
+      ],
+      "properties": {
+        "document_overview": { "$ref": "#/$defs/sectionOverview" },
+        "parties": { "$ref": "#/$defs/sectionParties" },
+        "term_and_termination": { "$ref": "#/$defs/sectionTerm" },
+        "scope_of_services": { "$ref": "#/$defs/sectionScope" },
+        "payment": { "$ref": "#/$defs/sectionPayment" },
+        "independent_contractor_status": { "$ref": "#/$defs/sectionIC" },
+        "expenses": { "$ref": "#/$defs/sectionExpenses" },
+        "confidentiality": { "$ref": "#/$defs/sectionConfidentiality" },
+        "intellectual_property": { "$ref": "#/$defs/sectionIP" },
+        "non_solicit_non_compete": { "$ref": "#/$defs/sectionRestrictiveCovenants" },
+        "liability_indemnity_insurance": { "$ref": "#/$defs/sectionLiability" },
+        "dispute_resolution_and_governing_law": { "$ref": "#/$defs/sectionDisputes" },
+        "data_privacy_and_security": { "$ref": "#/$defs/sectionPrivacySecurity" },
+        "operational_details": { "$ref": "#/$defs/sectionOperational" },
+        "signatures_and_execution": { "$ref": "#/$defs/sectionSignatures" },
+        "flags_and_clarifications": { "$ref": "#/$defs/sectionFlags" },
+        "notices_and_disclaimers": { "$ref": "#/$defs/sectionNotices" },
+        "source_map_section": { "$ref": "#/$defs/sectionSourceMap" }
+      }
+    },
+    "flags": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/flagItem" }
+    },
+    "notices": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["not_legal_advice", "limits", "tone_policy"],
+      "properties": {
+        "not_legal_advice": { "type": "string" },
+        "limits": { "type": "array", "items": { "type": "string" } },
+        "tone_policy": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "source_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceItem" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "foundStatus": {
+      "type": "string",
+      "enum": ["found", "not_found", "not_clearly_stated"]
+    },
+    "riskLevel": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "unknown"]
+    },
+    "clauseType": {
+      "type": "string",
+      "enum": [
+        "missing_detail",
+        "ambiguous",
+        "unusual",
+        "one_sided",
+        "inconsistent",
+        "requires_attachment",
+        "definitions_missing",
+        "possible_conflict"
+      ]
+    },
+    "sourcePointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "page", "start_char", "end_char"],
+      "properties": {
+        "source_id": { "type": "string" },
+        "page": { "type": "integer", "minimum": 1 },
+        "start_char": { "type": "integer", "minimum": 0 },
+        "end_char": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "fieldBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "summary", "quotes", "sources"],
+      "properties": {
+        "status": { "$ref": "#/$defs/foundStatus" },
+        "summary": {
+          "type": "string",
+          "description": "Plain-English summary. Must be cautious and non-prescriptive."
+        },
+        "quotes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 3,
+          "description": "Short, exact excerpts. Keep brief."
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourcePointer" },
+          "description": "Pointers into extracted text. Empty array allowed only when status != 'found'."
+        }
+      }
+    },
+    "sectionOverview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "plain_summary",
+        "contract_purpose",
+        "effective_date",
+        "overall_structure"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Document Overview" },
+        "plain_summary": { "$ref": "#/$defs/fieldBase" },
+        "contract_purpose": { "$ref": "#/$defs/fieldBase" },
+        "effective_date": { "$ref": "#/$defs/fieldBase" },
+        "overall_structure": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionParties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "client",
+        "contractor",
+        "notice_addresses",
+        "definitions_of_parties"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Parties" },
+        "client": { "$ref": "#/$defs/fieldBase" },
+        "contractor": { "$ref": "#/$defs/fieldBase" },
+        "notice_addresses": { "$ref": "#/$defs/fieldBase" },
+        "definitions_of_parties": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionTerm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "start_date",
+        "end_date_or_auto_renewal",
+        "termination_for_convenience",
+        "termination_for_cause",
+        "post_termination_obligations"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Term & Termination" },
+        "start_date": { "$ref": "#/$defs/fieldBase" },
+        "end_date_or_auto_renewal": { "$ref": "#/$defs/fieldBase" },
+        "termination_for_convenience": { "$ref": "#/$defs/fieldBase" },
+        "termination_for_cause": { "$ref": "#/$defs/fieldBase" },
+        "post_termination_obligations": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "services_description",
+        "deliverables",
+        "acceptance_or_review",
+        "change_control",
+        "timeline_and_milestones"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Scope of Services" },
+        "services_description": { "$ref": "#/$defs/fieldBase" },
+        "deliverables": { "$ref": "#/$defs/fieldBase" },
+        "acceptance_or_review": { "$ref": "#/$defs/fieldBase" },
+        "change_control": { "$ref": "#/$defs/fieldBase" },
+        "timeline_and_milestones": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionPayment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "fee_structure",
+        "rate_and_amounts",
+        "invoicing",
+        "payment_timing",
+        "late_fees_interest",
+        "taxes_withholding"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Payment" },
+        "fee_structure": { "$ref": "#/$defs/fieldBase" },
+        "rate_and_amounts": { "$ref": "#/$defs/fieldBase" },
+        "invoicing": { "$ref": "#/$defs/fieldBase" },
+        "payment_timing": { "$ref": "#/$defs/fieldBase" },
+        "late_fees_interest": { "$ref": "#/$defs/fieldBase" },
+        "taxes_withholding": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionIC": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "status_statement",
+        "control_and_direction",
+        "benefits",
+        "authority_to_bind"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Independent Contractor Status" },
+        "status_statement": { "$ref": "#/$defs/fieldBase" },
+        "control_and_direction": { "$ref": "#/$defs/fieldBase" },
+        "benefits": { "$ref": "#/$defs/fieldBase" },
+        "authority_to_bind": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionExpenses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading", "reimbursable_expenses", "pre_approval", "expense_caps"],
+      "properties": {
+        "heading": { "type": "string", "const": "Expenses" },
+        "reimbursable_expenses": { "$ref": "#/$defs/fieldBase" },
+        "pre_approval": { "$ref": "#/$defs/fieldBase" },
+        "expense_caps": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionConfidentiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "confidential_info_definition",
+        "permitted_disclosures",
+        "return_destroy",
+        "survival_period"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Confidentiality" },
+        "confidential_info_definition": { "$ref": "#/$defs/fieldBase" },
+        "permitted_disclosures": { "$ref": "#/$defs/fieldBase" },
+        "return_destroy": { "$ref": "#/$defs/fieldBase" },
+        "survival_period": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionIP": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "work_product_ownership",
+        "preexisting_materials",
+        "license_grants",
+        "moral_rights_waiver",
+        "open_source_or_third_party"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Intellectual Property" },
+        "work_product_ownership": { "$ref": "#/$defs/fieldBase" },
+        "preexisting_materials": { "$ref": "#/$defs/fieldBase" },
+        "license_grants": { "$ref": "#/$defs/fieldBase" },
+        "moral_rights_waiver": { "$ref": "#/$defs/fieldBase" },
+        "open_source_or_third_party": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionRestrictiveCovenants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "non_solicitation",
+        "non_compete",
+        "non_disparagement",
+        "conflict_of_interest"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Non-Solicitation / Non-Competition" },
+        "non_solicitation": { "$ref": "#/$defs/fieldBase" },
+        "non_compete": { "$ref": "#/$defs/fieldBase" },
+        "non_disparagement": { "$ref": "#/$defs/fieldBase" },
+        "conflict_of_interest": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionLiability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "limitation_of_liability",
+        "indemnification",
+        "insurance",
+        "warranties_disclaimers"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Liability, Indemnity & Insurance" },
+        "limitation_of_liability": { "$ref": "#/$defs/fieldBase" },
+        "indemnification": { "$ref": "#/$defs/fieldBase" },
+        "insurance": { "$ref": "#/$defs/fieldBase" },
+        "warranties_disclaimers": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionDisputes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "governing_law",
+        "venue_jurisdiction",
+        "arbitration_mediation",
+        "attorneys_fees"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Dispute Resolution & Governing Law" },
+        "governing_law": { "$ref": "#/$defs/fieldBase" },
+        "venue_jurisdiction": { "$ref": "#/$defs/fieldBase" },
+        "arbitration_mediation": { "$ref": "#/$defs/fieldBase" },
+        "attorneys_fees": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionPrivacySecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "data_access",
+        "security_requirements",
+        "breach_notice",
+        "privacy_laws_reference"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Data Privacy & Security" },
+        "data_access": { "$ref": "#/$defs/fieldBase" },
+        "security_requirements": { "$ref": "#/$defs/fieldBase" },
+        "breach_notice": { "$ref": "#/$defs/fieldBase" },
+        "privacy_laws_reference": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionOperational": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heading",
+        "communications_and_reporting",
+        "tools_and_systems",
+        "work_location",
+        "subcontractors",
+        "assignment",
+        "notices_clause"
+      ],
+      "properties": {
+        "heading": { "type": "string", "const": "Operational Details" },
+        "communications_and_reporting": { "$ref": "#/$defs/fieldBase" },
+        "tools_and_systems": { "$ref": "#/$defs/fieldBase" },
+        "work_location": { "$ref": "#/$defs/fieldBase" },
+        "subcontractors": { "$ref": "#/$defs/fieldBase" },
+        "assignment": { "$ref": "#/$defs/fieldBase" },
+        "notices_clause": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "sectionSignatures": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading", "signature_blocks", "effective_upon_signature"],
+      "properties": {
+        "heading": { "type": "string", "const": "Signatures & Execution" },
+        "signature_blocks": { "$ref": "#/$defs/fieldBase" },
+        "effective_upon_signature": { "$ref": "#/$defs/fieldBase" }
+      }
+    },
+    "flagItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "severity", "title", "plain_note", "related_fields", "sources"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "$ref": "#/$defs/clauseType" },
+        "severity": { "$ref": "#/$defs/riskLevel" },
+        "title": { "type": "string" },
+        "plain_note": { "type": "string" },
+        "related_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "JSON pointer-ish paths like 'sections.payment.late_fees_interest'."
+        },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourcePointer" }
+        }
+      }
+    },
+    "sectionFlags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading", "high_priority", "all_flags_summary"],
+      "properties": {
+        "heading": { "type": "string", "const": "Flags & Clarifications" },
+        "high_priority": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/flagItem" }
+        },
+        "all_flags_summary": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "sectionNotices": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading", "not_legal_advice", "how_to_use_this", "language_limits"],
+      "properties": {
+        "heading": { "type": "string", "const": "Notices & Disclaimers" },
+        "not_legal_advice": { "type": "string" },
+        "how_to_use_this": { "type": "array", "items": { "type": "string" } },
+        "language_limits": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "sourceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "kind", "label", "text_excerpt"],
+      "properties": {
+        "source_id": { "type": "string" },
+        "kind": { "type": "string", "enum": ["extracted_text"] },
+        "label": { "type": "string" },
+        "text_excerpt": {
+          "type": "string",
+          "description": "Optional small excerpt for debugging/UI; keep short."
+        }
+      }
+    },
+    "sectionSourceMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading", "notes"],
+      "properties": {
+        "heading": { "type": "string", "const": "Source Map" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

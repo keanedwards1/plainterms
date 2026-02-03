@@ -1,0 +1,699 @@
+{
+  "schema_version": "pt.v1",
+  "result_id": "res_01J9ZQ3K2K3H0Q9WQ0M9X7ABCD",
+  "created_at": "2026-01-31T19:42:10Z",
+  "document": {
+    "contract_type": "independent_contractor_services_agreement",
+    "title": "Independent Contractor Services Agreement",
+    "jurisdiction_hint": "California, United States",
+    "page_count": 7,
+    "word_count": 3120,
+    "confidence_notes": [
+      "Text appears machine-readable (not a scanned image).",
+      "Agreement references 'Exhibit A (Statement of Work)'; Exhibit A was not included in the provided file."
+    ]
+  },
+  "sections": {
+    "document_overview": {
+      "heading": "Document Overview",
+      "plain_summary": {
+        "status": "found",
+        "summary": "This agreement describes a services relationship where a contractor provides services to a company in exchange for a monthly fee. It includes confidentiality terms, an ownership/assignment approach for work product, and a dispute process tied to California law.",
+        "quotes": [
+          "Contractor will provide the Services described in this Agreement and in any Statement of Work.",
+          "This Agreement will be governed by the laws of the State of California."
+        ],
+        "sources": [
+          { "source_id": "src_main", "page": 1, "start_char": 420, "end_char": 620 },
+          { "source_id": "src_main", "page": 6, "start_char": 1820, "end_char": 1920 }
+        ]
+      },
+      "contract_purpose": {
+        "status": "found",
+        "summary": "It sets the terms for providing services and related obligations like confidentiality, ownership of work product, and how the relationship can end.",
+        "quotes": ["Contractor agrees to perform the Services for Company."],
+        "sources": [
+          { "source_id": "src_main", "page": 1, "start_char": 250, "end_char": 330 }
+        ]
+      },
+      "effective_date": {
+        "status": "found",
+        "summary": "The effective date is stated as March 1, 2026.",
+        "quotes": ["Effective Date: March 1, 2026"],
+        "sources": [
+          { "source_id": "src_main", "page": 1, "start_char": 120, "end_char": 155 }
+        ]
+      },
+      "overall_structure": {
+        "status": "found",
+        "summary": "The agreement includes sections on services, term and termination, payment, confidentiality, intellectual property, liability/indemnity, and governing law/disputes, with an external Statement of Work referenced for detailed scope.",
+        "quotes": ["Exhibit A (Statement of Work) is incorporated by reference."],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 40, "end_char": 110 }
+        ]
+      }
+    },
+    "parties": {
+      "heading": "Parties",
+      "client": {
+        "status": "found",
+        "summary": "The client is Redwood Labs, Inc., a Delaware corporation.",
+        "quotes": ["Redwood Labs, Inc., a Delaware corporation (\"Company\")"],
+        "sources": [
+          { "source_id": "src_main", "page": 1, "start_char": 160, "end_char": 230 }
+        ]
+      },
+      "contractor": {
+        "status": "found",
+        "summary": "The contractor is Jordan Lee, an individual.",
+        "quotes": ["Jordan Lee (\"Contractor\")"],
+        "sources": [
+          { "source_id": "src_main", "page": 1, "start_char": 232, "end_char": 270 }
+        ]
+      },
+      "notice_addresses": {
+        "status": "found",
+        "summary": "A notices section lists mailing addresses and allows notice by email if sent to the listed addresses.",
+        "quotes": [
+          "Notices must be in writing and delivered to the addresses below.",
+          "Notices may be sent by email to the addresses set forth below."
+        ],
+        "sources": [
+          { "source_id": "src_main", "page": 6, "start_char": 1200, "end_char": 1500 }
+        ]
+      },
+      "definitions_of_parties": {
+        "status": "found",
+        "summary": "The agreement defines the parties as 'Company' and 'Contractor'.",
+        "quotes": ["(\"Company\")", "(\"Contractor\")"],
+        "sources": [
+          { "source_id": "src_main", "page": 1, "start_char": 175, "end_char": 275 }
+        ]
+      }
+    },
+    "term_and_termination": {
+      "heading": "Term & Termination",
+      "start_date": {
+        "status": "found",
+        "summary": "The term starts on the effective date (March 1, 2026).",
+        "quotes": ["This Agreement begins on the Effective Date."],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 210, "end_char": 270 }
+        ]
+      },
+      "end_date_or_auto_renewal": {
+        "status": "not_clearly_stated",
+        "summary": "The agreement says it continues month-to-month, but it is not fully clear whether there is any fixed end date because the referenced Statement of Work may contain timeline details.",
+        "quotes": ["continues on a month-to-month basis unless terminated"],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 270, "end_char": 335 }
+        ]
+      },
+      "termination_for_convenience": {
+        "status": "found",
+        "summary": "Either party may terminate for any reason with 14 days' written notice.",
+        "quotes": ["Either party may terminate ... upon fourteen (14) days' written notice."],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 340, "end_char": 430 }
+        ]
+      },
+      "termination_for_cause": {
+        "status": "found",
+        "summary": "A material breach can lead to termination if it is not cured within 10 days after written notice.",
+        "quotes": ["material breach ... not cured within ten (10) days"],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 432, "end_char": 520 }
+        ]
+      },
+      "post_termination_obligations": {
+        "status": "found",
+        "summary": "After termination, the contractor must return confidential information and the payment obligation continues for amounts earned through the termination date.",
+        "quotes": [
+          "Contractor will return or destroy Confidential Information upon request.",
+          "Company will pay Contractor for Services performed through the termination date."
+        ],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 525, "end_char": 680 },
+          { "source_id": "src_main", "page": 4, "start_char": 920, "end_char": 1010 }
+        ]
+      }
+    },
+    "scope_of_services": {
+      "heading": "Scope of Services",
+      "services_description": {
+        "status": "not_clearly_stated",
+        "summary": "The agreement states that services are defined in a Statement of Work, but the detailed description is not included in the file provided.",
+        "quotes": ["Services will be described in each Statement of Work (\"SOW\")."],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 120, "end_char": 200 }
+        ]
+      },
+      "deliverables": {
+        "status": "not_found",
+        "summary": "Specific deliverables are not listed in the main agreement text.",
+        "quotes": [],
+        "sources": []
+      },
+      "acceptance_or_review": {
+        "status": "not_found",
+        "summary": "An acceptance or formal review process is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      },
+      "change_control": {
+        "status": "not_clearly_stated",
+        "summary": "The document references changes through written Statements of Work, but does not spell out a detailed change-order process in the provided text.",
+        "quotes": ["Any SOW must be in writing and signed by both parties."],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 200, "end_char": 275 }
+        ]
+      },
+      "timeline_and_milestones": {
+        "status": "not_found",
+        "summary": "Timelines or milestones are not stated in the provided text (they may exist in the missing Statement of Work).",
+        "quotes": [],
+        "sources": []
+      }
+    },
+    "payment": {
+      "heading": "Payment",
+      "fee_structure": {
+        "status": "found",
+        "summary": "Payment is structured as a flat monthly fee rather than hourly billing.",
+        "quotes": ["Company will pay Contractor a monthly fee."],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 520, "end_char": 585 }
+        ]
+      },
+      "rate_and_amounts": {
+        "status": "found",
+        "summary": "The monthly fee is $6,000.",
+        "quotes": ["$6,000 per month"],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 586, "end_char": 610 }
+        ]
+      },
+      "invoicing": {
+        "status": "found",
+        "summary": "The contractor sends an invoice at the end of each month.",
+        "quotes": ["Contractor will invoice monthly in arrears."],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 612, "end_char": 675 }
+        ]
+      },
+      "payment_timing": {
+        "status": "found",
+        "summary": "Payment is due within 15 days after receipt of an invoice.",
+        "quotes": ["pay within fifteen (15) days of receipt of invoice"],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 676, "end_char": 745 }
+        ]
+      },
+      "late_fees_interest": {
+        "status": "found",
+        "summary": "Late payments may accrue interest at 1% per month.",
+        "quotes": ["interest at 1% per month"],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 746, "end_char": 790 }
+        ]
+      },
+      "taxes_withholding": {
+        "status": "found",
+        "summary": "The contractor is responsible for taxes, and the company does not withhold payroll taxes.",
+        "quotes": [
+          "Contractor is responsible for all taxes.",
+          "Company will not withhold payroll taxes."
+        ],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 792, "end_char": 920 }
+        ]
+      }
+    },
+    "independent_contractor_status": {
+      "heading": "Independent Contractor Status",
+      "status_statement": {
+        "status": "found",
+        "summary": "The agreement states the contractor is an independent contractor and not an employee.",
+        "quotes": ["Contractor is an independent contractor and not an employee."],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 930, "end_char": 1010 }
+        ]
+      },
+      "control_and_direction": {
+        "status": "found",
+        "summary": "It says the contractor controls the manner and means of performing the work, subject to agreed deliverables.",
+        "quotes": ["controls the manner and means of performing the Services"],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 1012, "end_char": 1100 }
+        ]
+      },
+      "benefits": {
+        "status": "found",
+        "summary": "It states the contractor is not eligible for company benefits.",
+        "quotes": ["not eligible for any Company benefits"],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 1102, "end_char": 1165 }
+        ]
+      },
+      "authority_to_bind": {
+        "status": "found",
+        "summary": "The contractor does not have authority to bind the company to obligations unless authorized in writing.",
+        "quotes": ["no authority to bind Company unless authorized in writing"],
+        "sources": [
+          { "source_id": "src_main", "page": 2, "start_char": 1166, "end_char": 1260 }
+        ]
+      }
+    },
+    "expenses": {
+      "heading": "Expenses",
+      "reimbursable_expenses": {
+        "status": "found",
+        "summary": "Reasonable, pre-approved expenses may be reimbursed.",
+        "quotes": ["Company will reimburse pre-approved, reasonable expenses"],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 40, "end_char": 120 }
+        ]
+      },
+      "pre_approval": {
+        "status": "found",
+        "summary": "Expenses need written approval in advance.",
+        "quotes": ["must be approved in writing in advance"],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 122, "end_char": 170 }
+        ]
+      },
+      "expense_caps": {
+        "status": "not_found",
+        "summary": "A dollar cap for expenses is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      }
+    },
+    "confidentiality": {
+      "heading": "Confidentiality",
+      "confidential_info_definition": {
+        "status": "found",
+        "summary": "Confidential information includes non-public business, technical, and customer information, with common exclusions (public information, independently developed, etc.).",
+        "quotes": [
+          "\"Confidential Information\" includes non-public business and technical information.",
+          "Confidential Information does not include information that becomes public through no fault of Contractor."
+        ],
+        "sources": [
+          { "source_id": "src_main", "page": 4, "start_char": 120, "end_char": 420 }
+        ]
+      },
+      "permitted_disclosures": {
+        "status": "found",
+        "summary": "Disclosure is allowed to contractors/agents who need to know, and for legal requirements, as described.",
+        "quotes": ["may disclose ... as required by law, provided notice is given where permitted"],
+        "sources": [
+          { "source_id": "src_main", "page": 4, "start_char": 422, "end_char": 560 }
+        ]
+      },
+      "return_destroy": {
+        "status": "found",
+        "summary": "Confidential materials may need to be returned or destroyed upon request or at the end of the engagement.",
+        "quotes": ["return or destroy Confidential Information upon request"],
+        "sources": [
+          { "source_id": "src_main", "page": 4, "start_char": 562, "end_char": 640 }
+        ]
+      },
+      "survival_period": {
+        "status": "found",
+        "summary": "The confidentiality obligation lasts 3 years after termination.",
+        "quotes": ["for three (3) years after termination"],
+        "sources": [
+          { "source_id": "src_main", "page": 4, "start_char": 642, "end_char": 690 }
+        ]
+      }
+    },
+    "intellectual_property": {
+      "heading": "Intellectual Property",
+      "work_product_ownership": {
+        "status": "found",
+        "summary": "Work product created in connection with the services is assigned to the company upon creation (as written).",
+        "quotes": ["all Work Product is hereby assigned to Company"],
+        "sources": [
+          { "source_id": "src_main", "page": 5, "start_char": 120, "end_char": 240 }
+        ]
+      },
+      "preexisting_materials": {
+        "status": "found",
+        "summary": "Pre-existing materials remain the contractor’s property, but the company receives a license to use them as incorporated into the work product.",
+        "quotes": [
+          "Pre-Existing Materials remain Contractor's property.",
+          "Contractor grants Company a non-exclusive, perpetual license to use Pre-Existing Materials as incorporated."
+        ],
+        "sources": [
+          { "source_id": "src_main", "page": 5, "start_char": 242, "end_char": 420 }
+        ]
+      },
+      "license_grants": {
+        "status": "found",
+        "summary": "A license is granted for any contractor-owned materials that are included in deliverables, limited to use with the deliverables.",
+        "quotes": ["license ... as incorporated into the Work Product"],
+        "sources": [
+          { "source_id": "src_main", "page": 5, "start_char": 300, "end_char": 420 }
+        ]
+      },
+      "moral_rights_waiver": {
+        "status": "not_found",
+        "summary": "A moral rights waiver is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      },
+      "open_source_or_third_party": {
+        "status": "not_clearly_stated",
+        "summary": "The agreement mentions third-party materials generally, but it is not clear whether there are specific open-source obligations because no project-specific exhibit is included.",
+        "quotes": ["may include third-party materials subject to their respective terms"],
+        "sources": [
+          { "source_id": "src_main", "page": 5, "start_char": 422, "end_char": 500 }
+        ]
+      }
+    },
+    "non_solicit_non_compete": {
+      "heading": "Non-Solicitation / Non-Competition",
+      "non_solicitation": {
+        "status": "found",
+        "summary": "The contractor may be restricted from soliciting the company’s employees for 12 months after termination.",
+        "quotes": ["will not solicit any employee ... for twelve (12) months"],
+        "sources": [
+          { "source_id": "src_main", "page": 5, "start_char": 740, "end_char": 840 }
+        ]
+      },
+      "non_compete": {
+        "status": "not_found",
+        "summary": "A non-competition restriction is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      },
+      "non_disparagement": {
+        "status": "not_found",
+        "summary": "A non-disparagement clause is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      },
+      "conflict_of_interest": {
+        "status": "found",
+        "summary": "The contractor must avoid conflicts of interest and disclose potential conflicts related to the services.",
+        "quotes": ["Contractor will promptly disclose any conflict of interest"],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 700, "end_char": 780 }
+        ]
+      }
+    },
+    "liability_indemnity_insurance": {
+      "heading": "Liability, Indemnity & Insurance",
+      "limitation_of_liability": {
+        "status": "found",
+        "summary": "Liability may be capped at fees paid in the prior 3 months, and certain damages (like consequential damages) are excluded as written.",
+        "quotes": [
+          "liability will not exceed fees paid in the three (3) months preceding the claim",
+          "no party will be liable for consequential or incidental damages"
+        ],
+        "sources": [
+          { "source_id": "src_main", "page": 6, "start_char": 120, "end_char": 310 }
+        ]
+      },
+      "indemnification": {
+        "status": "found",
+        "summary": "The contractor agrees to indemnify the company for third-party claims arising from the contractor’s breach or misconduct, as described.",
+        "quotes": ["Contractor will indemnify and hold harmless Company from third-party claims arising out of"],
+        "sources": [
+          { "source_id": "src_main", "page": 6, "start_char": 312, "end_char": 520 }
+        ]
+      },
+      "insurance": {
+        "status": "not_clearly_stated",
+        "summary": "The agreement references maintaining 'appropriate insurance' but does not specify types or coverage amounts in the provided text.",
+        "quotes": ["Contractor will maintain appropriate insurance coverage"],
+        "sources": [
+          { "source_id": "src_main", "page": 6, "start_char": 522, "end_char": 585 }
+        ]
+      },
+      "warranties_disclaimers": {
+        "status": "found",
+        "summary": "The contractor provides a limited warranty that services will be performed in a professional manner, and other warranties are disclaimed as written.",
+        "quotes": [
+          "Services will be performed in a professional and workmanlike manner.",
+          "EXCEPT AS EXPRESSLY SET FORTH ... DISCLAIMS ALL WARRANTIES"
+        ],
+        "sources": [
+          { "source_id": "src_main", "page": 6, "start_char": 587, "end_char": 740 }
+        ]
+      }
+    },
+    "dispute_resolution_and_governing_law": {
+      "heading": "Dispute Resolution & Governing Law",
+      "governing_law": {
+        "status": "found",
+        "summary": "California law governs the agreement.",
+        "quotes": ["governed by the laws of the State of California"],
+        "sources": [
+          { "source_id": "src_main", "page": 6, "start_char": 1820, "end_char": 1920 }
+        ]
+      },
+      "venue_jurisdiction": {
+        "status": "found",
+        "summary": "Disputes may be brought in state or federal courts located in San Francisco County, California, as written.",
+        "quotes": ["exclusive jurisdiction in the state or federal courts located in San Francisco County, California"],
+        "sources": [
+          { "source_id": "src_main", "page": 6, "start_char": 1922, "end_char": 2050 }
+        ]
+      },
+      "arbitration_mediation": {
+        "status": "not_found",
+        "summary": "Arbitration or mediation is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      },
+      "attorneys_fees": {
+        "status": "not_found",
+        "summary": "A specific attorneys’ fees clause is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      }
+    },
+    "data_privacy_and_security": {
+      "heading": "Data Privacy & Security",
+      "data_access": {
+        "status": "not_clearly_stated",
+        "summary": "The agreement mentions access to company systems and information, but does not describe specific data handling requirements in the provided text.",
+        "quotes": ["may be granted access to Company systems solely to perform Services"],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 820, "end_char": 910 }
+        ]
+      },
+      "security_requirements": {
+        "status": "not_found",
+        "summary": "Specific security standards (encryption, SOC 2, etc.) are not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      },
+      "breach_notice": {
+        "status": "not_found",
+        "summary": "A breach notification process is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      },
+      "privacy_laws_reference": {
+        "status": "not_found",
+        "summary": "References to specific privacy laws are not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      }
+    },
+    "operational_details": {
+      "heading": "Operational Details",
+      "communications_and_reporting": {
+        "status": "not_found",
+        "summary": "A reporting cadence (weekly updates, status reports) is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      },
+      "tools_and_systems": {
+        "status": "not_clearly_stated",
+        "summary": "The agreement permits access to company systems, but it is not clear which tools are required because the Statement of Work is not included.",
+        "quotes": ["access to Company systems solely to perform Services"],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 820, "end_char": 910 }
+        ]
+      },
+      "work_location": {
+        "status": "not_found",
+        "summary": "A work location (remote/on-site) is not stated in the provided text.",
+        "quotes": [],
+        "sources": []
+      },
+      "subcontractors": {
+        "status": "found",
+        "summary": "Subcontracting is allowed only with the company’s prior written consent.",
+        "quotes": ["may not subcontract without Company's prior written consent"],
+        "sources": [
+          { "source_id": "src_main", "page": 3, "start_char": 912, "end_char": 980 }
+        ]
+      },
+      "assignment": {
+        "status": "found",
+        "summary": "The company may assign the agreement in connection with a merger or sale; the contractor may not assign without consent.",
+        "quotes": [
+          "Company may assign ... in connection with a merger, acquisition, or sale of assets",
+          "Contractor may not assign without Company's written consent"
+        ],
+        "sources": [
+          { "source_id": "src_main", "page": 6, "start_char": 900, "end_char": 1040 }
+        ]
+      },
+      "notices_clause": {
+        "status": "found",
+        "summary": "Notices must be in writing and delivered using the methods listed in the notices section.",
+        "quotes": ["Notices must be in writing and will be deemed given upon"],
+        "sources": [
+          { "source_id": "src_main", "page": 6, "start_char": 1200, "end_char": 1500 }
+        ]
+      }
+    },
+    "signatures_and_execution": {
+      "heading": "Signatures & Execution",
+      "signature_blocks": {
+        "status": "found",
+        "summary": "The agreement includes signature blocks for both parties, including name and title for the company signatory.",
+        "quotes": ["IN WITNESS WHEREOF, the parties have executed this Agreement"],
+        "sources": [
+          { "source_id": "src_main", "page": 7, "start_char": 120, "end_char": 220 }
+        ]
+      },
+      "effective_upon_signature": {
+        "status": "not_clearly_stated",
+        "summary": "The agreement lists an effective date, but it is not fully clear whether signatures occurred on that date because signature dates are blank in the provided text.",
+        "quotes": ["Effective Date: March 1, 2026"],
+        "sources": [
+          { "source_id": "src_main", "page": 1, "start_char": 120, "end_char": 155 }
+        ]
+      }
+    },
+    "flags_and_clarifications": {
+      "heading": "Flags & Clarifications",
+      "high_priority": [
+        {
+          "id": "flag_001",
+          "type": "requires_attachment",
+          "severity": "medium",
+          "title": "Statement of Work (Exhibit A) referenced but not included",
+          "plain_note": "The agreement points to Exhibit A for the detailed services scope and possibly timelines. Without Exhibit A, key details about deliverables and milestones are not clearly stated.",
+          "related_fields": [
+            "sections.scope_of_services.services_description",
+            "sections.scope_of_services.deliverables",
+            "sections.scope_of_services.timeline_and_milestones"
+          ],
+          "sources": [
+            { "source_id": "src_main", "page": 2, "start_char": 40, "end_char": 110 }
+          ]
+        },
+        {
+          "id": "flag_002",
+          "type": "one_sided",
+          "severity": "medium",
+          "title": "Indemnity appears one-directional",
+          "plain_note": "The indemnity section describes the contractor indemnifying the company for certain third-party claims. The document does not describe a matching indemnity by the company in the provided text.",
+          "related_fields": ["sections.liability_indemnity_insurance.indemnification"],
+          "sources": [
+            { "source_id": "src_main", "page": 6, "start_char": 312, "end_char": 520 }
+          ]
+        },
+        {
+          "id": "flag_003",
+          "type": "unusual",
+          "severity": "low",
+          "title": "Non-solicitation duration may be longer than some short-form agreements",
+          "plain_note": "A 12-month employee non-solicitation is commonly used, but it is sometimes shorter in brief contractor engagements. The practical impact can depend on role and scope.",
+          "related_fields": ["sections.non_solicit_non_compete.non_solicitation"],
+          "sources": [
+            { "source_id": "src_main", "page": 5, "start_char": 740, "end_char": 840 }
+          ]
+        }
+      ],
+      "all_flags_summary": [
+        "Exhibit A (Statement of Work) is missing; scope/timeline details are not fully available.",
+        "Indemnity is described from contractor to company; a reciprocal clause is not shown in the provided text.",
+        "12-month employee non-solicitation is present; duration may be more restrictive than some brief engagements."
+      ]
+    },
+    "notices_and_disclaimers": {
+      "heading": "Notices & Disclaimers",
+      "not_legal_advice": "This summary is for informational purposes only and is not legal advice.",
+      "how_to_use_this": [
+        "This output is a plain-English map of what the document says, with direct pointers to the relevant text.",
+        "If a section is marked 'not_found' or 'not_clearly_stated', that means the detail is missing from the provided file or unclear as written."
+      ],
+      "language_limits": [
+        "No claims are made about legality or enforceability.",
+        "No negotiation tactics or predictions are provided.",
+        "Where something is unclear, it is described as unclear rather than filled in."
+      ]
+    },
+    "source_map_section": {
+      "heading": "Source Map",
+      "notes": [
+        "source_id values correspond to extracted text buffers stored temporarily during analysis.",
+        "page/start_char/end_char pointers are intended to support highlighting and audits."
+      ]
+    }
+  },
+  "flags": [
+    {
+      "id": "flag_001",
+      "type": "requires_attachment",
+      "severity": "medium",
+      "title": "Statement of Work (Exhibit A) referenced but not included",
+      "plain_note": "The agreement points to Exhibit A for the detailed services scope and possibly timelines. Without Exhibit A, key details about deliverables and milestones are not clearly stated.",
+      "related_fields": [
+        "sections.scope_of_services.services_description",
+        "sections.scope_of_services.deliverables",
+        "sections.scope_of_services.timeline_and_milestones"
+      ],
+      "sources": [{ "source_id": "src_main", "page": 2, "start_char": 40, "end_char": 110 }]
+    },
+    {
+      "id": "flag_002",
+      "type": "one_sided",
+      "severity": "medium",
+      "title": "Indemnity appears one-directional",
+      "plain_note": "The indemnity section describes the contractor indemnifying the company for certain third-party claims. The document does not describe a matching indemnity by the company in the provided text.",
+      "related_fields": ["sections.liability_indemnity_insurance.indemnification"],
+      "sources": [{ "source_id": "src_main", "page": 6, "start_char": 312, "end_char": 520 }]
+    },
+    {
+      "id": "flag_003",
+      "type": "unusual",
+      "severity": "low",
+      "title": "Non-solicitation duration may be longer than some short-form agreements",
+      "plain_note": "A 12-month employee non-solicitation is commonly used, but it is sometimes shorter in brief contractor engagements. The practical impact can depend on role and scope.",
+      "related_fields": ["sections.non_solicit_non_compete.non_solicitation"],
+      "sources": [{ "source_id": "src_main", "page": 5, "start_char": 740, "end_char": 840 }]
+    }
+  ],
+  "notices": {
+    "not_legal_advice": "This summary is for informational purposes only and is not legal advice.",
+    "limits": [
+      "This output describes only what is present in the provided document text.",
+      "If the document references exhibits or attachments that are not provided, related details may be marked as not clearly stated.",
+      "No statements are made about whether a clause is enforceable or lawful."
+    ],
+    "tone_policy": [
+      "Avoids prescriptive language (no 'you should').",
+      "Uses cautious phrasing ('may', 'often used to', 'worth clarifying').",
+      "Does not speculate beyond the text."
+    ]
+  },
+  "source_map": {
+    "items": [
+      {
+        "source_id": "src_main",
+        "kind": "extracted_text",
+        "label": "Primary extracted text",
+        "text_excerpt": "Independent Contractor Services Agreement ... (excerpt)"
+      }
+    ]
+  }
+}

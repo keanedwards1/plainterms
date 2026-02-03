@@ -1,6 +1,38 @@
 /* service/api/plainterms-api/hello-world/getResult.mjs */
 
+function corsHeaders() {
+  return {
+    "access-control-allow-origin": "*",
+    "access-control-allow-methods": "GET,OPTIONS",
+    "access-control-allow-headers": "content-type"
+  };
+}
+
+function json(statusCode, bodyObj) {
+  return {
+    statusCode,
+    headers: {
+      ...corsHeaders(),
+      "content-type": "application/json"
+    },
+    body: JSON.stringify(bodyObj)
+  };
+}
+
 export const handler = async (event) => {
+  // Handle CORS preflight
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: corsHeaders(),
+      body: ""
+    };
+  }
+
+  if (event.httpMethod !== "GET") {
+    return json(405, { error: "Method not allowed" });
+  }
+
   const id = event?.pathParameters?.id ?? "demo_123";
 
   const body = {
@@ -42,12 +74,5 @@ export const handler = async (event) => {
     }
   };
 
-  return {
-    statusCode: 200,
-    headers: {
-      "content-type": "application/json",
-      "access-control-allow-origin": "*"
-    },
-    body: JSON.stringify(body)
-  };
+  return json(200, body);
 };
