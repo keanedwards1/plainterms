@@ -23,11 +23,28 @@ Resources:
   UploadBucket:
     Type: AWS::S3::Bucket
     Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - "https://plainterms.vercel.app"
+              # If you also test on Vercel preview URLs, add:
+              # - "https://*.vercel.app"
+            AllowedMethods:
+              - PUT
+              - POST
+              - GET
+              - HEAD
+            AllowedHeaders:
+              - "*"
+            ExposedHeaders:
+              - ETag
+            MaxAge: 3000
       LifecycleConfiguration:
         Rules:
           - Id: ExpireUploads
             Status: Enabled
             ExpirationInDays: 1
+
 
   UploadUrlFunction:
     Type: AWS::Serverless::Function

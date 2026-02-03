@@ -56,7 +56,7 @@ export default function AnalyzePage() {
         throw new Error("Upload URL response missing uploadUrl/objectKey.");
       }
 
-      // 2) Upload file directly to S3 via presigned URL (no API Gateway payload limits)
+      // 2) Upload file directly to S3 via presigned URL
       const s3PutRes = await fetch(uploadJson.uploadUrl, {
         method: "PUT",
         headers: {
@@ -70,7 +70,7 @@ export default function AnalyzePage() {
         throw new Error(`S3 upload failed (${s3PutRes.status}). ${text}`);
       }
 
-      // 3) Call /analyze with the objectKey (stub still returns resultId)
+      // 3) Call /analyze with only the objectKey (no big payload)
       const analyzeRes = await fetch(`${API_BASE_URL}/analyze`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -130,4 +130,3 @@ export default function AnalyzePage() {
     </main>
   );
 }
-
