@@ -1,5 +1,9 @@
 /* /services/api/plainterms-api/hello-world/analyze.mjs */
 
+import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+
+const db = new DynamoDBClient({});
+
 function corsHeaders() {
   return {
     "access-control-allow-origin": "*",
@@ -33,23 +37,43 @@ export const handler = async (event) => {
     return json(405, { error: "Method not allowed" });
   }
 
-  // Accept JSON from the frontend (objectKey, filename, contentType).
-  // We’re intentionally not doing anything with it yet in the stub.
   let payload = {};
   try {
-    const ct =
-      event.headers?.["content-type"] ||
-      event.headers?.["Content-Type"] ||
-      "";
-    if (ct.includes("application/json") && event.body) {
-      payload = JSON.parse(event.body);
-    }
+    payload = event.body ? JSON.parse(event.body) : {};
   } catch {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  // Stub: return a resultId regardless for now.
-  // Later: use payload.objectKey to read from S3 + run analysis.
   const resultId = makeResultId();
+  const createdAt = new Date().toISOString();
+
+  // Stub UI result (pt.ui.v1)
+  const uiResult = {
+    schema_version: "pt.ui.v1",
+    result_id: resultId,
+    created_at: createdAt,
+    headline: "Summary",
+    overview:
+      "This agreement describes a contractor providing services to a company in exchange for payment, with standard terms around confidentiality, ownership of work, and how the relationship ends.",
+    sections: [],
+    notices: {
+      not_legal_advice:
+        "This summary is for informational purposes only and is not legal advice.",
+    },
+  };
+
+  const cmd = new PutItemCommand({
+    TableName: process.env.RESULTS_TABLE,
+    Item: {
+      result_id: { S: resultId },
+      created_at: { S: createdAt },
+      object_key: { S: payload.objectKey ?? "" },
+      status: { S: "complete" },
+      ui_result: { S: JSON.stringify(uiResult) },
+    },
+  });
+
+  await db.send(cmd);
+
   return json(200, { resultId });
 };

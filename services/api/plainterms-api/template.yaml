@@ -27,8 +27,6 @@ Resources:
         CorsRules:
           - AllowedOrigins:
               - "https://plainterms.vercel.app"
-              # If you also test on Vercel preview URLs, add:
-              # - "https://*.vercel.app"
             AllowedMethods:
               - PUT
               - POST
@@ -36,8 +34,6 @@ Resources:
               - HEAD
             AllowedHeaders:
               - "*"
-            ExposedHeaders:
-              - ETag
             MaxAge: 3000
       LifecycleConfiguration:
         Rules:
@@ -45,6 +41,17 @@ Resources:
             Status: Enabled
             ExpirationInDays: 1
 
+  ResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PlainTermsResults
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: result_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: result_id
+          KeyType: HASH
 
   UploadUrlFunction:
     Type: AWS::Serverless::Function
@@ -58,38 +65,68 @@ Resources:
         - S3WritePolicy:
             BucketName: !Ref UploadBucket
       Events:
-        UploadUrl:
+        UploadUrlPost:
           Type: Api
           Properties:
             RestApiId: !Ref PlainTermsApi
             Path: /upload-url
             Method: POST
+        UploadUrlOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /upload-url
+            Method: OPTIONS
 
   AnalyzeFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: lambdas/
       Handler: analyze.handler
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
       Events:
-        Analyze:
+        AnalyzePost:
           Type: Api
           Properties:
             RestApiId: !Ref PlainTermsApi
             Path: /analyze
             Method: POST
+        AnalyzeOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /analyze
+            Method: OPTIONS
 
   GetResultFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: lambdas/
       Handler: getResult.handler
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ResultsTable
       Events:
-        GetResult:
+        GetResultGet:
           Type: Api
           Properties:
             RestApiId: !Ref PlainTermsApi
             Path: /result/{id}
             Method: GET
+        GetResultOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /result/{id}
+            Method: OPTIONS
 
 Outputs:
   ApiUrl:
