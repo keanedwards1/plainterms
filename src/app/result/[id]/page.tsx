@@ -7,6 +7,14 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
+function getRetentionDays() {
+  const raw = Number(
+    process.env.NEXT_PUBLIC_RESULT_RETENTION_DAYS ?? process.env.RESULT_TTL_DAYS ?? "7"
+  );
+  if (!Number.isFinite(raw) || raw <= 0) return 7;
+  return Math.floor(raw);
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
 
@@ -65,6 +73,7 @@ async function readFailureDetail(res: Response): Promise<string> {
 export default async function ResultPage({ params }: Props) {
   const { id } = await params;
   const baseUrl = getApiBaseUrl();
+  const retentionDays = getRetentionDays();
 
   const res = await fetch(`${baseUrl}/result/${id}`, {
     cache: "no-store",
@@ -95,10 +104,10 @@ export default async function ResultPage({ params }: Props) {
       return (
         <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
           <h1 className="text-3xl text-[var(--pt-ink)]">Result expired</h1>
-          <p className="mt-3 text-[var(--pt-muted)]">
-            This result is no longer available. Uploading the contract again will create a new
-            result.
-          </p>
+        <p className="mt-3 text-[var(--pt-muted)]">
+          This result is no longer available. Results typically expire after about{" "}
+          {retentionDays} days. Uploading the contract again will create a new result.
+        </p>
           <p className="mt-5 text-sm text-[var(--pt-muted)]">
             <strong>Result ID:</strong> {id}
           </p>
@@ -201,7 +210,11 @@ export default async function ResultPage({ params }: Props) {
       </section>
 
       <footer className="mt-8 border-t border-[var(--pt-border)] pt-5 text-sm text-[var(--pt-muted)]">
-        {data.notices.not_legal_advice}
+        <p>{data.notices.not_legal_advice}</p>
+        <p className="mt-2 text-xs">
+          Results are typically available for about {retentionDays} days and may expire
+          automatically.
+        </p>
       </footer>
     </main>
   );

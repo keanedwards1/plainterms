@@ -2,6 +2,20 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: PlainTerms API
 
+Parameters:
+  AppBaseUrl:
+    Type: String
+    Default: https://plainterms.vercel.app
+    Description: Frontend base URL used for Stripe success/cancel redirects.
+  StripeSecretKeyParamName:
+    Type: String
+    Default: /plainterms/stripe/secret-key
+    Description: SSM parameter name containing Stripe secret key (SecureString).
+  StripePriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/price-id
+    Description: SSM parameter name containing Stripe price ID (String).
+
 Globals:
   Function:
     Runtime: nodejs20.x
@@ -46,6 +60,9 @@ Resources:
     Properties:
       TableName: PlainTermsResults
       BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
       AttributeDefinitions:
         - AttributeName: result_id
           AttributeType: S
@@ -86,6 +103,7 @@ Resources:
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
+          RESULT_TTL_DAYS: "7"
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable
@@ -103,6 +121,71 @@ Resources:
             Path: /analyze
             Method: OPTIONS
 
+  CreateCheckoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: createCheckout.handler
+      Environment:
+        Variables:
+          STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
+          STRIPE_PRICE_ID_PARAM: !Ref StripePriceIdParamName
+          APP_BASE_URL: !Ref AppBaseUrl
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripePriceIdParamName}
+      Events:
+        CheckoutPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /checkout
+            Method: POST
+        CheckoutOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /checkout
+            Method: OPTIONS
+
+  VerifyCheckoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: verifyCheckout.handler
+      Environment:
+        Variables:
+          STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
+          RESULTS_TABLE: !Ref ResultsTable
+          RESULT_TTL_DAYS: "7"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+      Events:
+        CheckoutVerifyPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /checkout/verify
+            Method: POST
+        CheckoutVerifyOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /checkout/verify
+            Method: OPTIONS
+
   GetResultFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -111,6 +194,7 @@ Resources:
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
+          RESULT_TTL_DAYS: "7"
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref ResultsTable

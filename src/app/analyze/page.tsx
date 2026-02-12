@@ -2,14 +2,28 @@
 
 import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 type UploadUrlResponse = {
   uploadUrl: string;
   objectKey: string;
 };
 
-type SubmitStep = "requesting-upload-url" | "uploading-file" | "starting-analysis";
+type CheckoutResponse = {
+  checkoutSessionId: string;
+  checkoutUrl: string;
+};
+
+const parsedRetentionDays = Number(process.env.NEXT_PUBLIC_RESULT_RETENTION_DAYS ?? "7");
+const RESULT_RETENTION_DAYS =
+  Number.isFinite(parsedRetentionDays) && parsedRetentionDays > 0
+    ? Math.floor(parsedRetentionDays)
+    : 7;
+
+type SubmitStep =
+  | "requesting-upload-url"
+  | "uploading-file"
+  | "starting-checkout"
+  | "redirecting-to-checkout";
 
 async function readErrorResponse(res: Response): Promise<string> {
   const contentType = res.headers.get("content-type") ?? "";
@@ -37,8 +51,10 @@ function stepLabel(step: SubmitStep): string {
       return "Requesting upload URL";
     case "uploading-file":
       return "Uploading file";
-    case "starting-analysis":
-      return "Starting analysis";
+    case "starting-checkout":
+      return "Starting checkout";
+    case "redirecting-to-checkout":
+      return "Redirecting to payment";
   }
 }
 
@@ -48,12 +64,16 @@ function prettyFileSize(bytes: number): string {
 }
 
 export default function AnalyzePage() {
-  const router = useRouter();
-
   const [file, setFile] = React.useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<SubmitStep | null>(null);
+  const [checkoutCanceled, setCheckoutCanceled] = React.useState(false);
+
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    setCheckoutCanceled(url.searchParams.get("canceled") === "1");
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -104,9 +124,9 @@ export default function AnalyzePage() {
         throw new Error(`S3 upload failed (${s3PutRes.status}): ${detail}`);
       }
 
-      currentStep = "starting-analysis";
+      currentStep = "starting-checkout";
       setStep(currentStep);
-      const analyzeRes = await fetch("/api/analyze", {
+      const checkoutRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -117,17 +137,19 @@ export default function AnalyzePage() {
         }),
       });
 
-      if (!analyzeRes.ok) {
-        const detail = await readErrorResponse(analyzeRes);
-        throw new Error(`Analyze failed (${analyzeRes.status}): ${detail}`);
+      if (!checkoutRes.ok) {
+        const detail = await readErrorResponse(checkoutRes);
+        throw new Error(`Checkout failed (${checkoutRes.status}): ${detail}`);
       }
 
-      const data = (await analyzeRes.json()) as { resultId?: string };
-      if (!data.resultId) {
-        throw new Error("Analyze succeeded but no resultId was returned.");
+      const data = (await checkoutRes.json()) as CheckoutResponse;
+      if (!data.checkoutUrl) {
+        throw new Error("Checkout succeeded but no checkout URL was returned.");
       }
 
-      router.push(`/result/${data.resultId}`);
+      currentStep = "redirecting-to-checkout";
+      setStep(currentStep);
+      window.location.assign(data.checkoutUrl);
     } catch (err) {
       const detail = err instanceof Error ? err.message : "Unknown error";
       setError(`${stepLabel(currentStep)}: ${detail}`);
@@ -152,7 +174,8 @@ export default function AnalyzePage() {
             Upload your agreement for plain-English analysis.
           </h1>
           <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)]">
-            v1 supports independent contractor and services agreements. Upload a PDF or DOCX.
+            v1 supports independent contractor and services agreements. Upload a PDF or DOCX, then
+            continue to secure checkout.
           </p>
         </div>
 
@@ -205,6 +228,17 @@ export default function AnalyzePage() {
               {error}
             </div>
           )}
+
+          {checkoutCanceled && !error && (
+            <div className="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+              Checkout was canceled. You can continue to payment again when ready.
+            </div>
+          )}
+
+          <p className="mt-5 text-xs text-[var(--pt-muted)]">
+            Results are typically available for about {RESULT_RETENTION_DAYS} days and may expire
+            automatically after that window.
+          </p>
         </form>
       </section>
     </main>

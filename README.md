@@ -16,7 +16,7 @@ PlainTerms is a contract explainer app that turns legal language into plain Engl
 - AWS backend is deployed and reachable.
 - Vercel project and environment wiring are configured.
 - Frontend and backend are connected via `API_BASE_URL` through Next.js API proxy routes.
-- Local upload -> analyze -> result flow is working.
+- Local upload -> checkout -> result flow is implemented.
 
 Live backend URL currently in use:
 `https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod`
@@ -47,6 +47,7 @@ Frontend expects:
 
 ```bash
 API_BASE_URL=https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod
+NEXT_PUBLIC_RESULT_RETENTION_DAYS=7
 # Optional fallback for legacy code paths:
 # NEXT_PUBLIC_API_BASE_URL=https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod
 ```
@@ -56,6 +57,7 @@ Set this in:
 - Vercel project environment variables for `Preview` and `Production`
 
 `API_BASE_URL` is preferred because requests are proxied through Next.js API routes (avoids browser CORS issues).
+`NEXT_PUBLIC_RESULT_RETENTION_DAYS` controls user-facing retention messaging in the frontend.
 
 Quick Vercel CLI setup:
 
@@ -81,7 +83,8 @@ After deploy, verify one full flow on both Preview and Production:
 2. Confirm network calls return 200 for:
    - `POST /api/upload-url`
    - `POST /api/upload-file`
-   - `POST /api/analyze`
+   - `POST /api/checkout`
+   - `POST /api/checkout/verify` (via `/analyze/complete`)
 3. Confirm redirect to `/result/{id}` succeeds and renders summary content.
 4. If anything fails, check the on-screen error detail (status + backend message) and Vercel function logs:
 
@@ -96,6 +99,17 @@ sam build
 sam deploy --guided
 ```
 
+Stripe checkout environment (backend lambdas):
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PRICE_ID`
+- `APP_BASE_URL` (for example `https://plainterms.vercel.app`)
+- `API_BASE_URL` (used by checkout verify to call `/analyze`)
+
+Backend retention behavior:
+- DynamoDB TTL is enabled on attribute `expires_at`.
+- `AnalyzeFunction` writes `expires_at` using `RESULT_TTL_DAYS` (default `7`).
+- `GetResultFunction` returns `410 expired` once a result passes its TTL window.
+
 ## AWS Setup Notes
 
 - AWS account uses IAM user credentials (no root access keys).
@@ -103,26 +117,10 @@ sam deploy --guided
 - Credentials were verified with `aws sts get-caller-identity`.
 - SAM deployment created Lambda, API Gateway, and IAM resources successfully.
 
-## Planned Backend API Upgrade
+## Current Backend Endpoints
 
-The current hello-world style backend is being replaced with a job-based flow for uploads, payment, and analysis.
-
-Planned handlers:
-- `POST /checkout` -> create Stripe checkout session for a job
-- `POST /webhook/stripe` -> process Stripe webhook and mark job paid
-- `POST /analyze` -> accept upload/start analysis job
-- `GET /result/{id}` -> return structured analysis result
-
-Planned AWS resources:
-- DynamoDB table `PlainTermsJobs` for job state/results (`pk`, `status`, timestamps, result payload)
-- S3 uploads bucket (`plainterms-uploads-*`) with lifecycle auto-delete (for example, 1 day retention)
-
-Planned handler file layout under `services/api/plainterms-api`:
-
-```bash
-src/handlers/createCheckout.ts
-src/handlers/stripeWebhook.ts
-src/handlers/startAnalysis.ts
-src/handlers/getResult.ts
-src/lib/types.ts
-```
+- `POST /upload-url` -> create S3 presigned upload URL
+- `POST /checkout` -> create Stripe Checkout session
+- `POST /checkout/verify` -> verify paid session and create/reuse result
+- `POST /analyze` -> create deterministic `pt.v1` and transformed `pt.ui.v1`, persist to DynamoDB
+- `GET /result/{id}` -> return result, `202` processing, or `410` expired
