@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Backend/generated artifacts outside the Next.js app:
+    "services/api/plainterms-api/.aws-sam/**",
+    "services/api/plainterms-api/lambdas/**/*.mjs",
+    "services/api/node_modules/**",
   ]),
 ]);
 

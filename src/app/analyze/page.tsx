@@ -1,15 +1,51 @@
-/* /src/app/analyze/page.tsx */
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 type UploadUrlResponse = {
   uploadUrl: string;
   objectKey: string;
 };
+
+type SubmitStep = "requesting-upload-url" | "uploading-file" | "starting-analysis";
+
+async function readErrorResponse(res: Response): Promise<string> {
+  const contentType = res.headers.get("content-type") ?? "";
+
+  try {
+    if (contentType.includes("application/json")) {
+      const json = (await res.json()) as { error?: unknown; message?: unknown };
+      if (typeof json.error === "string" && json.error.trim()) return json.error;
+      if (typeof json.message === "string" && json.message.trim()) return json.message;
+      return JSON.stringify(json).slice(0, 500);
+    }
+
+    const text = await res.text();
+    if (text.trim()) return text.slice(0, 500);
+  } catch {
+    // Fall back below.
+  }
+
+  return res.statusText || "Unknown error";
+}
+
+function stepLabel(step: SubmitStep): string {
+  switch (step) {
+    case "requesting-upload-url":
+      return "Requesting upload URL";
+    case "uploading-file":
+      return "Uploading file";
+    case "starting-analysis":
+      return "Starting analysis";
+  }
+}
+
+function prettyFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
 
 export default function AnalyzePage() {
   const router = useRouter();
@@ -17,15 +53,11 @@ export default function AnalyzePage() {
   const [file, setFile] = React.useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [step, setStep] = React.useState<SubmitStep | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
-    if (!API_BASE_URL) {
-      setError("Missing NEXT_PUBLIC_API_BASE_URL in .env.local");
-      return;
-    }
 
     if (!file) {
       setError("Please choose a contract file.");
@@ -33,10 +65,11 @@ export default function AnalyzePage() {
     }
 
     setIsSubmitting(true);
+    let currentStep: SubmitStep = "requesting-upload-url";
+    setStep(currentStep);
 
     try {
-      // 1) Ask backend for a presigned upload URL
-      const uploadUrlRes = await fetch(`${API_BASE_URL}/upload-url`, {
+      const uploadUrlRes = await fetch("/api/upload-url", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -46,32 +79,34 @@ export default function AnalyzePage() {
       });
 
       if (!uploadUrlRes.ok) {
-        const text = await uploadUrlRes.text().catch(() => "");
-        throw new Error(`Upload URL failed (${uploadUrlRes.status}). ${text}`);
+        const detail = await readErrorResponse(uploadUrlRes);
+        throw new Error(`Upload URL failed (${uploadUrlRes.status}): ${detail}`);
       }
 
       const uploadJson = (await uploadUrlRes.json()) as UploadUrlResponse;
-
       if (!uploadJson.uploadUrl || !uploadJson.objectKey) {
         throw new Error("Upload URL response missing uploadUrl/objectKey.");
       }
 
-      // 2) Upload file directly to S3 via presigned URL
-      const s3PutRes = await fetch(uploadJson.uploadUrl, {
-        method: "PUT",
-        headers: {
-          "content-type": file.type || "application/octet-stream",
-        },
-        body: file,
+      currentStep = "uploading-file";
+      setStep(currentStep);
+      const uploadForm = new FormData();
+      uploadForm.set("uploadUrl", uploadJson.uploadUrl);
+      uploadForm.set("file", file);
+
+      const s3PutRes = await fetch("/api/upload-file", {
+        method: "POST",
+        body: uploadForm,
       });
 
       if (!s3PutRes.ok) {
-        const text = await s3PutRes.text().catch(() => "");
-        throw new Error(`S3 upload failed (${s3PutRes.status}). ${text}`);
+        const detail = await readErrorResponse(s3PutRes);
+        throw new Error(`S3 upload failed (${s3PutRes.status}): ${detail}`);
       }
 
-      // 3) Call /analyze with only the objectKey (no big payload)
-      const analyzeRes = await fetch(`${API_BASE_URL}/analyze`, {
+      currentStep = "starting-analysis";
+      setStep(currentStep);
+      const analyzeRes = await fetch("/api/analyze", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -83,50 +118,95 @@ export default function AnalyzePage() {
       });
 
       if (!analyzeRes.ok) {
-        const text = await analyzeRes.text().catch(() => "");
-        throw new Error(`Analyze failed (${analyzeRes.status}). ${text}`);
+        const detail = await readErrorResponse(analyzeRes);
+        throw new Error(`Analyze failed (${analyzeRes.status}): ${detail}`);
       }
 
       const data = (await analyzeRes.json()) as { resultId?: string };
-
       if (!data.resultId) {
         throw new Error("Analyze succeeded but no resultId was returned.");
       }
 
       router.push(`/result/${data.resultId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      const detail = err instanceof Error ? err.message : "Unknown error";
+      setError(`${stepLabel(currentStep)}: ${detail}`);
     } finally {
       setIsSubmitting(false);
+      setStep(null);
     }
   }
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-      <h1 style={{ fontSize: 28, marginBottom: 8 }}>Analyze a contract</h1>
-      <p style={{ marginTop: 0, opacity: 0.8 }}>
-        Upload a contract. For now, this is a stub that returns a result ID.
-      </p>
+    <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8 lg:px-12">
+      <Link href="/" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
+        ← Back to home
+      </Link>
 
-      <form onSubmit={onSubmit} style={{ marginTop: 24 }}>
-        <label style={{ display: "block", marginBottom: 8 }}>
-          Contract file (PDF or DOCX)
-        </label>
-
-        <input
-          type="file"
-          accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
-
-        <div style={{ marginTop: 16 }}>
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Continue"}
-          </button>
+      <section className="mt-5 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <p className="mb-3 inline-flex rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-1 text-sm font-semibold text-[var(--pt-muted)]">
+            Step 1 of 3
+          </p>
+          <h1 className="text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
+            Upload your agreement for plain-English analysis.
+          </h1>
+          <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)]">
+            v1 supports independent contractor and services agreements. Upload a PDF or DOCX.
+          </p>
         </div>
 
-        {error && <p style={{ marginTop: 16, color: "crimson" }}>{error}</p>}
-      </form>
+        <aside className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5 text-sm text-[var(--pt-muted)]">
+          <h2 className="text-lg text-[var(--pt-ink)]">What to expect</h2>
+          <ul className="mt-3 grid gap-2">
+            <li>• Calm, neutral summary language.</li>
+            <li>• Missing details are called out explicitly.</li>
+            <li>• Informational only, not legal advice.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section className="mt-8 rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-sm">
+        <form onSubmit={onSubmit}>
+          <label className="mb-3 block text-sm font-semibold text-[var(--pt-ink)]">
+            Contract file (PDF or DOCX)
+          </label>
+
+          <div className="rounded-2xl border-2 border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-5">
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--pt-accent)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--pt-accent-ink)] hover:file:brightness-95"
+            />
+            {file && (
+              <p className="mt-3 text-sm text-[var(--pt-muted)]">
+                Selected: <span className="font-semibold text-[var(--pt-ink)]">{file.name}</span>{" "}
+                ({prettyFileSize(file.size)})
+              </p>
+            )}
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="rounded-full bg-[var(--pt-accent)] px-6 py-3 text-sm font-semibold text-[var(--pt-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSubmitting ? "Processing..." : "Continue"}
+            </button>
+            {isSubmitting && step && (
+              <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>
+            )}
+          </div>
+
+          {error && (
+            <div className="mt-5 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+        </form>
+      </section>
     </main>
   );
 }
