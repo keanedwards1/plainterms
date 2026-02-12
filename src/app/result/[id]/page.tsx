@@ -70,8 +70,45 @@ export default async function ResultPage({ params }: Props) {
     cache: "no-store",
   });
 
+  if (res.status === 202) {
+    const detail = await readFailureDetail(res);
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
+        <h1 className="text-3xl text-[var(--pt-ink)]">Analysis in progress</h1>
+        <p className="mt-3 text-[var(--pt-muted)]">
+          Your document is still being processed. This page should become available shortly.
+        </p>
+        <p className="mt-5 text-sm text-[var(--pt-muted)]">
+          <strong>Result ID:</strong> {id}
+        </p>
+        <pre className="mt-3 overflow-auto rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-4 text-xs text-[var(--pt-ink)]">
+          {detail}
+        </pre>
+      </main>
+    );
+  }
+
   if (!res.ok) {
     const detail = await readFailureDetail(res);
+
+    if (res.status === 410) {
+      return (
+        <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
+          <h1 className="text-3xl text-[var(--pt-ink)]">Result expired</h1>
+          <p className="mt-3 text-[var(--pt-muted)]">
+            This result is no longer available. Uploading the contract again will create a new
+            result.
+          </p>
+          <p className="mt-5 text-sm text-[var(--pt-muted)]">
+            <strong>Result ID:</strong> {id}
+          </p>
+          <pre className="mt-3 overflow-auto rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-4 text-xs text-[var(--pt-ink)]">
+            {detail}
+          </pre>
+        </main>
+      );
+    }
+
     return (
       <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
         <h1 className="text-3xl text-[var(--pt-ink)]">Result not available</h1>

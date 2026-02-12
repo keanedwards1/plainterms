@@ -12,6 +12,16 @@ export async function GET(_req: Request, { params }: Props) {
       cache: "no-store",
     });
 
+    if (upstream.status === 202 || upstream.status === 410 || upstream.status === 404) {
+      const body = await upstream.text().catch(() => "");
+      return new Response(body, {
+        status: upstream.status,
+        headers: {
+          "content-type": upstream.headers.get("content-type") ?? "application/json",
+        },
+      });
+    }
+
     if (!upstream.ok) {
       const detail = await upstream.text().catch(() => "");
       return Response.json(

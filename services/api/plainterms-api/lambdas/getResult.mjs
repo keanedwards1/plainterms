@@ -47,7 +47,33 @@ export const handler = async (event) => {
   const res = await db.send(cmd);
 
   if (!res.Item) {
-    return json(404, { error: "Result not found" });
+    return json(404, { error: "Result not found", status: "not_found" });
+  }
+
+  const resultStatus = res.Item.status?.S ?? "complete";
+
+  if (resultStatus === "processing") {
+    return json(202, {
+      status: "processing",
+      resultId: id,
+      message: "Analysis is still in progress.",
+    });
+  }
+
+  if (resultStatus === "expired") {
+    return json(410, {
+      status: "expired",
+      resultId: id,
+      message: "This result is no longer available.",
+    });
+  }
+
+  if (!res.Item.ui_result?.S) {
+    return json(202, {
+      status: "processing",
+      resultId: id,
+      message: "Analysis is still in progress.",
+    });
   }
 
   const uiResult = JSON.parse(res.Item.ui_result.S);
