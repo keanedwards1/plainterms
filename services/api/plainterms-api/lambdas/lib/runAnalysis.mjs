@@ -4,6 +4,7 @@ import {
   assertPtV1Contract,
   transformPtV1ToUiV1,
 } from "./ptTransform.mjs";
+import { extractDocumentTextFromUpload } from "./extractDocumentText.mjs";
 
 const db = new DynamoDBClient({});
 
@@ -18,8 +19,16 @@ function getRetentionDays() {
   return Math.floor(raw);
 }
 
-function makeStubPtV1({ resultId, createdAt, payload }) {
+function pickSummaryText(text) {
+  if (!text) {
+    return "We could not extract readable text from this document yet, so this result is limited. Try a text-based PDF or DOCX export.";
+  }
+  return text.slice(0, 420);
+}
+
+function makeStubPtV1({ resultId, createdAt, payload, extraction }) {
   const filename = typeof payload.filename === "string" ? payload.filename : "Contract document";
+  const textSnippet = pickSummaryText(extraction.extractedText);
 
   return {
     schema_version: "pt.v1",
@@ -30,16 +39,15 @@ function makeStubPtV1({ resultId, createdAt, payload }) {
       contract_type: "independent_contractor_services_agreement",
       jurisdiction_hint: "not_found",
       page_count: 0,
-      word_count: 0,
-      confidence_notes: [],
+      word_count: extraction.extractedText ? extraction.extractedText.split(/\s+/).length : 0,
+      confidence_notes: extraction.extraction.notes,
     },
     sections: {
       document_overview: {
         heading: "Document Overview",
         plain_summary: {
           status: "found",
-          summary:
-            "This agreement describes a contractor providing services to a company in exchange for payment, with standard terms around confidentiality, ownership of work, and how the relationship ends.",
+          summary: textSnippet,
           quotes: [],
           sources: [],
         },
@@ -113,7 +121,15 @@ export async function runAnalysis(payload) {
   const createdAt = new Date().toISOString();
   const expiresAtEpoch = Math.floor(Date.now() / 1000) + getRetentionDays() * 24 * 60 * 60;
 
-  const ptV1 = makeStubPtV1({ resultId, createdAt, payload });
+  const bucket = process.env.UPLOAD_BUCKET;
+  const extraction = await extractDocumentTextFromUpload({
+    bucket,
+    objectKey: payload.objectKey,
+    filename: payload.filename,
+    contentType: payload.contentType,
+  });
+
+  const ptV1 = makeStubPtV1({ resultId, createdAt, payload, extraction });
   assertPtV1Contract(ptV1);
   const uiResult = transformPtV1ToUiV1(ptV1);
   assertPtUiV1Contract(uiResult);

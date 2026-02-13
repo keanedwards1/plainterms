@@ -104,9 +104,12 @@ Resources:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
           RESULT_TTL_DAYS: "7"
+          UPLOAD_BUCKET: !Ref UploadBucket
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
       Events:
         AnalyzePost:
           Type: Api
@@ -163,9 +166,12 @@ Resources:
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
           RESULTS_TABLE: !Ref ResultsTable
           RESULT_TTL_DAYS: "7"
+          UPLOAD_BUCKET: !Ref UploadBucket
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
         - Statement:
             Effect: Allow
             Action:
