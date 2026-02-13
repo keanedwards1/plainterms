@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 
 type VerifyResponse = {
   resultId: string;
@@ -69,6 +70,12 @@ export default function AnalyzeCompletePage() {
         return;
       }
 
+      void trackFunnelMetric({
+        event: "checkout_success",
+        funnelId: getOrCreateFunnelId(),
+        resultId: data.resultId,
+        sessionId,
+      });
       router.replace(`/result/${data.resultId}`);
     }
 

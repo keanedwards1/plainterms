@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
 import { PtResult, SECTION_TITLES } from "@/lib/plainterms-schema";
+import TrackResultViewed from "@/components/TrackResultViewed";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -148,6 +149,8 @@ export default async function ResultPage({ params }: Props) {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8 lg:px-12">
+      <TrackResultViewed resultId={data.result_id} />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href="/analyze" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
           ← Analyze another file

@@ -115,6 +115,21 @@ Run locally:
 SMOKE_BASE_URL=https://plainterms.vercel.app npm run smoke:funnel
 ```
 
+## Funnel Metrics
+
+The frontend emits funnel events to `POST /api/metrics` so you can monitor conversion drop-offs:
+1. `upload_start` (user submitted a file on `/analyze`)
+2. `checkout_start` (frontend started checkout request)
+3. `checkout_success` (checkout verify succeeded on `/analyze/complete`)
+4. `result_viewed` (user reached successful `/result/{id}` render)
+
+Metrics are logged as structured JSON with `event: "funnel.metric"` in Vercel function logs.
+
+Suggested quick check after deploy:
+1. Open Vercel logs for your deployment.
+2. Filter for `funnel.metric`.
+3. Compare counts by metric event to identify drop-off points.
+
 Backend (AWS SAM, from `services/api/plainterms-api`):
 
 ```bash

@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 
 type UploadUrlResponse = {
   uploadUrl: string;
@@ -84,6 +85,14 @@ export default function AnalyzePage() {
       return;
     }
 
+    const funnelId = getOrCreateFunnelId();
+    void trackFunnelMetric({
+      event: "upload_start",
+      funnelId,
+      fileSizeBytes: file.size,
+      fileType: file.type || "application/octet-stream",
+    });
+
     setIsSubmitting(true);
     let currentStep: SubmitStep = "requesting-upload-url";
     setStep(currentStep);
@@ -126,6 +135,7 @@ export default function AnalyzePage() {
 
       currentStep = "starting-checkout";
       setStep(currentStep);
+      void trackFunnelMetric({ event: "checkout_start", funnelId });
       const checkoutRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
