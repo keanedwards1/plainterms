@@ -1,0 +1,40 @@
+name: Smoke Funnel
+
+on:
+  workflow_dispatch:
+    inputs:
+      smoke_base_url:
+        description: "Optional override for smoke target (e.g., https://plainterms.vercel.app)"
+        required: false
+        type: string
+  schedule:
+    - cron: "19 */6 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run smoke funnel
+        env:
+          SMOKE_BASE_URL_INPUT: ${{ github.event.inputs.smoke_base_url }}
+          SMOKE_BASE_URL_VAR: ${{ vars.SMOKE_BASE_URL }}
+        run: |
+          SMOKE_BASE_URL="${SMOKE_BASE_URL_INPUT:-$SMOKE_BASE_URL_VAR}"
+          if [ -z "$SMOKE_BASE_URL" ]; then
+            echo "SMOKE_BASE_URL is not set. Configure repo variable SMOKE_BASE_URL or pass workflow input."
+            exit 1
+          fi
+          export SMOKE_BASE_URL
+          node scripts/smoke-funnel.mjs

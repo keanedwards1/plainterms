@@ -92,6 +92,27 @@ After deploy, verify one full flow on both Preview and Production:
 vercel logs <deployment-url>
 ```
 
+## Automated Smoke Test (Funnel)
+
+A scheduled GitHub Actions workflow runs `scripts/smoke-funnel.mjs` every 6 hours:
+- `.github/workflows/smoke-funnel.yml`
+
+What it verifies against your deployed frontend URL:
+1. `GET /analyze` returns success.
+2. `POST /api/upload-url` returns `uploadUrl` + `objectKey`.
+3. `POST /api/upload-file` uploads a tiny PDF to S3.
+4. `POST /api/checkout` returns Stripe checkout session fields.
+5. `POST /api/checkout/verify` returns expected unpaid status (`409`) or a valid paid result (`200`).
+
+Set repository variable:
+- `SMOKE_BASE_URL` (for example `https://plainterms.vercel.app`)
+
+Run locally:
+
+```bash
+SMOKE_BASE_URL=https://plainterms.vercel.app npm run smoke:funnel
+```
+
 Backend (AWS SAM, from `services/api/plainterms-api`):
 
 ```bash

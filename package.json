@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "smoke:funnel": "node scripts/smoke-funnel.mjs"
   },
   "dependencies": {
     "next": "16.1.6",
