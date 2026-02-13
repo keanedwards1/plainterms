@@ -48,6 +48,8 @@ Frontend expects:
 ```bash
 API_BASE_URL=https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod
 NEXT_PUBLIC_RESULT_RETENTION_DAYS=7
+# Optional: webhook endpoint for 5xx API alerts from Next.js routes
+# ALERT_WEBHOOK_URL=https://hooks.slack.com/services/...
 # Optional fallback for legacy code paths:
 # NEXT_PUBLIC_API_BASE_URL=https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod
 ```
