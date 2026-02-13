@@ -142,6 +142,36 @@ Stripe checkout environment (backend lambdas):
 - `STRIPE_PRICE_ID`
 - `APP_BASE_URL` (for example `https://plainterms.vercel.app`)
 - `API_BASE_URL` (used by checkout verify to call `/analyze`)
+- LLM analysis (optional, via AWS SSM + Lambda env):
+  - `ANALYSIS_MODE` = `rules` (default) or `llm`
+  - `LLM_BASE_URL` (default `https://api.openai.com/v1`)
+  - `LLM_MODEL` (default `gpt-4o-mini`)
+  - `LLM_API_KEY_PARAM` (default SSM parameter: `/plainterms/llm/api-key`)
+
+Enable LLM analysis (AWS):
+
+```bash
+aws ssm put-parameter \
+  --name /plainterms/llm/api-key \
+  --type SecureString \
+  --overwrite \
+  --value "<YOUR_LLM_API_KEY>"
+```
+
+Then deploy backend with `ANALYSIS_MODE=llm`:
+
+```bash
+cd services/api/plainterms-api
+sam build
+sam deploy --parameter-overrides AppBaseUrl=https://plainterms.vercel.app
+```
+
+If your stack was originally created with guided prompts, update `samconfig.toml` so
+`parameter_overrides` includes:
+
+```toml
+parameter_overrides = "AppBaseUrl=https://plainterms.vercel.app ANALYSIS_MODE=llm"
+```
 
 Backend retention behavior:
 - DynamoDB TTL is enabled on attribute `expires_at`.

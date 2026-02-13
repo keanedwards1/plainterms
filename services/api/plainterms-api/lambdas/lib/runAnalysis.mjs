@@ -5,6 +5,7 @@ import {
   transformPtV1ToUiV1,
 } from "./ptTransform.mjs";
 import { extractDocumentTextFromUpload } from "./extractDocumentText.mjs";
+import { analyzeExtractedTextWithLlm } from "./llmAnalyze.mjs";
 
 const db = new DynamoDBClient({});
 
@@ -26,9 +27,81 @@ function pickSummaryText(text) {
   return text.slice(0, 420);
 }
 
-function makeStubPtV1({ resultId, createdAt, payload, extraction }) {
+function makePtV1({ resultId, createdAt, payload, extraction, analysis }) {
   const filename = typeof payload.filename === "string" ? payload.filename : "Contract document";
   const textSnippet = pickSummaryText(extraction.extractedText);
+  const llmFields = analysis?.fields;
+  const notes = [...extraction.extraction.notes];
+  if (analysis?.usedLlm) {
+    notes.push("analysis_mode:llm");
+  } else {
+    notes.push(`analysis_mode:rules (${analysis?.reason || "unknown"})`);
+  }
+
+  const overviewField =
+    llmFields?.overview ??
+    {
+      status: "found",
+      summary: textSnippet,
+      quotes: [],
+      sources: [],
+    };
+  const purposeField =
+    llmFields?.contractPurpose ??
+    {
+      status: "found",
+      summary: "The contract sets practical terms for services, payment, and responsibilities between the parties.",
+      quotes: [],
+      sources: [],
+    };
+  const clientField =
+    llmFields?.partiesClient ??
+    {
+      status: "not_clearly_stated",
+      summary: "Client identity may be present but is not clearly extracted yet.",
+      quotes: [],
+      sources: [],
+    };
+  const contractorField =
+    llmFields?.partiesContractor ??
+    {
+      status: "not_clearly_stated",
+      summary: "Contractor identity may be present but is not clearly extracted yet.",
+      quotes: [],
+      sources: [],
+    };
+  const scopeField =
+    llmFields?.scopeServices ??
+    {
+      status: "not_clearly_stated",
+      summary: "Service details may rely on attachments or sections that were not clearly extracted.",
+      quotes: [],
+      sources: [],
+    };
+  const termField =
+    llmFields?.termTermination ??
+    {
+      status: "not_clearly_stated",
+      summary: "Term and termination rights were not clearly extracted.",
+      quotes: [],
+      sources: [],
+    };
+  const paymentField =
+    llmFields?.payment ??
+    {
+      status: "not_clearly_stated",
+      summary: "Payment structure may be present but was not fully extracted.",
+      quotes: [],
+      sources: [],
+    };
+  const confidentialityField =
+    llmFields?.confidentiality ??
+    {
+      status: "not_clearly_stated",
+      summary: "Confidentiality terms may be present but were not fully extracted.",
+      quotes: [],
+      sources: [],
+    };
 
   return {
     schema_version: "pt.v1",
@@ -40,70 +113,34 @@ function makeStubPtV1({ resultId, createdAt, payload, extraction }) {
       jurisdiction_hint: "not_found",
       page_count: 0,
       word_count: extraction.extractedText ? extraction.extractedText.split(/\s+/).length : 0,
-      confidence_notes: extraction.extraction.notes,
+      confidence_notes: notes,
     },
     sections: {
       document_overview: {
         heading: "Document Overview",
-        plain_summary: {
-          status: "found",
-          summary: textSnippet,
-          quotes: [],
-          sources: [],
-        },
-        contract_purpose: {
-          status: "found",
-          summary:
-            "The contract sets practical terms for services, payment, and responsibilities between the parties.",
-          quotes: [],
-          sources: [],
-        },
+        plain_summary: overviewField,
+        contract_purpose: purposeField,
       },
       parties: {
         heading: "Parties",
-        client: {
-          status: "not_clearly_stated",
-          summary: "Client identity may be present but is not clearly extracted in this stub result.",
-          quotes: [],
-          sources: [],
-        },
+        client: clientField,
+        contractor: contractorField,
       },
       scope_of_services: {
         heading: "Scope of Services",
-        services_description: {
-          status: "not_clearly_stated",
-          summary:
-            "Service details may rely on attachments or sections that were not fully parsed in this stub result.",
-          quotes: [],
-          sources: [],
-        },
+        services_description: scopeField,
       },
       term_and_termination: {
         heading: "Term & Termination",
-        termination_for_convenience: {
-          status: "not_found",
-          summary: "Termination rights were not clearly extracted in this stub result.",
-          quotes: [],
-          sources: [],
-        },
+        termination_for_convenience: termField,
       },
       payment: {
         heading: "Payment",
-        fee_structure: {
-          status: "not_clearly_stated",
-          summary: "Payment structure may be present but was not fully extracted in this stub result.",
-          quotes: [],
-          sources: [],
-        },
+        fee_structure: paymentField,
       },
       confidentiality: {
         heading: "Confidentiality",
-        confidentiality_info: {
-          status: "not_clearly_stated",
-          summary: "Confidentiality terms may be present but are not fully extracted in this stub result.",
-          quotes: [],
-          sources: [],
-        },
+        confidentiality_info: confidentialityField,
       },
     },
     flags: [],
@@ -129,7 +166,22 @@ export async function runAnalysis(payload) {
     contentType: payload.contentType,
   });
 
-  const ptV1 = makeStubPtV1({ resultId, createdAt, payload, extraction });
+  let llmAnalysis = { usedLlm: false, reason: "not_attempted", fields: null };
+  try {
+    llmAnalysis = await analyzeExtractedTextWithLlm({
+      filename: payload.filename,
+      contentType: payload.contentType,
+      extractedText: extraction.extractedText,
+    });
+  } catch (err) {
+    llmAnalysis = {
+      usedLlm: false,
+      reason: `llm_error:${err instanceof Error ? err.message : String(err)}`,
+      fields: null,
+    };
+  }
+
+  const ptV1 = makePtV1({ resultId, createdAt, payload, extraction, analysis: llmAnalysis });
   assertPtV1Contract(ptV1);
   const uiResult = transformPtV1ToUiV1(ptV1);
   assertPtUiV1Contract(uiResult);

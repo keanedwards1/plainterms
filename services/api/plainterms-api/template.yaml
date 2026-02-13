@@ -15,6 +15,17 @@ Parameters:
     Type: String
     Default: /plainterms/stripe/price-id
     Description: SSM parameter name containing Stripe price ID (String).
+  AnalysisMode:
+    Type: String
+    Default: rules
+    AllowedValues:
+      - rules
+      - llm
+    Description: Contract analysis mode.
+  LlmApiKeyParamName:
+    Type: String
+    Default: /plainterms/llm/api-key
+    Description: SSM parameter name containing LLM API key (SecureString).
 
 Globals:
   Function:
@@ -105,11 +116,21 @@ Resources:
           RESULTS_TABLE: !Ref ResultsTable
           RESULT_TTL_DAYS: "7"
           UPLOAD_BUCKET: !Ref UploadBucket
+          ANALYSIS_MODE: !Ref AnalysisMode
+          LLM_BASE_URL: "https://api.openai.com/v1"
+          LLM_MODEL: "gpt-4o-mini"
+          LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable
         - S3ReadPolicy:
             BucketName: !Ref UploadBucket
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
       Events:
         AnalyzePost:
           Type: Api
@@ -167,6 +188,10 @@ Resources:
           RESULTS_TABLE: !Ref ResultsTable
           RESULT_TTL_DAYS: "7"
           UPLOAD_BUCKET: !Ref UploadBucket
+          ANALYSIS_MODE: !Ref AnalysisMode
+          LLM_BASE_URL: "https://api.openai.com/v1"
+          LLM_MODEL: "gpt-4o-mini"
+          LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable
@@ -178,6 +203,7 @@ Resources:
               - ssm:GetParameter
             Resource:
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
       Events:
         CheckoutVerifyPost:
           Type: Api
