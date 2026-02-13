@@ -111,6 +111,8 @@ Resources:
     Properties:
       CodeUri: lambdas/
       Handler: analyze.handler
+      Timeout: 45
+      MemorySize: 512
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
@@ -182,6 +184,8 @@ Resources:
     Properties:
       CodeUri: lambdas/
       Handler: verifyCheckout.handler
+      Timeout: 45
+      MemorySize: 512
       Environment:
         Variables:
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName

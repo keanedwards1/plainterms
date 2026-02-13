@@ -16,7 +16,12 @@ async function readErrorResponse(res: Response): Promise<string> {
   try {
     if (contentType.includes("application/json")) {
       const json = (await res.json()) as { error?: unknown; detail?: unknown; message?: unknown };
-      if (typeof json.error === "string" && json.error.trim()) return json.error;
+      if (typeof json.error === "string" && json.error.trim()) {
+        if (typeof json.detail === "string" && json.detail.trim()) {
+          return `${json.error} ${json.detail}`;
+        }
+        return json.error;
+      }
       if (typeof json.message === "string" && json.message.trim()) return json.message;
       if (typeof json.detail === "string" && json.detail.trim()) return json.detail;
       return JSON.stringify(json).slice(0, 500);
