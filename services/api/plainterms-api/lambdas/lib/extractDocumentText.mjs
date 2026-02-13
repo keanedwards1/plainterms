@@ -25,6 +25,18 @@ function normalizeWhitespace(text) {
   return text.replace(/\s+/g, " ").trim();
 }
 
+function decodePdfString(raw) {
+  // Decode common PDF escapes: \( \) \\ \n \r \t \b \f and octal like \123
+  return raw
+    .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\t/g, "\t")
+    .replace(/\\b/g, "\b")
+    .replace(/\\f/g, "\f")
+    .replace(/\\([()\\])/g, "$1");
+}
+
 function guessType({ contentType, filename }) {
   const ct = (contentType || "").toLowerCase();
   const name = (filename || "").toLowerCase();
@@ -47,23 +59,77 @@ function guessType({ contentType, filename }) {
 function extractTextFromPdf(buffer) {
   const text = buffer.toString("latin1");
   const chunks = [];
-  const literalMatches = text.match(/\((?:\\.|[^()])+\)\s*Tj/g) || [];
-  for (const m of literalMatches) {
-    const start = m.indexOf("(");
-    const end = m.lastIndexOf(")");
-    if (start >= 0 && end > start) {
-      const raw = m.slice(start + 1, end);
-      chunks.push(raw.replace(/\\([()\\])/g, "$1"));
+
+  function collectFromContent(content) {
+    const literalMatches = content.match(/\((?:\\.|[^()])+\)\s*Tj/g) || [];
+    for (const m of literalMatches) {
+      const start = m.indexOf("(");
+      const end = m.lastIndexOf(")");
+      if (start >= 0 && end > start) {
+        const raw = m.slice(start + 1, end);
+        chunks.push(decodePdfString(raw));
+      }
+    }
+
+    const arrayMatches = content.match(/\[(?:.|\n|\r)*?\]\s*TJ/g) || [];
+    for (const m of arrayMatches) {
+      const strings = m.match(/\((?:\\.|[^()])+\)/g) || [];
+      for (const s of strings) {
+        const raw = s.slice(1, -1);
+        chunks.push(decodePdfString(raw));
+      }
+
+      const hexStrings = m.match(/<([0-9A-Fa-f]+)>/g) || [];
+      for (const h of hexStrings) {
+        const hex = h.slice(1, -1);
+        if (hex.length % 2 !== 0) continue;
+        try {
+          chunks.push(Buffer.from(hex, "hex").toString("latin1"));
+        } catch {
+          // Ignore malformed hex.
+        }
+      }
     }
   }
 
-  const arrayMatches = text.match(/\[(?:.|\n|\r)*?\]\s*TJ/g) || [];
-  for (const m of arrayMatches) {
-    const strings = m.match(/\((?:\\.|[^()])+\)/g) || [];
-    for (const s of strings) {
-      const raw = s.slice(1, -1);
-      chunks.push(raw.replace(/\\([()\\])/g, "$1"));
+  collectFromContent(text);
+
+  // Many PDFs compress page content streams. Inflate FlateDecode streams and parse operators there.
+  const streamRegex = /stream\r?\n/g;
+  let match;
+  while ((match = streamRegex.exec(text)) !== null) {
+    const streamStart = match.index + match[0].length;
+    const endIndex = text.indexOf("endstream", streamStart);
+    if (endIndex < 0) break;
+
+    const dictStart = text.lastIndexOf("<<", match.index);
+    const dictEnd = text.indexOf(">>", dictStart >= 0 ? dictStart : 0);
+    const dict = dictStart >= 0 && dictEnd >= 0 && dictEnd < match.index
+      ? text.slice(dictStart, dictEnd + 2)
+      : "";
+    const hasFlate = /\/Filter\s*\/FlateDecode/.test(dict) || /\/FlateDecode/.test(dict);
+    if (!hasFlate) {
+      streamRegex.lastIndex = endIndex + "endstream".length;
+      continue;
     }
+
+    let raw = buffer.subarray(streamStart, endIndex);
+    if (raw.length > 0 && raw[raw.length - 1] === 0x0d) raw = raw.subarray(0, raw.length - 1);
+    if (raw.length > 0 && raw[raw.length - 1] === 0x0a) raw = raw.subarray(0, raw.length - 1);
+
+    try {
+      const inflated = zlib.inflateSync(raw);
+      collectFromContent(inflated.toString("latin1"));
+    } catch {
+      try {
+        const inflatedRaw = zlib.inflateRawSync(raw);
+        collectFromContent(inflatedRaw.toString("latin1"));
+      } catch {
+        // Ignore non-inflatable streams.
+      }
+    }
+
+    streamRegex.lastIndex = endIndex + "endstream".length;
   }
 
   return normalizeWhitespace(chunks.join(" "));
@@ -152,7 +218,7 @@ export async function extractDocumentTextFromUpload({ bucket, objectKey, filenam
       notes.push("extracted_with_utf8_text_decoder");
     } else if (detectedType === "pdf") {
       text = extractTextFromPdf(buffer);
-      notes.push("extracted_with_pdf_text_operator_parser");
+      notes.push("extracted_with_pdf_text_operator_parser_v2");
     } else if (detectedType === "docx") {
       text = extractTextFromDocx(buffer);
       notes.push("extracted_with_docx_zip_xml_parser");
@@ -180,4 +246,3 @@ export async function extractDocumentTextFromUpload({ bucket, objectKey, filenam
     },
   };
 }
-
