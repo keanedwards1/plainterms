@@ -42,7 +42,14 @@ export async function POST(req: Request) {
         level: "info",
         event: "funnel.metric",
         ...ctx,
-        ...payload.data,
+        metricEvent: payload.data.event,
+        funnelId: payload.data.funnelId,
+        pathname: payload.data.pathname,
+        resultId: payload.data.resultId,
+        sessionId: payload.data.sessionId,
+        fileSizeBytes: payload.data.fileSizeBytes,
+        fileType: payload.data.fileType,
+        clientTs: payload.data.clientTs,
         ip: clientIp(req),
       })
     );
@@ -62,4 +69,3 @@ export async function POST(req: Request) {
     return Response.json({ error: "Metrics ingestion failed.", requestId: ctx.requestId }, { status: 500 });
   }
 }
-
