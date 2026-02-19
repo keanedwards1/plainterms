@@ -7,6 +7,7 @@ import {
 import { extractDocumentTextFromUpload } from "./extractDocumentText.mjs";
 import { analyzeExtractedTextWithLlm } from "./llmAnalyze.mjs";
 import { validateObjectKey, validateUploadMeta } from "./uploadPolicy.mjs";
+import { buildReportInsights } from "./reportEngine.mjs";
 
 const db = new DynamoDBClient({});
 
@@ -28,7 +29,38 @@ function pickSummaryText(text) {
   return text.slice(0, 420);
 }
 
-function makePtV1({ resultId, createdAt, payload, extraction, analysis }) {
+function statusFromClauseStatus(status) {
+  if (status === "present") return "found";
+  if (status === "missing") return "not_found";
+  return "not_clearly_stated";
+}
+
+function fallbackField(summary) {
+  return {
+    status: "not_clearly_stated",
+    summary,
+    quotes: [],
+    sources: [],
+  };
+}
+
+function makeFieldFromClause(clause, fallbackSummary) {
+  if (!clause) return fallbackField(fallbackSummary);
+  const quote = typeof clause.evidence === "string" ? clause.evidence.trim() : "";
+  return {
+    status: statusFromClauseStatus(clause.status),
+    summary: clause.what_it_means || fallbackSummary,
+    quotes: quote ? [quote] : [],
+    sources: [],
+  };
+}
+
+function clauseByKey(report, key) {
+  const list = Array.isArray(report?.clause_breakdown) ? report.clause_breakdown : [];
+  return list.find((item) => item?.key === key);
+}
+
+function makePtV1({ resultId, createdAt, payload, extraction, analysis, report }) {
   const filename = typeof payload.filename === "string" ? payload.filename : "Contract document";
   const textSnippet = pickSummaryText(extraction.extractedText);
   const llmFields = analysis?.fields;
@@ -104,6 +136,37 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis }) {
       sources: [],
     };
 
+  const ipField = makeFieldFromClause(
+    clauseByKey(report, "ip"),
+    "IP ownership and license terms were not clearly extracted."
+  );
+  const creatorUsageField = makeFieldFromClause(
+    clauseByKey(report, "creator_usage"),
+    "Creator/model usage rights were not clearly extracted."
+  );
+  const restrictionField = makeFieldFromClause(
+    clauseByKey(report, "restrictions"),
+    "Restrictive covenant terms were not clearly extracted."
+  );
+  const liabilityField = makeFieldFromClause(
+    clauseByKey(report, "liability"),
+    "Liability and indemnity terms were not clearly extracted."
+  );
+  const disputesField = makeFieldFromClause(
+    clauseByKey(report, "disputes"),
+    "Dispute resolution and governing law terms were not clearly extracted."
+  );
+  const assignmentField = makeFieldFromClause(
+    clauseByKey(report, "assignment_subcontracting"),
+    "Assignment and subcontracting terms were not clearly extracted."
+  );
+
+  const redFlags = Array.isArray(report?.red_flags) ? report.red_flags : [];
+  const flagSummaryText =
+    redFlags.length > 0
+      ? `Detected ${redFlags.length} potential risk flags. Highest severity items should be reviewed before signing.`
+      : "No high-priority flags were detected from the extracted text, but clarification may still be useful.";
+
   return {
     schema_version: "pt.v1",
     result_id: resultId,
@@ -143,12 +206,69 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis }) {
         heading: "Confidentiality",
         confidentiality_info: confidentialityField,
       },
+      intellectual_property: {
+        heading: "Intellectual Property",
+        work_product_ownership: ipField,
+        license_grants: creatorUsageField,
+      },
+      non_solicit_non_compete: {
+        heading: "Non-Solicitation / Non-Competition",
+        non_compete: restrictionField,
+      },
+      liability_indemnity_insurance: {
+        heading: "Liability, Indemnity & Insurance",
+        limitation_of_liability: liabilityField,
+        indemnification: liabilityField,
+      },
+      dispute_resolution_and_governing_law: {
+        heading: "Dispute Resolution & Governing Law",
+        governing_law: disputesField,
+      },
+      operational_details: {
+        heading: "Operational Details",
+        assignment: assignmentField,
+      },
+      flags_and_clarifications: {
+        heading: "Flags & Clarifications",
+        flags_overview: {
+          status: redFlags.length > 0 ? "found" : "not_found",
+          summary: flagSummaryText,
+          quotes: [],
+          sources: [],
+        },
+        high_priority: report?.flags_section?.high_priority ?? [],
+        all_flags_summary: report?.flags_section?.all_flags_summary ?? [],
+      },
+      notices_and_disclaimers: {
+        heading: "Notices & Disclaimers",
+        notice_summary: {
+          status: "found",
+          summary:
+            "This output is informational and should be used as preparation for negotiation or attorney review.",
+          quotes: [],
+          sources: [],
+        },
+      },
+      source_map_section: {
+        heading: "Source Map",
+        source_summary: {
+          status: "found",
+          summary:
+            "Risk findings are based on extracted text snippets and may require original-document validation.",
+          quotes: [],
+          sources: [],
+        },
+      },
     },
-    flags: [],
+    flags: redFlags,
     notices: {
       not_legal_advice: "This summary is for informational purposes only and is not legal advice.",
       limits: [],
       tone_policy: [],
+    },
+    report: {
+      tier: "report_69",
+      ...report,
     },
     source_map: { items: [] },
   };
@@ -204,12 +324,18 @@ export async function runAnalysis(payload) {
     };
   }
 
+  const reportInsights = buildReportInsights({
+    extractedText: extraction.extractedText,
+    llmFields: llmAnalysis?.fields,
+  });
+
   const ptV1 = makePtV1({
     resultId,
     createdAt,
     payload: normalizedPayload,
     extraction,
     analysis: llmAnalysis,
+    report: reportInsights,
   });
   assertPtV1Contract(ptV1);
   const uiResult = transformPtV1ToUiV1(ptV1);

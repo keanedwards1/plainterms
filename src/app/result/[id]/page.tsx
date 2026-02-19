@@ -16,6 +16,24 @@ function getRetentionDays() {
   return Math.floor(raw);
 }
 
+function riskLabelClass(label: "low" | "medium" | "high") {
+  if (label === "high") return "bg-red-100 text-red-800 border-red-200";
+  if (label === "medium") return "bg-amber-100 text-amber-800 border-amber-200";
+  return "bg-emerald-100 text-emerald-800 border-emerald-200";
+}
+
+function recommendationClass(action: "sign" | "negotiate" | "do_not_sign_yet") {
+  if (action === "do_not_sign_yet") return "bg-red-100 text-red-800 border-red-200";
+  if (action === "negotiate") return "bg-amber-100 text-amber-800 border-amber-200";
+  return "bg-emerald-100 text-emerald-800 border-emerald-200";
+}
+
+function clauseStatusClass(status: "present" | "unclear" | "missing") {
+  if (status === "missing") return "bg-red-100 text-red-800";
+  if (status === "unclear") return "bg-amber-100 text-amber-800";
+  return "bg-emerald-100 text-emerald-800";
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
 
@@ -168,6 +186,137 @@ export default async function ResultPage({ params }: Props) {
           </div>
         )}
       </section>
+
+      {data.report && (
+        <section className="mt-6 grid gap-4">
+          <article className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-2xl text-[var(--pt-ink)]">Risk Summary</h2>
+              <span
+                className={`rounded-full border px-3 py-1 text-xs font-semibold ${riskLabelClass(
+                  data.report.risk.label
+                )}`}
+              >
+                {data.report.risk.label.toUpperCase()}
+              </span>
+            </div>
+            <p className="mt-3 text-[15px] leading-7 text-[var(--pt-muted)]">
+              Risk score: <strong className="text-[var(--pt-ink)]">{data.report.risk.score}/100</strong>
+            </p>
+            <div
+              className={`mt-4 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${recommendationClass(
+                data.report.recommendation.action
+              )}`}
+            >
+              Recommendation: {data.report.recommendation.label}
+            </div>
+            <p className="mt-3 text-sm text-[var(--pt-muted)]">{data.report.recommendation.reason}</p>
+            {data.report.creator_contract && (
+              <p className="mt-2 text-xs font-semibold text-[var(--pt-muted)]">
+                Creator/Model contract signals detected.
+              </p>
+            )}
+          </article>
+
+          {data.report.red_flags.length > 0 && (
+            <article className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
+              <h2 className="text-2xl text-[var(--pt-ink)]">Top Red Flags</h2>
+              <div className="mt-4 grid gap-3">
+                {data.report.red_flags.map((flag) => (
+                  <div
+                    key={flag.id}
+                    className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold text-[var(--pt-ink)]">{flag.title}</p>
+                      <span
+                        className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
+                          flag.severity === "high"
+                            ? "bg-red-100 text-red-800"
+                            : flag.severity === "medium"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-emerald-100 text-emerald-800"
+                        }`}
+                      >
+                        {flag.severity}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-[var(--pt-muted)]">{flag.plain_note}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
+
+          {data.report.clause_breakdown.length > 0 && (
+            <article className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
+              <h2 className="text-2xl text-[var(--pt-ink)]">Clause-by-Clause Breakdown</h2>
+              <div className="mt-4 grid gap-3">
+                {data.report.clause_breakdown.map((clause) => (
+                  <div
+                    key={clause.key}
+                    className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4"
+                  >
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold text-[var(--pt-ink)]">{clause.title}</p>
+                      <span
+                        className={`rounded-full px-2 py-1 text-[11px] font-semibold ${clauseStatusClass(
+                          clause.status
+                        )}`}
+                      >
+                        {clause.status}
+                      </span>
+                    </div>
+                    <p className="text-sm text-[var(--pt-muted)]">{clause.what_it_means}</p>
+                    <p className="mt-2 text-sm text-[var(--pt-muted)]">
+                      <strong className="text-[var(--pt-ink)]">Why it matters:</strong>{" "}
+                      {clause.why_it_matters}
+                    </p>
+                    {clause.evidence && (
+                      <blockquote className="mt-2 rounded-r-lg border-l-4 border-[var(--pt-accent)] bg-[var(--pt-surface)] px-3 py-2 text-xs text-[var(--pt-muted)]">
+                        {clause.evidence}
+                      </blockquote>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </article>
+          )}
+
+          {data.report.negotiation_bullets && (
+            <article className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
+              <h2 className="text-2xl text-[var(--pt-ink)]">Negotiation Bullets</h2>
+              <div className="mt-4 grid gap-4">
+                {(["high", "medium", "low"] as const).map((priority) =>
+                  data.report?.negotiation_bullets?.[priority]?.length ? (
+                    <div key={priority}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                        {priority} priority
+                      </p>
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[var(--pt-muted)]">
+                        {data.report.negotiation_bullets[priority].map((item, idx) => (
+                          <li key={`${priority}-${idx}`}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null
+                )}
+              </div>
+            </article>
+          )}
+
+          {data.report.questions_to_ask?.length ? (
+            <article className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
+              <h2 className="text-2xl text-[var(--pt-ink)]">Questions To Ask</h2>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--pt-muted)]">
+                {data.report.questions_to_ask.map((question, idx) => (
+                  <li key={`q-${idx}`}>{question}</li>
+                ))}
+              </ul>
+            </article>
+          ) : null}
+        </section>
+      )}
 
       <section className="mt-8 grid gap-4">
         {data.sections.map((section) => (

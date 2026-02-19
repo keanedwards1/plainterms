@@ -105,6 +105,11 @@
       "type": "array",
       "items": { "$ref": "#/$defs/flagItem" }
     },
+    "report": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional structured report payload (risk score, recommendation, red flags, clause breakdown)."
+    },
     "notices": {
       "type": "object",
       "additionalProperties": false,
