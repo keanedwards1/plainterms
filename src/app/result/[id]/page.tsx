@@ -8,6 +8,44 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
+const LEGAL_TERM_GLOSSARY = Object.freeze({
+  "indemnity": "Who pays legal costs if a third party sues over this contract.",
+  "indemnification": "Who pays legal costs if a third party sues over this contract.",
+  "indemnify": "To cover the other side's losses or legal costs in certain situations.",
+  "liability": "Legal responsibility for losses, damages, or claims.",
+  "limitation of liability": "A clause that sets a maximum amount one side can owe.",
+  "liability cap": "A maximum amount one side can be required to pay.",
+  "governing law": "The state/country law used to interpret this contract.",
+  "jurisdiction": "Which courts have authority to hear a dispute.",
+  "venue": "The physical place or court where a dispute is handled.",
+  "arbitration": "Private dispute process instead of going to court.",
+  "mediation": "A neutral third party helps both sides try to settle.",
+  "material breach": "A serious contract violation that can justify termination.",
+  "cure period": "Time allowed to fix a breach before penalties or termination.",
+  "termination for convenience": "A right to end the contract without fault.",
+  "warranty": "A promise that certain facts or quality standards are true.",
+  "warranties": "Promises that certain facts or quality standards are true.",
+  "disclaimer": "Language that limits or removes certain promises or liability.",
+  "assignment": "Transferring contract rights/obligations to another party.",
+  "subcontracting": "Hiring another party to perform part of the work.",
+  "sublicensing": "Giving another party permission to use licensed rights.",
+  "perpetual": "No set end date; it can continue indefinitely.",
+  "irrevocable": "Cannot be unilaterally taken back once granted.",
+  "exclusivity": "Restriction preventing work with certain other parties.",
+  "non-compete": "Restriction on doing competing work for a period of time.",
+  "non-solicit": "Restriction on approaching certain clients/employees.",
+  "confidentiality": "Rules for keeping sensitive information private.",
+  "injunctive relief": "Court order requiring someone to do or stop doing something.",
+});
+
+const LEGAL_TERM_KEYS = Object.keys(LEGAL_TERM_GLOSSARY).sort(
+  (a, b) => b.length - a.length
+);
+const LEGAL_TERM_REGEX = new RegExp(
+  `\\b(${LEGAL_TERM_KEYS.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`,
+  "gi"
+);
+
 function getRetentionDays() {
   const raw = Number(
     process.env.NEXT_PUBLIC_RESULT_RETENTION_DAYS ?? process.env.RESULT_TTL_DAYS ?? "7"
@@ -32,6 +70,34 @@ function clauseStatusClass(status: "present" | "unclear" | "missing") {
   if (status === "missing") return "bg-red-100 text-red-800";
   if (status === "unclear") return "bg-amber-100 text-amber-800";
   return "bg-emerald-100 text-emerald-800";
+}
+
+function annotateLegalTerms(text: string, keyPrefix: string) {
+  if (!text || !LEGAL_TERM_REGEX.test(text)) {
+    LEGAL_TERM_REGEX.lastIndex = 0;
+    return text;
+  }
+  LEGAL_TERM_REGEX.lastIndex = 0;
+
+  const parts = text.split(LEGAL_TERM_REGEX);
+  return parts.map((part, idx) => {
+    const definition =
+      LEGAL_TERM_GLOSSARY[part.toLowerCase() as keyof typeof LEGAL_TERM_GLOSSARY];
+    if (!definition) {
+      return <span key={`${keyPrefix}-${idx}`}>{part}</span>;
+    }
+
+    return (
+      <span
+        key={`${keyPrefix}-${idx}`}
+        className="cursor-help underline decoration-dotted underline-offset-2"
+        title={definition}
+        aria-label={`${part}: ${definition}`}
+      >
+        {part}
+      </span>
+    );
+  });
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -165,8 +231,22 @@ export default async function ResultPage({ params }: Props) {
 
   const data = parsed.data;
   const supportingSections = data.sections.filter((section) => section.key !== "summary");
+  const reportSupportingSections = data.report
+    ? supportingSections.filter(
+        (section) =>
+          section.key === "questions_missing_info" ||
+          section.key === "notices_disclaimers" ||
+          section.key === "source_map"
+      )
+    : supportingSections;
   const renderSectionsInline = !data.report && supportingSections.length > 0;
-  const renderSectionsCollapsed = Boolean(data.report) && supportingSections.length > 0;
+  const renderSectionsCollapsed = Boolean(data.report) && reportSupportingSections.length > 0;
+  const hasNegotiationBullets = Boolean(
+    data.report?.negotiation_bullets &&
+      (data.report.negotiation_bullets.high.length > 0 ||
+        data.report.negotiation_bullets.medium.length > 0 ||
+        data.report.negotiation_bullets.low.length > 0)
+  );
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8 lg:px-12">
@@ -181,11 +261,16 @@ export default async function ResultPage({ params }: Props) {
 
       <section className="mt-5 rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-sm">
         <h1 className="text-3xl leading-tight text-[var(--pt-ink)] sm:text-4xl">{data.headline}</h1>
-        <p className="mt-4 text-base text-[var(--pt-muted)]">{data.overview}</p>
+        <p className="mt-4 text-base text-[var(--pt-muted)]">
+          {annotateLegalTerms(data.overview, "overview")}
+        </p>
+        <p className="mt-3 text-xs text-[var(--pt-muted)]">
+          Underlined legal terms include quick plain-English definitions (hover or long-press).
+        </p>
 
         {data.gentle_notice && (
           <div className="mt-5 rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4 text-sm text-[var(--pt-muted)]">
-            {data.gentle_notice}
+            {annotateLegalTerms(data.gentle_notice, "gentle-notice")}
           </div>
         )}
       </section>
@@ -213,7 +298,9 @@ export default async function ResultPage({ params }: Props) {
             >
               Recommendation: {data.report.recommendation.label}
             </div>
-            <p className="mt-3 text-sm text-[var(--pt-muted)]">{data.report.recommendation.reason}</p>
+            <p className="mt-3 text-sm text-[var(--pt-muted)]">
+              {annotateLegalTerms(data.report.recommendation.reason, "recommendation-reason")}
+            </p>
             {data.report.creator_contract && (
               <p className="mt-2 text-xs font-semibold text-[var(--pt-muted)]">
                 Creator/Model contract signals detected.
@@ -231,7 +318,9 @@ export default async function ResultPage({ params }: Props) {
                     className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-semibold text-[var(--pt-ink)]">{flag.title}</p>
+                      <p className="font-semibold text-[var(--pt-ink)]">
+                        {annotateLegalTerms(flag.title, `flag-title-${flag.id}`)}
+                      </p>
                       <span
                         className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
                           flag.severity === "high"
@@ -244,7 +333,9 @@ export default async function ResultPage({ params }: Props) {
                         {flag.severity}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm text-[var(--pt-muted)]">{flag.plain_note}</p>
+                    <p className="mt-2 text-sm text-[var(--pt-muted)]">
+                      {annotateLegalTerms(flag.plain_note, `flag-note-${flag.id}`)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -261,7 +352,9 @@ export default async function ResultPage({ params }: Props) {
                     className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4"
                   >
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-semibold text-[var(--pt-ink)]">{clause.title}</p>
+                      <p className="font-semibold text-[var(--pt-ink)]">
+                        {annotateLegalTerms(clause.title, `clause-title-${clause.key}`)}
+                      </p>
                       <span
                         className={`rounded-full px-2 py-1 text-[11px] font-semibold ${clauseStatusClass(
                           clause.status
@@ -270,14 +363,19 @@ export default async function ResultPage({ params }: Props) {
                         {clause.status}
                       </span>
                     </div>
-                    <p className="text-sm text-[var(--pt-muted)]">{clause.what_it_means}</p>
+                    <p className="text-sm text-[var(--pt-muted)]">
+                      {annotateLegalTerms(clause.what_it_means, `clause-meaning-${clause.key}`)}
+                    </p>
                     <p className="mt-2 text-sm text-[var(--pt-muted)]">
                       <strong className="text-[var(--pt-ink)]">Why it matters:</strong>{" "}
-                      {clause.why_it_matters}
+                      {annotateLegalTerms(
+                        clause.why_it_matters,
+                        `clause-matters-${clause.key}`
+                      )}
                     </p>
                     {clause.evidence && (
                       <blockquote className="mt-2 rounded-r-lg border-l-4 border-[var(--pt-accent)] bg-[var(--pt-surface)] px-3 py-2 text-xs text-[var(--pt-muted)]">
-                        {clause.evidence}
+                        {annotateLegalTerms(clause.evidence, `clause-evidence-${clause.key}`)}
                       </blockquote>
                     )}
                   </div>
@@ -286,7 +384,7 @@ export default async function ResultPage({ params }: Props) {
             </article>
           )}
 
-          {data.report.negotiation_bullets && (
+          {hasNegotiationBullets && (
             <article className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
               <h2 className="text-2xl text-[var(--pt-ink)]">Negotiation Bullets</h2>
               <div className="mt-4 grid gap-4">
@@ -298,7 +396,9 @@ export default async function ResultPage({ params }: Props) {
                       </p>
                       <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[var(--pt-muted)]">
                         {data.report.negotiation_bullets[priority].map((item, idx) => (
-                          <li key={`${priority}-${idx}`}>{item}</li>
+                          <li key={`${priority}-${idx}`}>
+                            {annotateLegalTerms(item, `negotiation-${priority}-${idx}`)}
+                          </li>
                         ))}
                       </ul>
                     </div>
@@ -313,7 +413,7 @@ export default async function ResultPage({ params }: Props) {
               <h2 className="text-2xl text-[var(--pt-ink)]">Questions To Ask</h2>
               <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--pt-muted)]">
                 {data.report.questions_to_ask.map((question, idx) => (
-                  <li key={`q-${idx}`}>{question}</li>
+                  <li key={`q-${idx}`}>{annotateLegalTerms(question, `question-${idx}`)}</li>
                 ))}
               </ul>
             </article>
@@ -341,11 +441,13 @@ export default async function ResultPage({ params }: Props) {
                 </span>
               </div>
 
-              <p className="text-[15px] leading-7 text-[var(--pt-muted)]">{section.body}</p>
+              <p className="text-[15px] leading-7 text-[var(--pt-muted)]">
+                {annotateLegalTerms(section.body, `section-body-${section.key}`)}
+              </p>
 
               {section.soft_note && (
                 <p className="mt-3 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3 text-sm text-[var(--pt-muted)]">
-                  {section.soft_note}
+                  {annotateLegalTerms(section.soft_note, `section-soft-note-${section.key}`)}
                 </p>
               )}
 
@@ -356,7 +458,7 @@ export default async function ResultPage({ params }: Props) {
                       key={`${section.key}-q-${idx}`}
                       className="rounded-r-lg border-l-4 border-[var(--pt-accent)] bg-[var(--pt-surface-soft)] px-4 py-3 text-sm text-[var(--pt-muted)]"
                     >
-                      {q}
+                      {annotateLegalTerms(q, `section-quote-${section.key}-${idx}`)}
                     </blockquote>
                   ))}
                 </div>
@@ -373,7 +475,7 @@ export default async function ResultPage({ params }: Props) {
               Supporting extraction details
             </summary>
             <div className="mt-4 grid gap-4">
-              {supportingSections.map((section) => (
+              {reportSupportingSections.map((section) => (
                 <article
                   key={section.key}
                   className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4"
@@ -392,7 +494,9 @@ export default async function ResultPage({ params }: Props) {
                       {section.status}
                     </span>
                   </div>
-                  <p className="text-sm text-[var(--pt-muted)]">{section.body}</p>
+                  <p className="text-sm text-[var(--pt-muted)]">
+                    {annotateLegalTerms(section.body, `section-detail-body-${section.key}`)}
+                  </p>
                   {section.quotes?.length ? (
                     <div className="mt-3 grid gap-2">
                       {section.quotes.map((q, idx) => (
@@ -400,7 +504,7 @@ export default async function ResultPage({ params }: Props) {
                           key={`${section.key}-detail-q-${idx}`}
                           className="rounded-r-lg border-l-4 border-[var(--pt-accent)] bg-[var(--pt-surface)] px-3 py-2 text-xs text-[var(--pt-muted)]"
                         >
-                          {q}
+                          {annotateLegalTerms(q, `section-detail-quote-${section.key}-${idx}`)}
                         </blockquote>
                       ))}
                     </div>
@@ -413,7 +517,7 @@ export default async function ResultPage({ params }: Props) {
       ) : null}
 
       <footer className="mt-8 border-t border-[var(--pt-border)] pt-5 text-sm text-[var(--pt-muted)]">
-        <p>{data.notices.not_legal_advice}</p>
+        <p>{annotateLegalTerms(data.notices.not_legal_advice, "not-legal-advice")}</p>
         <p className="mt-2 text-xs">
           Results are typically available for about {retentionDays} days and may expire
           automatically.

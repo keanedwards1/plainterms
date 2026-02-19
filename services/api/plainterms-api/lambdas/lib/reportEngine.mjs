@@ -354,27 +354,76 @@ function isLowQualitySnippet(snippet) {
   return false;
 }
 
-function getSnippetAround(text, startIdx, matchLength = 20) {
-  if (!text || startIdx < 0) return "";
-  const window = 58;
-  const start = Math.max(0, startIdx - window);
-  const end = Math.min(text.length, startIdx + matchLength + window);
-  const raw = text
-    .slice(start, end)
+function normalizeSnippetText(value) {
+  return String(value || "")
     .replace(/_{2,}/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-  if (!raw) return "";
+}
 
-  if (isLowQualitySnippet(raw)) return "";
+function findLeftSentenceBoundary(text, pivot, maxLookback = 280) {
+  const min = Math.max(0, pivot - maxLookback);
+  for (let i = pivot; i > min; i -= 1) {
+    const ch = text[i];
+    if (ch === "." || ch === "!" || ch === "?" || ch === "\n") {
+      return i + 1;
+    }
+  }
+  return min;
+}
 
-  if (raw.length > 150) {
-    const trimmed = raw.slice(0, 147).trim();
-    if (isLowQualitySnippet(trimmed)) return "";
-    return `${trimmed}...`;
+function findRightSentenceBoundary(text, pivot, maxLookahead = 320) {
+  const max = Math.min(text.length - 1, pivot + maxLookahead);
+  for (let i = pivot; i < max; i += 1) {
+    const ch = text[i];
+    if (ch === "." || ch === "!" || ch === "?" || ch === "\n") {
+      return i + 1;
+    }
+  }
+  return max + 1;
+}
+
+function trimSnippetToLimit(text, limit = 220) {
+  if (text.length <= limit) return text;
+
+  const slice = text.slice(0, limit + 1);
+  const punct = Math.max(
+    slice.lastIndexOf("."),
+    slice.lastIndexOf("!"),
+    slice.lastIndexOf("?"),
+    slice.lastIndexOf(";"),
+    slice.lastIndexOf(",")
+  );
+  if (punct >= Math.floor(limit * 0.6)) {
+    return `${slice.slice(0, punct + 1).trim()}...`;
   }
 
-  return raw;
+  const space = slice.lastIndexOf(" ");
+  if (space >= Math.floor(limit * 0.6)) {
+    return `${slice.slice(0, space).trim()}...`;
+  }
+
+  return `${slice.slice(0, limit).trim()}...`;
+}
+
+function getSnippetAround(text, startIdx, matchLength = 20) {
+  if (!text || startIdx < 0) return "";
+  const anchorStart = Math.max(0, startIdx);
+  const anchorEnd = Math.min(text.length, startIdx + matchLength);
+
+  let start = findLeftSentenceBoundary(text, anchorStart);
+  let end = findRightSentenceBoundary(text, anchorEnd);
+  let candidate = normalizeSnippetText(text.slice(start, end));
+
+  if (!candidate || candidate.length < 48) {
+    const fallbackWindow = 95;
+    start = Math.max(0, anchorStart - fallbackWindow);
+    end = Math.min(text.length, anchorEnd + fallbackWindow);
+    candidate = normalizeSnippetText(text.slice(start, end));
+  }
+
+  if (!candidate || isLowQualitySnippet(candidate)) return "";
+  return trimSnippetToLimit(candidate, 220);
 }
 
 function sourcePointerFromPatterns(text, patterns) {
@@ -429,10 +478,10 @@ function buildClauseStatus({ def, llmFields, text, isCreatorContract }) {
     status,
     what_it_means:
       status === "present"
-        ? `${def.meaning} Based on the extracted text, this clause appears to be present.`
+        ? `In plain English: ${def.meaning} Based on the extracted text, this clause appears to be present.`
         : status === "unclear"
-          ? `${def.meaning} The clause appears partially stated or ambiguous in the extracted text.`
-          : `${def.meaning} This clause was not clearly found in the extracted text.`,
+          ? `In plain English: ${def.meaning} The clause appears partially stated or ambiguous in the extracted text.`
+          : `In plain English: ${def.meaning} This clause was not clearly found in the extracted text.`,
     why_it_matters: def.whyItMatters,
     evidence,
     related_fields: [def.relatedField],

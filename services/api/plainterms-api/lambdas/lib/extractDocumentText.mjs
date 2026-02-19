@@ -37,6 +37,212 @@ function decodePdfString(raw) {
     .replace(/\\([()\\])/g, "$1");
 }
 
+function decodeUtf16Be(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) return "";
+  if (buffer.length % 2 !== 0) return buffer.toString("latin1");
+
+  const swapped = Buffer.alloc(buffer.length);
+  for (let i = 0; i < buffer.length; i += 2) {
+    swapped[i] = buffer[i + 1];
+    swapped[i + 1] = buffer[i];
+  }
+  return swapped.toString("utf16le");
+}
+
+function decodeUnicodeHex(hex) {
+  const clean = String(hex || "").replace(/[^0-9A-Fa-f]/g, "");
+  if (!clean || clean.length % 2 !== 0) return "";
+  const buf = Buffer.from(clean, "hex");
+  // ToUnicode cmap entries are typically UTF-16BE code units.
+  return decodeUtf16Be(buf);
+}
+
+function parseToUnicodeCMap(content) {
+  const map = new Map();
+  if (typeof content !== "string" || !/begincmap/i.test(content)) return map;
+
+  const bfcharBlocks = content.match(/\d+\s+beginbfchar[\s\S]*?endbfchar/gi) || [];
+  for (const block of bfcharBlocks) {
+    const entries = block.matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g);
+    for (const entry of entries) {
+      const src = entry[1]?.toUpperCase();
+      const dst = decodeUnicodeHex(entry[2]);
+      if (src && dst) map.set(src, dst);
+    }
+  }
+
+  const bfrangeBlocks = content.match(/\d+\s+beginbfrange[\s\S]*?endbfrange/gi) || [];
+  for (const block of bfrangeBlocks) {
+    const lines = block.matchAll(
+      /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*(<([0-9A-Fa-f]+)>|\[([\s\S]*?)\])/g
+    );
+    for (const line of lines) {
+      const srcStartHex = line[1]?.toUpperCase();
+      const srcEndHex = line[2]?.toUpperCase();
+      if (!srcStartHex || !srcEndHex) continue;
+
+      const srcStart = parseInt(srcStartHex, 16);
+      const srcEnd = parseInt(srcEndHex, 16);
+      if (!Number.isFinite(srcStart) || !Number.isFinite(srcEnd) || srcEnd < srcStart) {
+        continue;
+      }
+
+      if (line[4]) {
+        const dstStartHex = line[4].toUpperCase();
+        const dstStart = parseInt(dstStartHex, 16);
+        if (!Number.isFinite(dstStart)) continue;
+
+        for (let code = srcStart; code <= srcEnd; code += 1) {
+          const src = code.toString(16).toUpperCase().padStart(srcStartHex.length, "0");
+          const dstHex = (dstStart + (code - srcStart))
+            .toString(16)
+            .toUpperCase()
+            .padStart(dstStartHex.length, "0");
+          const dst = decodeUnicodeHex(dstHex);
+          if (dst) map.set(src, dst);
+        }
+        continue;
+      }
+
+      if (line[5]) {
+        const values = [...line[5].matchAll(/<([0-9A-Fa-f]+)>/g)].map((m) =>
+          m[1].toUpperCase()
+        );
+        for (
+          let idx = 0, code = srcStart;
+          code <= srcEnd && idx < values.length;
+          code += 1, idx += 1
+        ) {
+          const src = code.toString(16).toUpperCase().padStart(srcStartHex.length, "0");
+          const dst = decodeUnicodeHex(values[idx]);
+          if (dst) map.set(src, dst);
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
+function mapKeyLengths(map) {
+  const lengths = new Set();
+  for (const key of map.keys()) {
+    if (typeof key === "string" && key.length > 0) lengths.add(key.length);
+  }
+  return [...lengths].sort((a, b) => b - a);
+}
+
+function decodeHexTextWithMap(hex, toUnicodeMap, keyLengths) {
+  const clean = String(hex || "").replace(/[^0-9A-Fa-f]/g, "").toUpperCase();
+  if (!clean || clean.length % 2 !== 0) return "";
+
+  if (toUnicodeMap.size > 0 && keyLengths.length > 0) {
+    let out = "";
+    let i = 0;
+    const fallbackStep = keyLengths[keyLengths.length - 1] || 2;
+    while (i < clean.length) {
+      let matched = false;
+      for (const len of keyLengths) {
+        if (len <= 0 || i + len > clean.length) continue;
+        const key = clean.slice(i, i + len);
+        const mapped = toUnicodeMap.get(key);
+        if (typeof mapped === "string") {
+          out += mapped;
+          i += len;
+          matched = true;
+          break;
+        }
+      }
+
+      if (!matched) {
+        i += fallbackStep;
+      }
+    }
+    return out;
+  }
+
+  const buf = Buffer.from(clean, "hex");
+  if (buf.length >= 2 && buf.length % 2 === 0) {
+    let zeroHighBytes = 0;
+    for (let i = 0; i < buf.length; i += 2) {
+      if (buf[i] === 0) zeroHighBytes += 1;
+    }
+    if (zeroHighBytes / (buf.length / 2) > 0.3) {
+      return decodeUtf16Be(buf);
+    }
+  }
+
+  return buf.toString("latin1");
+}
+
+function collectTextFromPdfContent(content, toUnicodeMap) {
+  if (typeof content !== "string" || !content) return [];
+
+  const blocks = content.match(/BT[\s\S]*?ET/g) || [];
+  if (blocks.length === 0) return [];
+  const workingBlocks = blocks;
+  const keyLengths = mapKeyLengths(toUnicodeMap);
+  const lines = [];
+  const seen = new Set();
+
+  for (const block of workingBlocks) {
+    const opRegex =
+      /\[(?:.|\n|\r)*?\]\s*TJ|<([0-9A-Fa-f]+)>\s*(?:Tj|'|")|\((?:\\.|[^()])+\)\s*(?:Tj|'|")/g;
+    let match;
+    let line = "";
+    while ((match = opRegex.exec(block)) !== null) {
+      const token = match[0];
+
+      if (token.startsWith("[")) {
+        const itemRegex = /\((?:\\.|[^()])+\)|<([0-9A-Fa-f]+)>/g;
+        let item;
+        while ((item = itemRegex.exec(token)) !== null) {
+          const itemToken = item[0];
+          if (itemToken.startsWith("(")) {
+            line += decodePdfString(itemToken.slice(1, -1));
+          } else if (itemToken.startsWith("<")) {
+            line += decodeHexTextWithMap(
+              itemToken.slice(1, -1),
+              toUnicodeMap,
+              keyLengths
+            );
+          }
+        }
+        continue;
+      }
+
+      if (token.startsWith("(")) {
+        const start = token.indexOf("(");
+        const end = token.lastIndexOf(")");
+        if (start >= 0 && end > start) {
+          line += decodePdfString(token.slice(start + 1, end));
+        }
+        continue;
+      }
+
+      if (token.startsWith("<")) {
+        const start = token.indexOf("<");
+        const end = token.indexOf(">", start + 1);
+        if (start >= 0 && end > start) {
+          line += decodeHexTextWithMap(
+            token.slice(start + 1, end),
+            toUnicodeMap,
+            keyLengths
+          );
+        }
+      }
+    }
+
+    const cleaned = line.replace(/\u0000/g, "").trim();
+    if (cleaned && !seen.has(cleaned)) {
+      seen.add(cleaned);
+      lines.push(cleaned);
+    }
+  }
+
+  return lines;
+}
+
 function guessType({ contentType, filename }) {
   const ct = (contentType || "").toLowerCase();
   const name = (filename || "").toLowerCase();
@@ -58,41 +264,7 @@ function guessType({ contentType, filename }) {
 
 function extractTextFromPdf(buffer) {
   const text = buffer.toString("latin1");
-  const chunks = [];
-
-  function collectFromContent(content) {
-    const literalMatches = content.match(/\((?:\\.|[^()])+\)\s*Tj/g) || [];
-    for (const m of literalMatches) {
-      const start = m.indexOf("(");
-      const end = m.lastIndexOf(")");
-      if (start >= 0 && end > start) {
-        const raw = m.slice(start + 1, end);
-        chunks.push(decodePdfString(raw));
-      }
-    }
-
-    const arrayMatches = content.match(/\[(?:.|\n|\r)*?\]\s*TJ/g) || [];
-    for (const m of arrayMatches) {
-      const strings = m.match(/\((?:\\.|[^()])+\)/g) || [];
-      for (const s of strings) {
-        const raw = s.slice(1, -1);
-        chunks.push(decodePdfString(raw));
-      }
-
-      const hexStrings = m.match(/<([0-9A-Fa-f]+)>/g) || [];
-      for (const h of hexStrings) {
-        const hex = h.slice(1, -1);
-        if (hex.length % 2 !== 0) continue;
-        try {
-          chunks.push(Buffer.from(hex, "hex").toString("latin1"));
-        } catch {
-          // Ignore malformed hex.
-        }
-      }
-    }
-  }
-
-  collectFromContent(text);
+  const contents = [text];
 
   // Many PDFs compress page content streams. Inflate FlateDecode streams and parse operators there.
   const streamRegex = /stream\r?\n/g;
@@ -119,11 +291,11 @@ function extractTextFromPdf(buffer) {
 
     try {
       const inflated = zlib.inflateSync(raw);
-      collectFromContent(inflated.toString("latin1"));
+      contents.push(inflated.toString("latin1"));
     } catch {
       try {
         const inflatedRaw = zlib.inflateRawSync(raw);
-        collectFromContent(inflatedRaw.toString("latin1"));
+        contents.push(inflatedRaw.toString("latin1"));
       } catch {
         // Ignore non-inflatable streams.
       }
@@ -132,7 +304,22 @@ function extractTextFromPdf(buffer) {
     streamRegex.lastIndex = endIndex + "endstream".length;
   }
 
-  return normalizeWhitespace(chunks.join(" "));
+  const toUnicodeMap = new Map();
+  for (const content of contents) {
+    const parsed = parseToUnicodeCMap(content);
+    for (const [src, dst] of parsed.entries()) {
+      if (!toUnicodeMap.has(src)) {
+        toUnicodeMap.set(src, dst);
+      }
+    }
+  }
+
+  const lines = [];
+  for (const content of contents) {
+    lines.push(...collectTextFromPdfContent(content, toUnicodeMap));
+  }
+
+  return normalizeWhitespace(lines.join("\n"));
 }
 
 function parseDocxXmlFromZip(buffer) {
