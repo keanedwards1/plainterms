@@ -1,5 +1,7 @@
 import Stripe from "stripe";
 import { getStripeConfig } from "./lib/stripeConfig.mjs";
+import { validateObjectKey, validateUploadMeta } from "./lib/uploadPolicy.mjs";
+import { verifyPrecheckToken } from "./lib/precheckToken.mjs";
 
 function corsHeaders() {
   return {
@@ -37,6 +39,7 @@ export const handler = async (event) => {
   const filename = payload.filename;
   const contentType = payload.contentType;
   const size = payload.size;
+  const precheckToken = payload.precheckToken;
 
   if (!objectKey || !filename || !contentType || typeof size !== "number") {
     return json(400, {
@@ -44,7 +47,49 @@ export const handler = async (event) => {
     });
   }
 
+  if (typeof precheckToken !== "string" || !precheckToken.trim()) {
+    return json(400, { error: "precheckToken is required." });
+  }
+
+  const uploadMeta = validateUploadMeta({
+    filename,
+    contentType,
+    size,
+    requireSize: true,
+  });
+  if (!uploadMeta.ok) {
+    const status = uploadMeta.errorCode === "file_too_large" ? 413 : 400;
+    return json(status, { error: uploadMeta.error });
+  }
+
+  const objectKeyCheck = validateObjectKey(objectKey);
+  if (!objectKeyCheck.ok) {
+    return json(400, { error: objectKeyCheck.error });
+  }
+
   try {
+    const precheck = await verifyPrecheckToken(precheckToken);
+    if (!precheck.ok) {
+      return json(409, {
+        error: "Precheck token is invalid or expired. Please re-upload your contract.",
+        code: precheck.error,
+      });
+    }
+
+    const tokenPayload = precheck.payload;
+    const tokenMatchesUpload =
+      tokenPayload.objectKey === objectKeyCheck.objectKey &&
+      tokenPayload.filename === uploadMeta.filename &&
+      tokenPayload.contentType === uploadMeta.contentType &&
+      tokenPayload.size === size;
+
+    if (!tokenMatchesUpload) {
+      return json(409, {
+        error: "Precheck does not match this file. Please upload and validate again.",
+        code: "precheck_payload_mismatch",
+      });
+    }
+
     const { stripeSecretKey, stripePriceId } = await getStripeConfig();
     if (!stripePriceId) {
       return json(500, { error: "Missing Stripe price configuration." });
@@ -62,10 +107,11 @@ export const handler = async (event) => {
       success_url: `${appBaseUrl}/analyze/complete?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appBaseUrl}/analyze?canceled=1`,
       metadata: {
-        objectKey: String(objectKey),
-        filename: String(filename),
-        contentType: String(contentType),
+        objectKey: objectKeyCheck.objectKey,
+        filename: uploadMeta.filename,
+        contentType: uploadMeta.contentType,
         size: String(size),
+        precheckValidated: "true",
       },
     });
 

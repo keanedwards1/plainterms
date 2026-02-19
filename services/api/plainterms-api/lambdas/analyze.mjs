@@ -37,6 +37,11 @@ export const handler = async (event) => {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  const { resultId } = await runAnalysis(payload);
-  return json(200, { resultId });
+  try {
+    const { resultId } = await runAnalysis(payload);
+    return json(200, { resultId });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return json(400, { error: `Analyze failed: ${message}` });
+  }
 };

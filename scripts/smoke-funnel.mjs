@@ -70,7 +70,10 @@ async function main() {
   assert(typeof uploadUrlJson.objectKey === "string", "upload-url response missing objectKey.");
 
   logStep("3) POST /api/upload-file");
-  const pdfBytes = Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n", "utf8");
+  const pdfBytes = Buffer.from(
+    "%PDF-1.4\n1 0 obj\n<<>>\nendobj\nBT (This contract includes payment and termination terms.) Tj ET\n%%EOF\n",
+    "utf8"
+  );
   const form = new FormData();
   form.set("uploadUrl", uploadUrlJson.uploadUrl);
   form.set("file", new File([pdfBytes], filename, { type: "application/pdf" }));
@@ -84,7 +87,26 @@ async function main() {
     fail(`POST /api/upload-file failed (${uploadFileRes.status}): ${short(JSON.stringify(body))}`);
   }
 
-  logStep("4) POST /api/checkout");
+  logStep("4) POST /api/precheck");
+  const precheckRes = await request("/api/precheck", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      objectKey: uploadUrlJson.objectKey,
+      filename,
+      contentType: "application/pdf",
+      size: pdfBytes.length,
+    }),
+  });
+  if (!precheckRes.ok) {
+    const body = await readBody(precheckRes);
+    fail(`POST /api/precheck failed (${precheckRes.status}): ${short(JSON.stringify(body))}`);
+  }
+  const precheckJson = await readBody(precheckRes);
+  assert(typeof precheckJson === "object" && precheckJson, "precheck response was not JSON.");
+  assert(typeof precheckJson.precheckToken === "string", "precheck response missing precheckToken.");
+
+  logStep("5) POST /api/checkout");
   const checkoutRes = await request("/api/checkout", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -93,6 +115,7 @@ async function main() {
       filename,
       contentType: "application/pdf",
       size: pdfBytes.length,
+      precheckToken: precheckJson.precheckToken,
     }),
   });
   if (!checkoutRes.ok) {
@@ -104,7 +127,7 @@ async function main() {
   assert(typeof checkoutJson.checkoutSessionId === "string", "checkout response missing checkoutSessionId.");
   assert(typeof checkoutJson.checkoutUrl === "string", "checkout response missing checkoutUrl.");
 
-  logStep("5) POST /api/checkout/verify (expect unpaid)");
+  logStep("6) POST /api/checkout/verify (expect unpaid)");
   const verifyRes = await request("/api/checkout/verify", {
     method: "POST",
     headers: { "content-type": "application/json" },

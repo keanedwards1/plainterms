@@ -14,6 +14,11 @@ type CheckoutResponse = {
   checkoutUrl: string;
 };
 
+type PrecheckResponse = {
+  precheckPassed: boolean;
+  precheckToken: string;
+};
+
 const parsedRetentionDays = Number(process.env.NEXT_PUBLIC_RESULT_RETENTION_DAYS ?? "7");
 const RESULT_RETENTION_DAYS =
   Number.isFinite(parsedRetentionDays) && parsedRetentionDays > 0
@@ -23,6 +28,7 @@ const RESULT_RETENTION_DAYS =
 type SubmitStep =
   | "requesting-upload-url"
   | "uploading-file"
+  | "validating-file"
   | "starting-checkout"
   | "redirecting-to-checkout";
 
@@ -52,6 +58,8 @@ function stepLabel(step: SubmitStep): string {
       return "Requesting upload URL";
     case "uploading-file":
       return "Uploading file";
+    case "validating-file":
+      return "Validating file";
     case "starting-checkout":
       return "Starting checkout";
     case "redirecting-to-checkout":
@@ -133,6 +141,29 @@ export default function AnalyzePage() {
         throw new Error(`S3 upload failed (${s3PutRes.status}): ${detail}`);
       }
 
+      currentStep = "validating-file";
+      setStep(currentStep);
+      const precheckRes = await fetch("/api/precheck", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          objectKey: uploadJson.objectKey,
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+          size: file.size,
+        }),
+      });
+
+      if (!precheckRes.ok) {
+        const detail = await readErrorResponse(precheckRes);
+        throw new Error(`File validation failed (${precheckRes.status}): ${detail}`);
+      }
+
+      const precheckJson = (await precheckRes.json()) as PrecheckResponse;
+      if (!precheckJson.precheckPassed || !precheckJson.precheckToken) {
+        throw new Error("File validation did not pass. Please upload another file.");
+      }
+
       currentStep = "starting-checkout";
       setStep(currentStep);
       void trackFunnelMetric({ event: "checkout_start", funnelId });
@@ -144,6 +175,7 @@ export default function AnalyzePage() {
           filename: file.name,
           contentType: file.type || "application/octet-stream",
           size: file.size,
+          precheckToken: precheckJson.precheckToken,
         }),
       });
 
@@ -185,7 +217,7 @@ export default function AnalyzePage() {
           </h1>
           <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)]">
             v1 supports independent contractor and services agreements. Upload a PDF or DOCX, then
-            continue to secure checkout.
+            we validate readability before secure checkout.
           </p>
         </div>
 
@@ -208,7 +240,7 @@ export default function AnalyzePage() {
           <div className="rounded-2xl border-2 border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-5">
             <input
               type="file"
-              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--pt-accent)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--pt-accent-ink)] hover:file:brightness-95"
             />

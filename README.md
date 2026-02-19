@@ -85,6 +85,7 @@ After deploy, verify one full flow on both Preview and Production:
 2. Confirm network calls return 200 for:
    - `POST /api/upload-url`
    - `POST /api/upload-file`
+   - `POST /api/precheck`
    - `POST /api/checkout`
    - `POST /api/checkout/verify` (via `/analyze/complete`)
 3. Confirm redirect to `/result/{id}` succeeds and renders summary content.
@@ -103,8 +104,9 @@ What it verifies against your deployed frontend URL:
 1. `GET /analyze` returns success.
 2. `POST /api/upload-url` returns `uploadUrl` + `objectKey`.
 3. `POST /api/upload-file` uploads a tiny PDF to S3.
-4. `POST /api/checkout` returns Stripe checkout session fields.
-5. `POST /api/checkout/verify` returns expected unpaid status (`409`) or a valid paid result (`200`).
+4. `POST /api/precheck` validates file type/readability and returns `precheckToken`.
+5. `POST /api/checkout` returns Stripe checkout session fields.
+6. `POST /api/checkout/verify` returns expected unpaid status (`409`) or a valid paid result (`200`).
 
 Set repository variable:
 - `SMOKE_BASE_URL` (for example `https://plainterms.vercel.app`)
@@ -142,6 +144,7 @@ Stripe checkout environment (backend lambdas):
 - `STRIPE_PRICE_ID`
 - `APP_BASE_URL` (for example `https://plainterms.vercel.app`)
 - `API_BASE_URL` (used by checkout verify to call `/analyze`)
+- `PRECHECK_TOKEN_SECRET` (or SSM param `PRECHECK_TOKEN_SECRET_PARAM`) for precheck token signing
 - LLM analysis (optional, via AWS SSM + Lambda env):
   - `ANALYSIS_MODE` = `rules` (default) or `llm`
   - `LLM_BASE_URL` (default `https://api.openai.com/v1`)
@@ -188,6 +191,7 @@ Backend retention behavior:
 ## Current Backend Endpoints
 
 - `POST /upload-url` -> create S3 presigned upload URL
+- `POST /precheck` -> validate file type/size/readability and issue precheck token
 - `POST /checkout` -> create Stripe Checkout session
 - `POST /checkout/verify` -> verify paid session and create/reuse result
 - `POST /analyze` -> create deterministic `pt.v1` and transformed `pt.ui.v1`, persist to DynamoDB

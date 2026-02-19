@@ -6,6 +6,7 @@ import {
 } from "./ptTransform.mjs";
 import { extractDocumentTextFromUpload } from "./extractDocumentText.mjs";
 import { analyzeExtractedTextWithLlm } from "./llmAnalyze.mjs";
+import { validateObjectKey, validateUploadMeta } from "./uploadPolicy.mjs";
 
 const db = new DynamoDBClient({});
 
@@ -154,6 +155,28 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis }) {
 }
 
 export async function runAnalysis(payload) {
+  const objectKeyCheck = validateObjectKey(payload?.objectKey);
+  if (!objectKeyCheck.ok) {
+    throw new Error(objectKeyCheck.error);
+  }
+
+  const metaCheck = validateUploadMeta({
+    filename: payload?.filename,
+    contentType: payload?.contentType,
+    size: payload?.size,
+    requireSize: true,
+  });
+  if (!metaCheck.ok) {
+    throw new Error(metaCheck.error);
+  }
+
+  const normalizedPayload = {
+    objectKey: objectKeyCheck.objectKey,
+    filename: metaCheck.filename,
+    contentType: metaCheck.contentType,
+    size: metaCheck.size,
+  };
+
   const resultId = makeResultId();
   const createdAt = new Date().toISOString();
   const expiresAtEpoch = Math.floor(Date.now() / 1000) + getRetentionDays() * 24 * 60 * 60;
@@ -161,16 +184,16 @@ export async function runAnalysis(payload) {
   const bucket = process.env.UPLOAD_BUCKET;
   const extraction = await extractDocumentTextFromUpload({
     bucket,
-    objectKey: payload.objectKey,
-    filename: payload.filename,
-    contentType: payload.contentType,
+    objectKey: normalizedPayload.objectKey,
+    filename: normalizedPayload.filename,
+    contentType: normalizedPayload.contentType,
   });
 
   let llmAnalysis = { usedLlm: false, reason: "not_attempted", fields: null };
   try {
     llmAnalysis = await analyzeExtractedTextWithLlm({
-      filename: payload.filename,
-      contentType: payload.contentType,
+      filename: normalizedPayload.filename,
+      contentType: normalizedPayload.contentType,
       extractedText: extraction.extractedText,
     });
   } catch (err) {
@@ -181,7 +204,13 @@ export async function runAnalysis(payload) {
     };
   }
 
-  const ptV1 = makePtV1({ resultId, createdAt, payload, extraction, analysis: llmAnalysis });
+  const ptV1 = makePtV1({
+    resultId,
+    createdAt,
+    payload: normalizedPayload,
+    extraction,
+    analysis: llmAnalysis,
+  });
   assertPtV1Contract(ptV1);
   const uiResult = transformPtV1ToUiV1(ptV1);
   assertPtUiV1Contract(uiResult);
@@ -192,7 +221,7 @@ export async function runAnalysis(payload) {
       result_id: { S: resultId },
       created_at: { S: createdAt },
       expires_at: { N: String(expiresAtEpoch) },
-      object_key: { S: payload.objectKey ?? "" },
+      object_key: { S: normalizedPayload.objectKey },
       status: { S: "complete" },
       pt_v1_result: { S: JSON.stringify(ptV1) },
       ui_result: { S: JSON.stringify(uiResult) },

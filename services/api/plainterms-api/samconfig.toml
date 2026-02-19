@@ -18,8 +18,8 @@ capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
 s3_prefix = "plainterms-api"
-region = "us-west-2"
 image_repositories = []
+parameter_overrides = "AppBaseUrl=\"https://plainterms.vercel.app\" StripeSecretKeyParamName=\"/plainterms/stripe/secret-key\" StripePriceIdParamName=\"/plainterms/stripe/price-id\" AnalysisMode=\"rules\" LlmApiKeyParamName=\"/plainterms/llm/api-key\" PrecheckTokenSecretParamName=\"/plainterms/precheck/token-secret\""
 
 [default.package.parameters]
 resolve_s3 = true

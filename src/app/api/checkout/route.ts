@@ -7,6 +7,7 @@ const CheckoutRequest = z.object({
   filename: z.string().min(1),
   contentType: z.string().min(1),
   size: z.number().nonnegative(),
+  precheckToken: z.string().min(1),
 });
 
 const CheckoutResponse = z.object({
