@@ -335,12 +335,46 @@ function firstMatch(text, patterns = []) {
   return null;
 }
 
+function isLowQualitySnippet(snippet) {
+  if (!snippet) return true;
+  const tokens = snippet.split(/\s+/).filter(Boolean);
+  if (tokens.length < 4) return true;
+
+  const oneCharTokens = tokens.filter(
+    (token) => token.length === 1 && /[a-z]/i.test(token)
+  ).length;
+  if (oneCharTokens / tokens.length > 0.2) return true;
+
+  const shortTokens = tokens.filter((token) => token.length <= 2).length;
+  if (shortTokens / tokens.length > 0.45) return true;
+
+  const longTokenCount = tokens.filter((token) => token.length >= 4).length;
+  if (longTokenCount < 2) return true;
+
+  return false;
+}
+
 function getSnippetAround(text, startIdx, matchLength = 20) {
   if (!text || startIdx < 0) return "";
-  const window = 90;
+  const window = 58;
   const start = Math.max(0, startIdx - window);
   const end = Math.min(text.length, startIdx + matchLength + window);
-  return text.slice(start, end).trim();
+  const raw = text
+    .slice(start, end)
+    .replace(/_{2,}/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!raw) return "";
+
+  if (isLowQualitySnippet(raw)) return "";
+
+  if (raw.length > 150) {
+    const trimmed = raw.slice(0, 147).trim();
+    if (isLowQualitySnippet(trimmed)) return "";
+    return `${trimmed}...`;
+  }
+
+  return raw;
 }
 
 function sourcePointerFromPatterns(text, patterns) {

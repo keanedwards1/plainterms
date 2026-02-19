@@ -22,13 +22,6 @@ function getRetentionDays() {
   return Math.floor(raw);
 }
 
-function pickSummaryText(text) {
-  if (!text) {
-    return "We could not extract readable text from this document yet, so this result is limited. Try a text-based PDF or DOCX export.";
-  }
-  return text.slice(0, 420);
-}
-
 function statusFromClauseStatus(status) {
   if (status === "present") return "found";
   if (status === "missing") return "not_found";
@@ -60,9 +53,24 @@ function clauseByKey(report, key) {
   return list.find((item) => item?.key === key);
 }
 
+function makeOverviewFallback({ report }) {
+  const risk = report?.risk?.label ?? "medium";
+  const flagCount = Array.isArray(report?.red_flags) ? report.red_flags.length : 0;
+  const creator = Boolean(report?.creator_contract);
+
+  if (creator) {
+    return `This appears to be a creator/model-focused services agreement with a ${risk} risk profile and ${flagCount} identified risk ${
+      flagCount === 1 ? "flag" : "flags"
+    }.`;
+  }
+
+  return `This appears to be a professional services agreement with a ${risk} risk profile and ${flagCount} identified risk ${
+    flagCount === 1 ? "flag" : "flags"
+  }.`;
+}
+
 function makePtV1({ resultId, createdAt, payload, extraction, analysis, report }) {
   const filename = typeof payload.filename === "string" ? payload.filename : "Contract document";
-  const textSnippet = pickSummaryText(extraction.extractedText);
   const llmFields = analysis?.fields;
   const notes = [...extraction.extraction.notes];
   if (analysis?.usedLlm) {
@@ -75,7 +83,7 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report }
     llmFields?.overview ??
     {
       status: "found",
-      summary: textSnippet,
+      summary: makeOverviewFallback({ report }),
       quotes: [],
       sources: [],
     };

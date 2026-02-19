@@ -32,10 +32,15 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function normalizeForDedup(value) {
+  return String(value).replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 function collectFieldSummaries(sectionObj) {
   if (!isObject(sectionObj)) return [];
 
   const summaries = [];
+  const seenSummaries = new Set();
   for (const [key, value] of Object.entries(sectionObj)) {
     if (key === "heading") continue;
     if (!isObject(value)) continue;
@@ -45,6 +50,9 @@ function collectFieldSummaries(sectionObj) {
     const quotes = asArray(value.quotes).filter((q) => typeof q === "string");
 
     if (!summary) continue;
+    const summaryKey = normalizeForDedup(summary);
+    if (seenSummaries.has(summaryKey)) continue;
+    seenSummaries.add(summaryKey);
     summaries.push({ status, summary, quotes });
   }
 
@@ -70,7 +78,16 @@ function toUiSection(key, sectionObj) {
     .join(" ")
     .trim();
 
-  const quotes = fieldSummaries.flatMap((f) => f.quotes).slice(0, 3);
+  const seenQuotes = new Set();
+  const quotes = fieldSummaries
+    .flatMap((f) => f.quotes)
+    .filter((quote) => {
+      const key = normalizeForDedup(quote);
+      if (!key || seenQuotes.has(key)) return false;
+      seenQuotes.add(key);
+      return true;
+    })
+    .slice(0, 3);
 
   const section = {
     key,

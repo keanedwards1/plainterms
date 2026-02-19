@@ -164,6 +164,9 @@ export default async function ResultPage({ params }: Props) {
   }
 
   const data = parsed.data;
+  const supportingSections = data.sections.filter((section) => section.key !== "summary");
+  const renderSectionsInline = !data.report && supportingSections.length > 0;
+  const renderSectionsCollapsed = Boolean(data.report) && supportingSections.length > 0;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8 lg:px-12">
@@ -318,48 +321,96 @@ export default async function ResultPage({ params }: Props) {
         </section>
       )}
 
-      <section className="mt-8 grid gap-4">
-        {data.sections.map((section) => (
-          <article
-            key={section.key}
-            className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5"
-          >
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-2xl text-[var(--pt-ink)]">{SECTION_TITLES[section.key]}</h2>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  section.status === "present"
-                    ? "bg-[var(--pt-accent-soft)] text-[var(--pt-ink)]"
-                    : "bg-amber-100 text-amber-800"
-                }`}
-              >
-                {section.status}
-              </span>
-            </div>
-
-            <p className="text-[15px] leading-7 text-[var(--pt-muted)]">{section.body}</p>
-
-            {section.soft_note && (
-              <p className="mt-3 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3 text-sm text-[var(--pt-muted)]">
-                {section.soft_note}
-              </p>
-            )}
-
-            {section.quotes?.length ? (
-              <div className="mt-4 grid gap-3">
-                {section.quotes.map((q, idx) => (
-                  <blockquote
-                    key={`${section.key}-q-${idx}`}
-                    className="rounded-r-lg border-l-4 border-[var(--pt-accent)] bg-[var(--pt-surface-soft)] px-4 py-3 text-sm text-[var(--pt-muted)]"
-                  >
-                    {q}
-                  </blockquote>
-                ))}
+      {renderSectionsInline ? (
+        <section className="mt-8 grid gap-4">
+          {supportingSections.map((section) => (
+            <article
+              key={section.key}
+              className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5"
+            >
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-2xl text-[var(--pt-ink)]">{SECTION_TITLES[section.key]}</h2>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    section.status === "present"
+                      ? "bg-[var(--pt-accent-soft)] text-[var(--pt-ink)]"
+                      : "bg-amber-100 text-amber-800"
+                  }`}
+                >
+                  {section.status}
+                </span>
               </div>
-            ) : null}
-          </article>
-        ))}
-      </section>
+
+              <p className="text-[15px] leading-7 text-[var(--pt-muted)]">{section.body}</p>
+
+              {section.soft_note && (
+                <p className="mt-3 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3 text-sm text-[var(--pt-muted)]">
+                  {section.soft_note}
+                </p>
+              )}
+
+              {section.quotes?.length ? (
+                <div className="mt-4 grid gap-3">
+                  {section.quotes.map((q, idx) => (
+                    <blockquote
+                      key={`${section.key}-q-${idx}`}
+                      className="rounded-r-lg border-l-4 border-[var(--pt-accent)] bg-[var(--pt-surface-soft)] px-4 py-3 text-sm text-[var(--pt-muted)]"
+                    >
+                      {q}
+                    </blockquote>
+                  ))}
+                </div>
+              ) : null}
+            </article>
+          ))}
+        </section>
+      ) : null}
+
+      {renderSectionsCollapsed ? (
+        <section className="mt-8">
+          <details className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
+            <summary className="cursor-pointer text-sm font-semibold text-[var(--pt-ink)]">
+              Supporting extraction details
+            </summary>
+            <div className="mt-4 grid gap-4">
+              {supportingSections.map((section) => (
+                <article
+                  key={section.key}
+                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4"
+                >
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-base font-semibold text-[var(--pt-ink)]">
+                      {SECTION_TITLES[section.key]}
+                    </h3>
+                    <span
+                      className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
+                        section.status === "present"
+                          ? "bg-[var(--pt-accent-soft)] text-[var(--pt-ink)]"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {section.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-[var(--pt-muted)]">{section.body}</p>
+                  {section.quotes?.length ? (
+                    <div className="mt-3 grid gap-2">
+                      {section.quotes.map((q, idx) => (
+                        <blockquote
+                          key={`${section.key}-detail-q-${idx}`}
+                          className="rounded-r-lg border-l-4 border-[var(--pt-accent)] bg-[var(--pt-surface)] px-3 py-2 text-xs text-[var(--pt-muted)]"
+                        >
+                          {q}
+                        </blockquote>
+                      ))}
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </details>
+        </section>
+      ) : null}
 
       <footer className="mt-8 border-t border-[var(--pt-border)] pt-5 text-sm text-[var(--pt-muted)]">
         <p>{data.notices.not_legal_advice}</p>
