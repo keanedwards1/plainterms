@@ -146,9 +146,9 @@ Stripe checkout environment (backend lambdas):
 - `API_BASE_URL` (used by checkout verify to call `/analyze`)
 - `PRECHECK_TOKEN_SECRET` (or SSM param `PRECHECK_TOKEN_SECRET_PARAM`) for precheck token signing
 - LLM analysis (optional, via AWS SSM + Lambda env):
-  - `ANALYSIS_MODE` = `rules` (default) or `llm`
+  - `ANALYSIS_MODE` (from SAM parameter `AnalysisMode`) = `rules` (default) or `llm`
   - `LLM_BASE_URL` (default `https://api.openai.com/v1`)
-  - `LLM_MODEL` (default `gpt-4o-mini`)
+  - `LLM_MODEL` (from SAM parameter `LlmModel`; default `gpt-4o-mini`; supported: `gpt-4o-mini`, `gpt-5-mini`, `gpt-5`, `gpt-5.2`)
   - `LLM_API_KEY_PARAM` (default SSM parameter: `/plainterms/llm/api-key`)
 
 Enable LLM analysis (AWS):
@@ -161,19 +161,30 @@ aws ssm put-parameter \
   --value "<YOUR_LLM_API_KEY>"
 ```
 
-Then deploy backend with `ANALYSIS_MODE=llm`:
+Clean switch examples:
 
 ```bash
 cd services/api/plainterms-api
 sam build
-sam deploy --parameter-overrides AppBaseUrl=https://plainterms.vercel.app
+
+# Rules mode (current default behavior)
+sam deploy --parameter-overrides AppBaseUrl=https://plainterms.vercel.app AnalysisMode=rules LlmModel=gpt-4o-mini
+
+# LLM mode with GPT-5.2
+sam deploy --parameter-overrides AppBaseUrl=https://plainterms.vercel.app AnalysisMode=llm LlmModel=gpt-5.2
 ```
+
+Quick UI switch for testing:
+- On `/analyze`, use the `Testing controls` card to choose:
+  - `Rules (no LLM)`
+  - `LLM` + model (`gpt-4o-mini`, `gpt-5-mini`, `gpt-5`, `gpt-5.2`)
+- The selection is stored in browser local storage and attached to checkout metadata, so each checkout run can use a different model without redeploying.
 
 If your stack was originally created with guided prompts, update `samconfig.toml` so
 `parameter_overrides` includes:
 
 ```toml
-parameter_overrides = "AppBaseUrl=https://plainterms.vercel.app ANALYSIS_MODE=llm"
+parameter_overrides = "AppBaseUrl=https://plainterms.vercel.app AnalysisMode=rules LlmModel=gpt-4o-mini"
 ```
 
 Backend retention behavior:

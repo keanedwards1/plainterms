@@ -10,6 +10,13 @@ type VerifyResponse = {
   reused?: boolean;
 };
 
+const PROCESSING_STAGES = [
+  "Confirming secure payment.",
+  "Reading and structuring contract clauses.",
+  "Scoring risk and generating plain-English guidance.",
+  "Preparing your result page.",
+] as const;
+
 async function readErrorResponse(res: Response): Promise<string> {
   const contentType = res.headers.get("content-type") ?? "";
 
@@ -40,6 +47,7 @@ export default function AnalyzeCompletePage() {
   const router = useRouter();
   const [sessionId, setSessionId] = React.useState<string | null | undefined>(undefined);
   const [error, setError] = React.useState<string | null>(null);
+  const [stageIndex, setStageIndex] = React.useState(0);
 
   React.useEffect(() => {
     const url = new URL(window.location.href);
@@ -87,6 +95,14 @@ export default function AnalyzeCompletePage() {
     void verifyAndFinalize();
   }, [router, sessionId]);
 
+  React.useEffect(() => {
+    if (error) return;
+    const timer = window.setInterval(() => {
+      setStageIndex((prev) => (prev + 1) % PROCESSING_STAGES.length);
+    }, 1400);
+    return () => window.clearInterval(timer);
+  }, [error]);
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
       <h1 className="text-3xl text-[var(--pt-ink)]">Finalizing your analysis</h1>
@@ -104,7 +120,41 @@ export default function AnalyzeCompletePage() {
           </p>
         </div>
       ) : (
-        <p className="mt-6 text-sm text-[var(--pt-muted)]">Please wait...</p>
+        <section className="mt-6 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
+          <div className="flex items-center gap-4">
+            <div className="relative h-12 w-12 shrink-0">
+              <span className="absolute inset-0 rounded-full border-2 border-[var(--pt-border)]" />
+              <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-[var(--pt-accent)]" />
+              <span className="absolute inset-[10px] animate-pulse rounded-full bg-[var(--pt-accent-soft)]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[var(--pt-ink)]">
+                {PROCESSING_STAGES[stageIndex]}
+              </p>
+              <p className="mt-1 text-xs text-[var(--pt-muted)]">
+                This usually takes under a minute once payment is confirmed.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--pt-border)]">
+            <div
+              className="h-full rounded-full bg-[var(--pt-accent)] transition-all duration-700"
+              style={{ width: `${((stageIndex + 1) / PROCESSING_STAGES.length) * 100}%` }}
+            />
+          </div>
+
+          <div className="mt-3 flex items-center gap-1.5">
+            {PROCESSING_STAGES.map((stage, idx) => (
+              <span
+                key={stage}
+                className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                  idx <= stageIndex ? "bg-[var(--pt-accent)]" : "bg-[var(--pt-border)]"
+                } ${idx === stageIndex ? "animate-pulse" : ""}`}
+              />
+            ))}
+          </div>
+        </section>
       )}
     </main>
   );

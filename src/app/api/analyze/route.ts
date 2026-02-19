@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
+import { ANALYSIS_MODE_OPTIONS, LLM_MODEL_OPTIONS } from "@/lib/analysisOptions";
 import { z } from "zod";
 
 const AnalyzeRequest = z.object({
@@ -6,6 +7,8 @@ const AnalyzeRequest = z.object({
   filename: z.string().min(1),
   contentType: z.string().min(1),
   size: z.number().nonnegative(),
+  analysisMode: z.enum(ANALYSIS_MODE_OPTIONS).optional(),
+  llmModel: z.enum(LLM_MODEL_OPTIONS).optional(),
 });
 
 const AnalyzeResponse = z.object({

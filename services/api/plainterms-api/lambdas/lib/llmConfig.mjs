@@ -1,7 +1,9 @@
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
+import { normalizeAnalysisMode, normalizeLlmModel } from "./analysisSelection.mjs";
 
 const ssm = new SSMClient({});
-let cachedConfig = null;
+let cachedApiKey = null;
+let cachedApiKeyParamName = null;
 
 function getEnv(name, fallback = "") {
   return process.env[name] ?? fallback;
@@ -19,26 +21,44 @@ async function readParameter(name, withDecryption = false) {
 }
 
 export async function getLlmConfig() {
-  if (cachedConfig) return cachedConfig;
-
-  const mode = getEnv("ANALYSIS_MODE", "rules");
+  const envMode = normalizeAnalysisMode(getEnv("ANALYSIS_MODE", "rules")) ?? "rules";
   const baseUrl = getEnv("LLM_BASE_URL", "https://api.openai.com/v1").replace(/\/+$/, "");
-  const model = getEnv("LLM_MODEL", "gpt-4o-mini");
+  const envModel = normalizeLlmModel(getEnv("LLM_MODEL", "gpt-4o-mini")) ?? "gpt-4o-mini";
 
   const keyParam = getEnv("LLM_API_KEY_PARAM");
   const apiKeyFromEnv = getEnv("LLM_API_KEY");
 
   let apiKey = apiKeyFromEnv;
   if (!apiKey && keyParam) {
-    apiKey = await readParameter(keyParam, true);
+    if (!cachedApiKey || cachedApiKeyParamName !== keyParam) {
+      cachedApiKey = await readParameter(keyParam, true);
+      cachedApiKeyParamName = keyParam;
+    }
+    apiKey = cachedApiKey;
   }
 
-  cachedConfig = {
-    mode,
+  return {
+    mode: envMode,
     baseUrl,
-    model,
+    model: envModel,
     apiKey,
   };
-  return cachedConfig;
 }
 
+export async function getLlmConfigWithOverrides(selection = {}) {
+  const config = await getLlmConfig();
+  const overrideMode = normalizeAnalysisMode(selection.analysisMode);
+  const overrideModel = normalizeLlmModel(selection.llmModel);
+
+  let mode = overrideMode ?? config.mode;
+  if (!overrideMode && overrideModel) {
+    mode = "llm";
+  }
+
+  return {
+    mode,
+    baseUrl: config.baseUrl,
+    model: overrideModel ?? config.model,
+    apiKey: config.apiKey,
+  };
+}

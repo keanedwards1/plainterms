@@ -75,6 +75,7 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report }
   const notes = [...extraction.extraction.notes];
   if (analysis?.usedLlm) {
     notes.push("analysis_mode:llm");
+    if (analysis?.model) notes.push(`llm_model:${analysis.model}`);
   } else {
     notes.push(`analysis_mode:rules (${analysis?.reason || "unknown"})`);
   }
@@ -282,7 +283,7 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report }
   };
 }
 
-export async function runAnalysis(payload) {
+export async function runAnalysis(payload, analysisSelection = {}) {
   const objectKeyCheck = validateObjectKey(payload?.objectKey);
   if (!objectKeyCheck.ok) {
     throw new Error(objectKeyCheck.error);
@@ -323,6 +324,8 @@ export async function runAnalysis(payload) {
       filename: normalizedPayload.filename,
       contentType: normalizedPayload.contentType,
       extractedText: extraction.extractedText,
+      analysisMode: analysisSelection?.analysisMode ?? null,
+      llmModel: analysisSelection?.llmModel ?? null,
     });
   } catch (err) {
     llmAnalysis = {

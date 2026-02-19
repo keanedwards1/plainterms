@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { getStripeConfig } from "./lib/stripeConfig.mjs";
 import { validateObjectKey, validateUploadMeta } from "./lib/uploadPolicy.mjs";
 import { verifyPrecheckToken } from "./lib/precheckToken.mjs";
+import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
 
 function corsHeaders() {
   return {
@@ -40,11 +41,16 @@ export const handler = async (event) => {
   const contentType = payload.contentType;
   const size = payload.size;
   const precheckToken = payload.precheckToken;
+  const selectionCheck = parseAnalysisSelection(payload);
 
   if (!objectKey || !filename || !contentType || typeof size !== "number") {
     return json(400, {
       error: "objectKey, filename, contentType, and numeric size are required",
     });
+  }
+
+  if (!selectionCheck.ok) {
+    return json(400, { error: selectionCheck.error });
   }
 
   if (typeof precheckToken !== "string" || !precheckToken.trim()) {
@@ -100,6 +106,7 @@ export const handler = async (event) => {
     }
 
     const stripe = new Stripe(stripeSecretKey);
+    const selection = selectionCheck.selection;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -112,6 +119,8 @@ export const handler = async (event) => {
         contentType: uploadMeta.contentType,
         size: String(size),
         precheckValidated: "true",
+        ...(selection.analysisMode ? { analysisMode: selection.analysisMode } : {}),
+        ...(selection.llmModel ? { llmModel: selection.llmModel } : {}),
       },
     });
 

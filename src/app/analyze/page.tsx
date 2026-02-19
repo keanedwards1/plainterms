@@ -3,6 +3,13 @@
 import React from "react";
 import Link from "next/link";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
+import {
+  DEFAULT_ANALYSIS_MODE,
+  DEFAULT_LLM_MODEL,
+  LLM_MODEL_OPTIONS,
+  type AnalysisModeOption,
+  type LlmModelOption,
+} from "@/lib/analysisOptions";
 
 type UploadUrlResponse = {
   uploadUrl: string;
@@ -31,6 +38,33 @@ type SubmitStep =
   | "validating-file"
   | "starting-checkout"
   | "redirecting-to-checkout";
+
+const SUBMIT_STEP_ORDER: SubmitStep[] = [
+  "requesting-upload-url",
+  "uploading-file",
+  "validating-file",
+  "starting-checkout",
+  "redirecting-to-checkout",
+];
+
+const SUBMIT_STEP_DESCRIPTIONS: Record<SubmitStep, string> = {
+  "requesting-upload-url": "Setting up a secure upload session.",
+  "uploading-file": "Uploading your contract to encrypted storage.",
+  "validating-file": "Validating file type and extracting readable text.",
+  "starting-checkout": "Preparing secure checkout with your validated file.",
+  "redirecting-to-checkout": "Redirecting you to payment now.",
+};
+
+const LOCAL_STORAGE_ANALYSIS_MODE_KEY = "pt.analysisMode";
+const LOCAL_STORAGE_LLM_MODEL_KEY = "pt.llmModel";
+
+function isAnalysisModeOption(value: string): value is AnalysisModeOption {
+  return value === "rules" || value === "llm";
+}
+
+function isLlmModelOption(value: string): value is LlmModelOption {
+  return LLM_MODEL_OPTIONS.includes(value as LlmModelOption);
+}
 
 async function readErrorResponse(res: Response): Promise<string> {
   const contentType = res.headers.get("content-type") ?? "";
@@ -78,11 +112,38 @@ export default function AnalyzePage() {
   const [error, setError] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<SubmitStep | null>(null);
   const [checkoutCanceled, setCheckoutCanceled] = React.useState(false);
+  const [analysisMode, setAnalysisMode] = React.useState<AnalysisModeOption>(DEFAULT_ANALYSIS_MODE);
+  const [llmModel, setLlmModel] = React.useState<LlmModelOption>(DEFAULT_LLM_MODEL);
 
   React.useEffect(() => {
     const url = new URL(window.location.href);
     setCheckoutCanceled(url.searchParams.get("canceled") === "1");
   }, []);
+
+  React.useEffect(() => {
+    try {
+      const storedMode = window.localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODE_KEY);
+      const storedModel = window.localStorage.getItem(LOCAL_STORAGE_LLM_MODEL_KEY);
+
+      if (storedMode && isAnalysisModeOption(storedMode)) {
+        setAnalysisMode(storedMode);
+      }
+      if (storedModel && isLlmModelOption(storedModel)) {
+        setLlmModel(storedModel);
+      }
+    } catch {
+      // Storage is best effort only.
+    }
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODE_KEY, analysisMode);
+      window.localStorage.setItem(LOCAL_STORAGE_LLM_MODEL_KEY, llmModel);
+    } catch {
+      // Storage is best effort only.
+    }
+  }, [analysisMode, llmModel]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -176,6 +237,8 @@ export default function AnalyzePage() {
           contentType: file.type || "application/octet-stream",
           size: file.size,
           precheckToken: precheckJson.precheckToken,
+          analysisMode,
+          ...(analysisMode === "llm" ? { llmModel } : {}),
         }),
       });
 
@@ -252,6 +315,47 @@ export default function AnalyzePage() {
             )}
           </div>
 
+          <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+              Testing controls
+            </p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <label className="grid gap-2 text-sm text-[var(--pt-muted)]">
+                Analysis engine
+                <select
+                  value={analysisMode}
+                  onChange={(e) => setAnalysisMode(e.target.value as AnalysisModeOption)}
+                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)]"
+                >
+                  <option value="rules">Rules (no LLM)</option>
+                  <option value="llm">LLM</option>
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm text-[var(--pt-muted)]">
+                LLM model
+                <select
+                  value={llmModel}
+                  disabled={analysisMode !== "llm"}
+                  onChange={(e) => setLlmModel(e.target.value as LlmModelOption)}
+                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {LLM_MODEL_OPTIONS.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <p className="mt-3 text-xs text-[var(--pt-muted)]">
+              Current run:{" "}
+              <span className="font-semibold text-[var(--pt-ink)]">
+                {analysisMode === "rules" ? "Rules engine" : `LLM (${llmModel})`}
+              </span>
+            </p>
+          </div>
+
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
               type="submit"
@@ -260,10 +364,58 @@ export default function AnalyzePage() {
             >
               {isSubmitting ? "Processing..." : "Continue"}
             </button>
-            {isSubmitting && step && (
-              <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>
-            )}
+            {isSubmitting && step && <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>}
           </div>
+
+          {isSubmitting && step && (
+            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+              <div className="flex items-center gap-3">
+                <span className="relative inline-flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--pt-accent)] opacity-35" />
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-[var(--pt-accent)]" />
+                </span>
+                <p className="text-sm font-semibold text-[var(--pt-ink)]">{stepLabel(step)}</p>
+              </div>
+              <p className="mt-1 text-sm text-[var(--pt-muted)]">{SUBMIT_STEP_DESCRIPTIONS[step]}</p>
+
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--pt-border)]">
+                <div
+                  className="h-full rounded-full bg-[var(--pt-accent)] transition-all duration-500"
+                  style={{
+                    width: `${((SUBMIT_STEP_ORDER.indexOf(step) + 1) / SUBMIT_STEP_ORDER.length) * 100}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-3 grid gap-2">
+                {SUBMIT_STEP_ORDER.map((item, idx) => {
+                  const currentIndex = SUBMIT_STEP_ORDER.indexOf(step);
+                  const completed = idx < currentIndex;
+                  const active = idx === currentIndex;
+                  return (
+                    <div key={item} className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                          completed
+                            ? "bg-emerald-500"
+                            : active
+                              ? "animate-pulse bg-[var(--pt-accent)]"
+                              : "bg-[var(--pt-border)]"
+                        }`}
+                      />
+                      <span
+                        className={`text-xs ${
+                          completed || active ? "text-[var(--pt-ink)]" : "text-[var(--pt-muted)]"
+                        }`}
+                      >
+                        {stepLabel(item)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mt-5 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">

@@ -361,6 +361,61 @@ function normalizeSnippetText(value) {
     .trim();
 }
 
+function cleanSnippetStart(value) {
+  let text = String(value || "").trim();
+  if (!text) return "";
+
+  text = text.replace(/^[^A-Za-z0-9("“]+/, "");
+  if (!text) return "";
+
+  const firstTokenMatch = text.match(/^([A-Za-z]+)/);
+  const firstToken = firstTokenMatch?.[1] ?? "";
+  if (/^[a-z]{4,}$/.test(firstToken) && text.split(/\s+/).length > 2) {
+    text = text.slice(firstToken.length).trimStart();
+  }
+
+  if (/^[a-z]/.test(text)) {
+    const sentenceRestart = text.match(/[.!?]\s+([A-Z("“])/);
+    if (sentenceRestart?.index !== undefined) {
+      const boundary = sentenceRestart.index + sentenceRestart[0].length - 1;
+      text = text.slice(boundary).trimStart();
+    }
+  }
+
+  if (/^[a-z]/.test(text)) {
+    const firstCapital = text.search(/[A-Z]/);
+    if (firstCapital >= 10) {
+      text = text.slice(firstCapital);
+    }
+  }
+
+  return text.trim();
+}
+
+function isWordChar(char) {
+  return /[A-Za-z0-9]/.test(char || "");
+}
+
+function rewindToWordBoundary(text, index, maxSteps = 64) {
+  let i = Math.max(0, Math.min(text.length, index));
+  let steps = 0;
+  while (i > 0 && steps < maxSteps && isWordChar(text[i - 1])) {
+    i -= 1;
+    steps += 1;
+  }
+  return i;
+}
+
+function advanceToWordBoundary(text, index, maxSteps = 64) {
+  let i = Math.max(0, Math.min(text.length, index));
+  let steps = 0;
+  while (i < text.length && steps < maxSteps && isWordChar(text[i])) {
+    i += 1;
+    steps += 1;
+  }
+  return i;
+}
+
 function findLeftSentenceBoundary(text, pivot, maxLookback = 280) {
   const min = Math.max(0, pivot - maxLookback);
   for (let i = pivot; i > min; i -= 1) {
@@ -384,6 +439,14 @@ function findRightSentenceBoundary(text, pivot, maxLookahead = 320) {
 }
 
 function trimSnippetToLimit(text, limit = 220) {
+  const sectionMarker = /\s\d+\.\s+[A-Z]/.exec(text);
+  if (sectionMarker?.index !== undefined && sectionMarker.index >= 45) {
+    const beforeMarker = text.slice(0, sectionMarker.index).trim();
+    if (beforeMarker.length >= 42) {
+      return `${beforeMarker}...`;
+    }
+  }
+
   if (text.length <= limit) return text;
 
   const slice = text.slice(0, limit + 1);
@@ -413,17 +476,22 @@ function getSnippetAround(text, startIdx, matchLength = 20) {
 
   let start = findLeftSentenceBoundary(text, anchorStart);
   let end = findRightSentenceBoundary(text, anchorEnd);
-  let candidate = normalizeSnippetText(text.slice(start, end));
+  start = rewindToWordBoundary(text, start);
+  end = advanceToWordBoundary(text, end);
+  let candidate = cleanSnippetStart(normalizeSnippetText(text.slice(start, end)));
 
   if (!candidate || candidate.length < 48) {
     const fallbackWindow = 95;
     start = Math.max(0, anchorStart - fallbackWindow);
     end = Math.min(text.length, anchorEnd + fallbackWindow);
-    candidate = normalizeSnippetText(text.slice(start, end));
+    start = rewindToWordBoundary(text, start);
+    end = advanceToWordBoundary(text, end);
+    candidate = cleanSnippetStart(normalizeSnippetText(text.slice(start, end)));
   }
 
   if (!candidate || isLowQualitySnippet(candidate)) return "";
-  return trimSnippetToLimit(candidate, 220);
+  const trimmed = trimSnippetToLimit(candidate, 220);
+  return cleanSnippetStart(trimmed);
 }
 
 function sourcePointerFromPatterns(text, patterns) {

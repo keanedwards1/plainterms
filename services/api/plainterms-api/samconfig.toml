@@ -19,7 +19,7 @@ confirm_changeset = true
 resolve_s3 = true
 s3_prefix = "plainterms-api"
 image_repositories = []
-parameter_overrides = "AppBaseUrl=\"https://plainterms.vercel.app\" StripeSecretKeyParamName=\"/plainterms/stripe/secret-key\" StripePriceIdParamName=\"/plainterms/stripe/price-id\" AnalysisMode=\"rules\" LlmApiKeyParamName=\"/plainterms/llm/api-key\" PrecheckTokenSecretParamName=\"/plainterms/precheck/token-secret\""
+parameter_overrides = "AppBaseUrl=\"https://plainterms.vercel.app\" StripeSecretKeyParamName=\"/plainterms/stripe/secret-key\" StripePriceIdParamName=\"/plainterms/stripe/price-id\" AnalysisMode=\"rules\" LlmModel=\"gpt-4o-mini\" LlmApiKeyParamName=\"/plainterms/llm/api-key\" PrecheckTokenSecretParamName=\"/plainterms/precheck/token-secret\""
 
 [default.package.parameters]
 resolve_s3 = true

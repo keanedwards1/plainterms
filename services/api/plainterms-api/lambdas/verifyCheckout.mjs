@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { runAnalysis } from "./lib/runAnalysis.mjs";
 import { getStripeConfig } from "./lib/stripeConfig.mjs";
+import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
 
 function corsHeaders() {
   return {
@@ -146,6 +147,13 @@ export const handler = async (event) => {
     const contentType = session.metadata?.contentType;
     const sizeRaw = session.metadata?.size;
     const size = Number(sizeRaw);
+    const selectionCheck = parseAnalysisSelection({
+      analysisMode: session.metadata?.analysisMode,
+      llmModel: session.metadata?.llmModel,
+    });
+    const analysisSelection = selectionCheck.ok
+      ? selectionCheck.selection
+      : { analysisMode: null, llmModel: null };
 
     if (!objectKey || !filename || !contentType || !Number.isFinite(size)) {
       return json(500, { error: "Checkout session metadata missing contract upload fields" });
@@ -158,7 +166,7 @@ export const handler = async (event) => {
         filename,
         contentType,
         size,
-      });
+      }, analysisSelection);
       resultId = analysis.resultId;
     } catch (analysisErr) {
       const analysisMessage =

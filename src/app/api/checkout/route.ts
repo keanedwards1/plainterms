@@ -1,5 +1,6 @@
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
 import { getLogContext, logApiError } from "@/lib/observability";
+import { ANALYSIS_MODE_OPTIONS, LLM_MODEL_OPTIONS } from "@/lib/analysisOptions";
 import { z } from "zod";
 
 const CheckoutRequest = z.object({
@@ -8,6 +9,8 @@ const CheckoutRequest = z.object({
   contentType: z.string().min(1),
   size: z.number().nonnegative(),
   precheckToken: z.string().min(1),
+  analysisMode: z.enum(ANALYSIS_MODE_OPTIONS).optional(),
+  llmModel: z.enum(LLM_MODEL_OPTIONS).optional(),
 });
 
 const CheckoutResponse = z.object({

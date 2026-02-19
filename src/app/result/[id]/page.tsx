@@ -88,13 +88,20 @@ function annotateLegalTerms(text: string, keyPrefix: string) {
     }
 
     return (
-      <span
-        key={`${keyPrefix}-${idx}`}
-        className="cursor-help underline decoration-dotted underline-offset-2"
-        title={definition}
-        aria-label={`${part}: ${definition}`}
-      >
-        {part}
+      <span key={`${keyPrefix}-${idx}`} className="group relative inline">
+        <span
+          tabIndex={0}
+          className="cursor-pointer rounded-[2px] underline decoration-dotted decoration-[var(--pt-ink)] underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pt-ink)]/25"
+          aria-label={`${part}: ${definition}`}
+        >
+          {part}
+        </span>
+        <span
+          role="tooltip"
+          className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface)] p-2 text-left text-xs leading-5 text-[var(--pt-ink)] opacity-0 shadow-md transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+        >
+          {definition}
+        </span>
       </span>
     );
   });
@@ -265,7 +272,7 @@ export default async function ResultPage({ params }: Props) {
           {annotateLegalTerms(data.overview, "overview")}
         </p>
         <p className="mt-3 text-xs text-[var(--pt-muted)]">
-          Underlined legal terms include quick plain-English definitions (hover or long-press).
+          Underlined legal terms include quick plain-English definitions (hover or tap/click).
         </p>
 
         {data.gentle_notice && (

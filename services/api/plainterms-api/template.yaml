@@ -22,6 +22,15 @@ Parameters:
       - rules
       - llm
     Description: Contract analysis mode.
+  LlmModel:
+    Type: String
+    Default: gpt-4o-mini
+    AllowedValues:
+      - gpt-4o-mini
+      - gpt-5-mini
+      - gpt-5
+      - gpt-5.2
+    Description: LLM model to use when AnalysisMode is llm.
   LlmApiKeyParamName:
     Type: String
     Default: /plainterms/llm/api-key
@@ -125,7 +134,7 @@ Resources:
           UPLOAD_MAX_BYTES: "26214400"
           ANALYSIS_MODE: !Ref AnalysisMode
           LLM_BASE_URL: "https://api.openai.com/v1"
-          LLM_MODEL: "gpt-4o-mini"
+          LLM_MODEL: !Ref LlmModel
           LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
       Policies:
         - DynamoDBCrudPolicy:
@@ -239,7 +248,7 @@ Resources:
           UPLOAD_MAX_BYTES: "26214400"
           ANALYSIS_MODE: !Ref AnalysisMode
           LLM_BASE_URL: "https://api.openai.com/v1"
-          LLM_MODEL: "gpt-4o-mini"
+          LLM_MODEL: !Ref LlmModel
           LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
       Policies:
         - DynamoDBCrudPolicy:

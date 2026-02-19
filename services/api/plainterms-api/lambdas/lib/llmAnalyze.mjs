@@ -1,4 +1,4 @@
-import { getLlmConfig } from "./llmConfig.mjs";
+import { getLlmConfigWithOverrides } from "./llmConfig.mjs";
 
 const STATUS_VALUES = new Set(["found", "not_found", "not_clearly_stated"]);
 
@@ -88,12 +88,20 @@ ${extractedText}
   `.trim();
 }
 
-export async function analyzeExtractedTextWithLlm({ filename, contentType, extractedText }) {
-  const llm = await getLlmConfig();
+export async function analyzeExtractedTextWithLlm({
+  filename,
+  contentType,
+  extractedText,
+  analysisMode,
+  llmModel,
+}) {
+  const llm = await getLlmConfigWithOverrides({ analysisMode, llmModel });
   if (llm.mode !== "llm") {
     return {
       usedLlm: false,
       reason: "analysis_mode_not_llm",
+      mode: llm.mode,
+      model: llm.model,
       fields: null,
     };
   }
@@ -102,6 +110,8 @@ export async function analyzeExtractedTextWithLlm({ filename, contentType, extra
     return {
       usedLlm: false,
       reason: "llm_api_key_missing",
+      mode: llm.mode,
+      model: llm.model,
       fields: null,
     };
   }
@@ -111,6 +121,8 @@ export async function analyzeExtractedTextWithLlm({ filename, contentType, extra
     return {
       usedLlm: false,
       reason: "no_extracted_text",
+      mode: llm.mode,
+      model: llm.model,
       fields: null,
     };
   }
@@ -155,6 +167,8 @@ export async function analyzeExtractedTextWithLlm({ filename, contentType, extra
   return {
     usedLlm: true,
     reason: "ok",
+    mode: llm.mode,
+    model: llm.model,
     fields: {
       overview: safeField(
         parsed.overview,
@@ -199,4 +213,3 @@ export async function analyzeExtractedTextWithLlm({ filename, contentType, extra
     },
   };
 }
-

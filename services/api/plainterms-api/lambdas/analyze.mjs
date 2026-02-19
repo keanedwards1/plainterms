@@ -1,6 +1,7 @@
 /* /services/api/plainterms-api/hello-world/analyze.mjs */
 
 import { runAnalysis } from "./lib/runAnalysis.mjs";
+import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
 
 function corsHeaders() {
   return {
@@ -38,7 +39,12 @@ export const handler = async (event) => {
   }
 
   try {
-    const { resultId } = await runAnalysis(payload);
+    const selectionCheck = parseAnalysisSelection(payload);
+    if (!selectionCheck.ok) {
+      return json(400, { error: selectionCheck.error });
+    }
+
+    const { resultId } = await runAnalysis(payload, selectionCheck.selection);
     return json(200, { resultId });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
