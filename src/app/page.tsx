@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Independent Contractor Agreement Explanation | PlainTerms",
     description:
-      "Understand contractor agreements without legal jargon. Upload and review a plain-English summary.",
+      "Get detailed contract analysis at the fraction of the cost of a lawyer. Upload and review a plain-English summary.",
     url: "/",
     type: "website",
   },
@@ -32,7 +32,7 @@ export default function HomePage() {
             Plain-English contract analysis
           </p>
           <h1 className="max-w-2xl text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
-            Understand contractor agreements without legal jargon.
+            Get detailed contract analysis at the fraction of the cost of a lawyer.
           </h1>
           <p className="mt-5 max-w-xl text-lg text-[var(--pt-muted)]">
             PlainTerms explains independent contractor and services agreements in calm,

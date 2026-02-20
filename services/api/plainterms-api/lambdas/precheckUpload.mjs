@@ -9,21 +9,18 @@ import {
   createPrecheckToken,
   getPrecheckTokenTtlSec,
 } from "./lib/precheckToken.mjs";
+import { scanBufferForMalwareSignals } from "./lib/malwareScan.mjs";
+import { corsHeaders } from "./lib/cors.mjs";
 
 const s3 = new S3Client({});
 
-function corsHeaders() {
-  return {
-    "access-control-allow-origin": "*",
-    "access-control-allow-headers": "content-type",
-    "access-control-allow-methods": "POST,OPTIONS",
-  };
-}
-
-function json(statusCode, bodyObj) {
+function json(event, statusCode, bodyObj) {
   return {
     statusCode,
-    headers: { ...corsHeaders(), "content-type": "application/json" },
+    headers: {
+      ...corsHeaders(event, "POST,OPTIONS"),
+      "content-type": "application/json",
+    },
     body: JSON.stringify(bodyObj),
   };
 }
@@ -54,28 +51,28 @@ function mapHeadError(err) {
 
 export const handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders(), body: "" };
+    return { statusCode: 200, headers: corsHeaders(event, "POST,OPTIONS"), body: "" };
   }
 
   if (event.httpMethod !== "POST") {
-    return json(405, { error: "Method not allowed" });
+    return json(event, 405, { error: "Method not allowed" });
   }
 
   const bucket = process.env.UPLOAD_BUCKET;
   if (!bucket) {
-    return json(500, { error: "Upload bucket not configured" });
+    return json(event, 500, { error: "Upload bucket not configured" });
   }
 
   let payload = {};
   try {
     payload = event.body ? JSON.parse(event.body) : {};
   } catch {
-    return json(400, { error: "Invalid JSON body" });
+    return json(event, 400, { error: "Invalid JSON body" });
   }
 
   const objectKeyCheck = validateObjectKey(payload.objectKey);
   if (!objectKeyCheck.ok) {
-    return json(400, { error: objectKeyCheck.error });
+    return json(event, 400, { error: objectKeyCheck.error });
   }
 
   const metaCheck = validateUploadMeta({
@@ -86,7 +83,7 @@ export const handler = async (event) => {
   });
   if (!metaCheck.ok) {
     const status = metaCheck.errorCode === "file_too_large" ? 413 : 400;
-    return json(status, { error: metaCheck.error });
+    return json(event, status, { error: metaCheck.error });
   }
 
   let head;
@@ -99,22 +96,22 @@ export const handler = async (event) => {
     );
   } catch (err) {
     const mapped = mapHeadError(err);
-    return json(mapped.statusCode, { error: mapped.message });
+    return json(event, mapped.statusCode, { error: mapped.message });
   }
 
   const headSize = Number(head?.ContentLength ?? 0);
   const uploadMaxBytes = getUploadMaxBytes();
   if (!Number.isFinite(headSize) || headSize <= 0) {
-    return json(422, { error: "Uploaded file is empty or unreadable." });
+    return json(event, 422, { error: "Uploaded file is empty or unreadable." });
   }
   if (headSize > uploadMaxBytes) {
-    return json(413, {
+    return json(event, 413, {
       error: `File exceeds maximum allowed size (${uploadMaxBytes} bytes).`,
     });
   }
 
   if (headSize !== metaCheck.size) {
-    return json(409, {
+    return json(event, 409, {
       error: "Uploaded file metadata mismatch. Please upload again.",
     });
   }
@@ -127,7 +124,7 @@ export const handler = async (event) => {
     requireSize: true,
   });
   if (!contentTypeCheck.ok) {
-    return json(400, { error: contentTypeCheck.error });
+    return json(event, 400, { error: contentTypeCheck.error });
   }
 
   const extraction = await extractDocumentTextFromUpload({
@@ -135,18 +132,47 @@ export const handler = async (event) => {
     objectKey: objectKeyCheck.objectKey,
     filename: metaCheck.filename,
     contentType: contentTypeCheck.contentType,
+  }, { includeRawBuffer: true });
+  const malwareScan = scanBufferForMalwareSignals({
+    buffer: extraction.rawBuffer,
+    expectedType: contentTypeCheck.type,
   });
+
+  if (malwareScan.status !== "passed") {
+    return json(event, 422, {
+      error:
+        "Potentially unsafe file content detected. Please remove active content/macros and upload again.",
+      malwareScan,
+      extraction: {
+        detectedType: extraction.extraction.detectedType,
+        notes: extraction.extraction.notes,
+      },
+      checks: {
+        fileType: "passed",
+        fileSize: "passed",
+        malwareScan: "failed",
+        textExtractionPrecheck: "not_run",
+      },
+    });
+  }
+
   const extractedWordCount = countWords(extraction.extractedText);
   const minWords = getPrecheckMinWords();
 
   if (extractedWordCount < minWords) {
-    return json(422, {
+    return json(event, 422, {
       error:
         "We could not read enough text from this file. Please upload a text-based PDF or DOCX.",
       extraction: {
         detectedType: extraction.extraction.detectedType,
         wordCount: extractedWordCount,
         notes: extraction.extraction.notes,
+      },
+      checks: {
+        fileType: "passed",
+        fileSize: "passed",
+        malwareScan: "passed",
+        textExtractionPrecheck: "failed",
       },
     });
   }
@@ -156,9 +182,11 @@ export const handler = async (event) => {
     filename: metaCheck.filename,
     contentType: contentTypeCheck.contentType,
     size: headSize,
+    scanPassed: true,
+    textExtractionPrecheckPassed: true,
   });
 
-  return json(200, {
+  return json(event, 200, {
     precheckPassed: true,
     precheckToken,
     expiresInSec: getPrecheckTokenTtlSec(),
@@ -169,7 +197,8 @@ export const handler = async (event) => {
     checks: {
       fileType: "passed",
       fileSize: "passed",
-      textExtraction: "passed",
+      malwareScan: "passed",
+      textExtractionPrecheck: "passed",
     },
   });
 };

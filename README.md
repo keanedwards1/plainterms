@@ -47,7 +47,7 @@ Frontend expects:
 
 ```bash
 API_BASE_URL=https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod
-NEXT_PUBLIC_RESULT_RETENTION_DAYS=7
+NEXT_PUBLIC_RESULT_RETENTION_DAYS=30
 # Optional: webhook endpoint for 5xx API alerts from Next.js routes
 # ALERT_WEBHOOK_URL=https://hooks.slack.com/services/...
 # Optional fallback for legacy code paths:
@@ -139,12 +139,17 @@ sam build
 sam deploy --guided
 ```
 
-Stripe checkout environment (backend lambdas):
-- `STRIPE_SECRET_KEY`
-- `STRIPE_PRICE_ID`
-- `APP_BASE_URL` (for example `https://plainterms.vercel.app`)
-- `API_BASE_URL` (used by checkout verify to call `/analyze`)
-- `PRECHECK_TOKEN_SECRET` (or SSM param `PRECHECK_TOKEN_SECRET_PARAM`) for precheck token signing
+Stripe checkout configuration (SAM parameters -> Lambda env):
+- `StripeSecretKeyParamName` (SSM secure string for Stripe secret key)
+- `StripeReportPriceIdParamName` (SSM string for `Report ($69)` price ID)
+- `StripeScanPriceIdParamName` (SSM string for `Scan ($39)` price ID)
+- `StripeProtectPriceIdParamName` (SSM string for `Protect ($99)` price ID)
+- `StripePriceIdParamName` (legacy fallback; also defaults to report price path)
+- `AppBaseUrl` (for example `https://plainterms.vercel.app`)
+- `PrecheckTokenSecretParamName` (SSM secure string for precheck token signing)
+- Security controls (from SAM parameters):
+  - `ApiDefaultRateLimit` / `ApiDefaultBurstLimit` for stage-level throttling
+  - `WafGlobalIpLimitPer5Min` for WAF IP-based blocks
 - LLM analysis (optional, via AWS SSM + Lambda env):
   - `ANALYSIS_MODE` (from SAM parameter `AnalysisMode`) = `rules` (default) or `llm`
   - `LLM_BASE_URL` (default `https://api.openai.com/v1`)
@@ -189,7 +194,7 @@ parameter_overrides = "AppBaseUrl=https://plainterms.vercel.app AnalysisMode=rul
 
 Backend retention behavior:
 - DynamoDB TTL is enabled on attribute `expires_at`.
-- `AnalyzeFunction` writes `expires_at` using `RESULT_TTL_DAYS` (default `7`).
+- `VerifyCheckoutFunction` writes `expires_at` using `RESULT_TTL_DAYS` (default `30`).
 - `GetResultFunction` returns `410 expired` once a result passes its TTL window.
 
 ## AWS Setup Notes
@@ -202,8 +207,7 @@ Backend retention behavior:
 ## Current Backend Endpoints
 
 - `POST /upload-url` -> create S3 presigned upload URL
-- `POST /precheck` -> validate file type/size/readability and issue precheck token
+- `POST /precheck` -> validate file type/size/readability and issue `precheckToken`
 - `POST /checkout` -> create Stripe Checkout session
 - `POST /checkout/verify` -> verify paid session and create/reuse result
-- `POST /analyze` -> create deterministic `pt.v1` and transformed `pt.ui.v1`, persist to DynamoDB
 - `GET /result/{id}` -> return result, `202` processing, or `410` expired

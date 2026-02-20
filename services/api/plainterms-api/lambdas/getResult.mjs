@@ -1,28 +1,21 @@
 /* service/api/plainterms-api/hello-world/getResult.mjs */
 
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
+import { corsHeaders } from "./lib/cors.mjs";
 
 const db = new DynamoDBClient({});
 
 function getRetentionDays() {
-  const raw = Number(process.env.RESULT_TTL_DAYS ?? "7");
-  if (!Number.isFinite(raw) || raw <= 0) return 7;
+  const raw = Number(process.env.RESULT_TTL_DAYS ?? "30");
+  if (!Number.isFinite(raw) || raw <= 0) return 30;
   return Math.floor(raw);
 }
 
-function corsHeaders() {
-  return {
-    "access-control-allow-origin": "*",
-    "access-control-allow-headers": "content-type",
-    "access-control-allow-methods": "GET,OPTIONS",
-  };
-}
-
-function json(statusCode, bodyObj) {
+function json(event, statusCode, bodyObj) {
   return {
     statusCode,
     headers: {
-      ...corsHeaders(),
+      ...corsHeaders(event, "GET,OPTIONS"),
       "content-type": "application/json",
     },
     body: JSON.stringify(bodyObj),
@@ -31,16 +24,16 @@ function json(statusCode, bodyObj) {
 
 export const handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders(), body: "" };
+    return { statusCode: 200, headers: corsHeaders(event, "GET,OPTIONS"), body: "" };
   }
 
   if (event.httpMethod !== "GET") {
-    return json(405, { error: "Method not allowed" });
+    return json(event, 405, { error: "Method not allowed" });
   }
 
   const id = event?.pathParameters?.id;
   if (!id) {
-    return json(400, { error: "Missing result id" });
+    return json(event, 400, { error: "Missing result id" });
   }
 
   const cmd = new GetItemCommand({
@@ -53,13 +46,13 @@ export const handler = async (event) => {
   const res = await db.send(cmd);
 
   if (!res.Item) {
-    return json(404, { error: "Result not found", status: "not_found" });
+    return json(event, 404, { error: "Result not found", status: "not_found" });
   }
 
   const nowEpoch = Math.floor(Date.now() / 1000);
   const expiresAt = Number(res.Item.expires_at?.N ?? "0");
   if (Number.isFinite(expiresAt) && expiresAt > 0 && nowEpoch >= expiresAt) {
-    return json(410, {
+    return json(event, 410, {
       status: "expired",
       resultId: id,
       message: "This result is no longer available.",
@@ -70,7 +63,7 @@ export const handler = async (event) => {
   const resultStatus = res.Item.status?.S ?? "complete";
 
   if (resultStatus === "processing") {
-    return json(202, {
+    return json(event, 202, {
       status: "processing",
       resultId: id,
       message: "Analysis is still in progress.",
@@ -78,7 +71,7 @@ export const handler = async (event) => {
   }
 
   if (resultStatus === "expired") {
-    return json(410, {
+    return json(event, 410, {
       status: "expired",
       resultId: id,
       message: "This result is no longer available.",
@@ -86,7 +79,7 @@ export const handler = async (event) => {
   }
 
   if (!res.Item.ui_result?.S) {
-    return json(202, {
+    return json(event, 202, {
       status: "processing",
       resultId: id,
       message: "Analysis is still in progress.",
@@ -94,5 +87,5 @@ export const handler = async (event) => {
   }
 
   const uiResult = JSON.parse(res.Item.ui_result.S);
-  return json(200, uiResult);
+  return json(event, 200, uiResult);
 };

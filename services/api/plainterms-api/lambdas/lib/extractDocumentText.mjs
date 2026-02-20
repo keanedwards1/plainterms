@@ -381,9 +381,13 @@ function extractTextFromDocx(buffer) {
   return normalizeWhitespace(chunks.join(" "));
 }
 
-export async function extractDocumentTextFromUpload({ bucket, objectKey, filename, contentType }) {
+export async function extractDocumentTextFromUpload(
+  { bucket, objectKey, filename, contentType },
+  options = {}
+) {
   assert(bucket, "Missing upload bucket.");
   assert(objectKey, "Missing object key.");
+  const includeRawBuffer = options?.includeRawBuffer === true;
 
   const cmd = new GetObjectCommand({
     Bucket: bucket,
@@ -423,7 +427,7 @@ export async function extractDocumentTextFromUpload({ bucket, objectKey, filenam
     notes.push("no_text_extracted");
   }
 
-  return {
+  const result = {
     extractedText: normalized,
     extraction: {
       detectedType,
@@ -432,4 +436,10 @@ export async function extractDocumentTextFromUpload({ bucket, objectKey, filenam
       notes,
     },
   };
+
+  if (includeRawBuffer) {
+    result.rawBuffer = buffer;
+  }
+
+  return result;
 }

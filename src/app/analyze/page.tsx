@@ -10,6 +10,12 @@ import {
   type AnalysisModeOption,
   type LlmModelOption,
 } from "@/lib/analysisOptions";
+import {
+  DEFAULT_REPORT_TIER,
+  REPORT_TIER_LABELS,
+  REPORT_TIER_OPTIONS,
+  type ReportTierOption,
+} from "@/lib/pricingOptions";
 
 type UploadUrlResponse = {
   uploadUrl: string;
@@ -26,11 +32,11 @@ type PrecheckResponse = {
   precheckToken: string;
 };
 
-const parsedRetentionDays = Number(process.env.NEXT_PUBLIC_RESULT_RETENTION_DAYS ?? "7");
+const parsedRetentionDays = Number(process.env.NEXT_PUBLIC_RESULT_RETENTION_DAYS ?? "30");
 const RESULT_RETENTION_DAYS =
   Number.isFinite(parsedRetentionDays) && parsedRetentionDays > 0
     ? Math.floor(parsedRetentionDays)
-    : 7;
+    : 30;
 
 type SubmitStep =
   | "requesting-upload-url"
@@ -50,13 +56,20 @@ const SUBMIT_STEP_ORDER: SubmitStep[] = [
 const SUBMIT_STEP_DESCRIPTIONS: Record<SubmitStep, string> = {
   "requesting-upload-url": "Setting up a secure upload session.",
   "uploading-file": "Uploading your contract to encrypted storage.",
-  "validating-file": "Validating file type and extracting readable text.",
+  "validating-file": "Running malware scan, validating file type, and extracting readable text.",
   "starting-checkout": "Preparing secure checkout with your validated file.",
   "redirecting-to-checkout": "Redirecting you to payment now.",
 };
 
 const LOCAL_STORAGE_ANALYSIS_MODE_KEY = "pt.analysisMode";
 const LOCAL_STORAGE_LLM_MODEL_KEY = "pt.llmModel";
+const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
+
+const REPORT_TIER_DESCRIPTIONS: Record<ReportTierOption, string> = {
+  scan_39: "Quick risk scan with top findings.",
+  report_69: "Full report with complete clause breakdown and questions.",
+  protect_99: "Adds deeper rewrites, fallback positions, and negotiation plan.",
+};
 
 function isAnalysisModeOption(value: string): value is AnalysisModeOption {
   return value === "rules" || value === "llm";
@@ -64,6 +77,10 @@ function isAnalysisModeOption(value: string): value is AnalysisModeOption {
 
 function isLlmModelOption(value: string): value is LlmModelOption {
   return LLM_MODEL_OPTIONS.includes(value as LlmModelOption);
+}
+
+function isReportTierOption(value: string): value is ReportTierOption {
+  return REPORT_TIER_OPTIONS.includes(value as ReportTierOption);
 }
 
 async function readErrorResponse(res: Response): Promise<string> {
@@ -114,6 +131,7 @@ export default function AnalyzePage() {
   const [checkoutCanceled, setCheckoutCanceled] = React.useState(false);
   const [analysisMode, setAnalysisMode] = React.useState<AnalysisModeOption>(DEFAULT_ANALYSIS_MODE);
   const [llmModel, setLlmModel] = React.useState<LlmModelOption>(DEFAULT_LLM_MODEL);
+  const [reportTier, setReportTier] = React.useState<ReportTierOption>(DEFAULT_REPORT_TIER);
 
   React.useEffect(() => {
     const url = new URL(window.location.href);
@@ -124,12 +142,16 @@ export default function AnalyzePage() {
     try {
       const storedMode = window.localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODE_KEY);
       const storedModel = window.localStorage.getItem(LOCAL_STORAGE_LLM_MODEL_KEY);
+      const storedReportTier = window.localStorage.getItem(LOCAL_STORAGE_REPORT_TIER_KEY);
 
       if (storedMode && isAnalysisModeOption(storedMode)) {
         setAnalysisMode(storedMode);
       }
       if (storedModel && isLlmModelOption(storedModel)) {
         setLlmModel(storedModel);
+      }
+      if (storedReportTier && isReportTierOption(storedReportTier)) {
+        setReportTier(storedReportTier);
       }
     } catch {
       // Storage is best effort only.
@@ -140,10 +162,11 @@ export default function AnalyzePage() {
     try {
       window.localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODE_KEY, analysisMode);
       window.localStorage.setItem(LOCAL_STORAGE_LLM_MODEL_KEY, llmModel);
+      window.localStorage.setItem(LOCAL_STORAGE_REPORT_TIER_KEY, reportTier);
     } catch {
       // Storage is best effort only.
     }
-  }, [analysisMode, llmModel]);
+  }, [analysisMode, llmModel, reportTier]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -238,6 +261,7 @@ export default function AnalyzePage() {
           size: file.size,
           precheckToken: precheckJson.precheckToken,
           analysisMode,
+          reportTier,
           ...(analysisMode === "llm" ? { llmModel } : {}),
         }),
       });
@@ -355,6 +379,44 @@ export default function AnalyzePage() {
               </span>
             </p>
           </div>
+
+          {file && (
+            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                Choose your depth of analysis and report detail
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {REPORT_TIER_OPTIONS.map((tier) => {
+                  const selected = reportTier === tier;
+                  return (
+                    <label
+                      key={tier}
+                      className={`cursor-pointer rounded-xl border p-3 ${
+                        selected
+                          ? "border-[var(--pt-accent)] bg-[var(--pt-surface)]"
+                          : "border-[var(--pt-border)] bg-[var(--pt-surface)]"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="report-tier"
+                        value={tier}
+                        checked={selected}
+                        onChange={() => setReportTier(tier)}
+                        className="sr-only"
+                      />
+                      <p className="text-sm font-semibold text-[var(--pt-ink)]">
+                        {REPORT_TIER_LABELS[tier]}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--pt-muted)]">
+                        {REPORT_TIER_DESCRIPTIONS[tier]}
+                      </p>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button

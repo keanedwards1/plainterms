@@ -10,6 +10,15 @@ import { validateObjectKey, validateUploadMeta } from "./uploadPolicy.mjs";
 import { buildReportInsights } from "./reportEngine.mjs";
 
 const db = new DynamoDBClient({});
+const REPORT_TIERS = new Set(["scan_39", "report_69", "protect_99"]);
+const CRITICAL_CLAUSE_KEYS = new Set(["scope", "payment", "termination", "ip", "liability"]);
+const ADVANCED_RISK_CLAUSE_KEYS = new Set([
+  "liability",
+  "warranty",
+  "assignment_subcontracting",
+  "restrictions",
+  "disputes",
+]);
 
 function makeResultId() {
   const rand = Math.random().toString(36).slice(2, 10);
@@ -17,9 +26,127 @@ function makeResultId() {
 }
 
 function getRetentionDays() {
-  const raw = Number(process.env.RESULT_TTL_DAYS ?? "7");
-  if (!Number.isFinite(raw) || raw <= 0) return 7;
+  const raw = Number(process.env.RESULT_TTL_DAYS ?? "30");
+  if (!Number.isFinite(raw) || raw <= 0) return 30;
   return Math.floor(raw);
+}
+
+function normalizeReportTier(value) {
+  const normalized =
+    typeof value === "string" && value.trim() ? value.trim().toLowerCase() : "report_69";
+  return REPORT_TIERS.has(normalized) ? normalized : "report_69";
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function buildProtectUpsellSignals(report) {
+  const clauses = asArray(report?.clause_breakdown);
+  const flags = asArray(report?.red_flags);
+  const riskScore = Number(report?.risk?.score ?? 0);
+  const highSeverityFlags = flags.filter((flag) => flag?.severity === "high").length;
+
+  const criticalClauseDetected = clauses.some(
+    (clause) =>
+      CRITICAL_CLAUSE_KEYS.has(String(clause?.key ?? "")) && clause?.status !== "present"
+  );
+  const advancedRiskClauseDetected = clauses.some(
+    (clause) =>
+      ADVANCED_RISK_CLAUSE_KEYS.has(String(clause?.key ?? "")) && clause?.status !== "present"
+  );
+
+  const highRiskOrCritical = riskScore >= 70 || criticalClauseDetected;
+  const highSeverityThresholdMet = highSeverityFlags >= 4;
+  const shouldUpsellProtect =
+    highRiskOrCritical || advancedRiskClauseDetected || highSeverityThresholdMet;
+
+  const reasons = [];
+  if (highRiskOrCritical) reasons.push("High-risk score or critical clause issue detected.");
+  if (advancedRiskClauseDetected) reasons.push("Advanced-risk clause set detected.");
+  if (highSeverityThresholdMet) reasons.push("Multiple high-severity flags detected.");
+
+  return {
+    should_upsell_protect: shouldUpsellProtect,
+    high_risk_or_critical: highRiskOrCritical,
+    advanced_risk_clause_set_detected: advancedRiskClauseDetected,
+    high_severity_flags_threshold_met: highSeverityThresholdMet,
+    high_severity_flags: highSeverityFlags,
+    reasons,
+  };
+}
+
+function applyTierToReport(baseReport, selectedTier) {
+  const tier = normalizeReportTier(selectedTier);
+  const report = JSON.parse(JSON.stringify(baseReport ?? {}));
+  const protectUpsell = buildProtectUpsellSignals(report);
+
+  report.tier = tier;
+  report.protect_upsell = protectUpsell;
+  report.teaser_report_69 = {
+    headline: "Upgrade to Report ($69)",
+    bullets: [
+      "Unlock full clause-by-clause breakdown.",
+      "Get complete negotiation bullets and clearer next-step guidance.",
+      "Includes follow-up Q&A capability in the report tier workflow.",
+    ],
+  };
+  report.teaser_protect_99 = {
+    headline: "Upgrade to Protect ($99)",
+    bullets: [
+      "Deeper rewrite suggestions with fallback positions.",
+      "Advanced clause coverage and stronger negotiation plan.",
+      "Best for high-risk or complex agreements.",
+    ],
+    recommended: protectUpsell.should_upsell_protect,
+    reasons: protectUpsell.reasons,
+  };
+
+  if (tier === "scan_39") {
+    report.red_flags = asArray(report.red_flags).slice(0, 3);
+    report.clause_breakdown = asArray(report.clause_breakdown)
+      .filter((clause) => clause?.status === "present")
+      .slice(0, 4);
+    report.negotiation_bullets = { high: [], medium: [], low: [] };
+    report.questions_to_ask = [];
+    report.recommendation = {
+      action: "negotiate",
+      label: "Review required",
+      reason:
+        "This is a quick scan preview. Upgrade for full clause coverage, negotiation bullets, and follow-up guidance.",
+    };
+  }
+
+  if (tier === "protect_99") {
+    const topFlags = asArray(report.red_flags).slice(0, 6);
+    const advancedCoverage = asArray(report.clause_breakdown)
+      .filter((clause) => ADVANCED_RISK_CLAUSE_KEYS.has(String(clause?.key ?? "")))
+      .map((clause) => ({
+        key: clause?.key,
+        title: clause?.title,
+        status: clause?.status,
+      }));
+    const negotiationPlan = [
+      ...asArray(report?.negotiation_bullets?.high),
+      ...asArray(report?.negotiation_bullets?.medium),
+    ].slice(0, 10);
+
+    report.protect_extras = {
+      deeper_rewrites: topFlags.map((flag, idx) => ({
+        id: `rw_${idx + 1}`,
+        issue: flag?.title ?? "Risk issue",
+        suggestion: `Proposed stronger rewrite: ${flag?.plain_note ?? "Clarify and narrow this clause."}`,
+      })),
+      fallback_positions: topFlags.map((flag, idx) => ({
+        id: `fb_${idx + 1}`,
+        position: `Fallback position for "${flag?.title ?? "this issue"}": request narrower scope, shorter duration, and explicit mutuality where applicable.`,
+      })),
+      negotiation_plan: negotiationPlan,
+      advanced_clause_coverage: advancedCoverage,
+    };
+  }
+
+  return report;
 }
 
 function statusFromClauseStatus(status) {
@@ -276,7 +403,6 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report }
       tone_policy: [],
     },
     report: {
-      tier: "report_69",
       ...report,
     },
     source_map: { items: [] },
@@ -339,6 +465,8 @@ export async function runAnalysis(payload, analysisSelection = {}) {
     extractedText: extraction.extractedText,
     llmFields: llmAnalysis?.fields,
   });
+  const selectedTier = normalizeReportTier(analysisSelection?.reportTier);
+  const tieredReportInsights = applyTierToReport(reportInsights, selectedTier);
 
   const ptV1 = makePtV1({
     resultId,
@@ -346,7 +474,7 @@ export async function runAnalysis(payload, analysisSelection = {}) {
     payload: normalizedPayload,
     extraction,
     analysis: llmAnalysis,
-    report: reportInsights,
+    report: tieredReportInsights,
   });
   assertPtV1Contract(ptV1);
   const uiResult = transformPtV1ToUiV1(ptV1);

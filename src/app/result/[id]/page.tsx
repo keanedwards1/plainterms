@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
 import { PtResult, SECTION_TITLES } from "@/lib/plainterms-schema";
+import { REPORT_TIER_LABELS } from "@/lib/pricingOptions";
 import TrackResultViewed from "@/components/TrackResultViewed";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
+
+type ReportTier = "scan_39" | "report_69" | "protect_99";
 
 const LEGAL_TERM_GLOSSARY = Object.freeze({
   "indemnity": "Who pays legal costs if a third party sues over this contract.",
@@ -48,9 +51,9 @@ const LEGAL_TERM_REGEX = new RegExp(
 
 function getRetentionDays() {
   const raw = Number(
-    process.env.NEXT_PUBLIC_RESULT_RETENTION_DAYS ?? process.env.RESULT_TTL_DAYS ?? "7"
+    process.env.NEXT_PUBLIC_RESULT_RETENTION_DAYS ?? process.env.RESULT_TTL_DAYS ?? "30"
   );
-  if (!Number.isFinite(raw) || raw <= 0) return 7;
+  if (!Number.isFinite(raw) || raw <= 0) return 30;
   return Math.floor(raw);
 }
 
@@ -70,6 +73,12 @@ function clauseStatusClass(status: "present" | "unclear" | "missing") {
   if (status === "missing") return "bg-red-100 text-red-800";
   if (status === "unclear") return "bg-amber-100 text-amber-800";
   return "bg-emerald-100 text-emerald-800";
+}
+
+function reportTierClass(tier: ReportTier) {
+  if (tier === "scan_39") return "bg-slate-100 text-slate-800 border-slate-300";
+  if (tier === "protect_99") return "bg-indigo-100 text-indigo-800 border-indigo-200";
+  return "bg-sky-100 text-sky-800 border-sky-200";
 }
 
 function annotateLegalTerms(text: string, keyPrefix: string) {
@@ -254,6 +263,23 @@ export default async function ResultPage({ params }: Props) {
         data.report.negotiation_bullets.medium.length > 0 ||
         data.report.negotiation_bullets.low.length > 0)
   );
+  const reportTier: ReportTier = data.report?.tier ?? "report_69";
+  const isScanTier = reportTier === "scan_39";
+  const isReportTier = reportTier === "report_69";
+  const isProtectTier = reportTier === "protect_99";
+  const protectUpsellReasons = data.report?.protect_upsell?.reasons ?? [];
+  const showReportTierTeaser = Boolean(isScanTier && data.report?.teaser_report_69);
+  const showProtectTierTeaser = Boolean(
+    (isScanTier || isReportTier) && data.report?.teaser_protect_99
+  );
+  const hasProtectExtras = Boolean(
+    isProtectTier &&
+      data.report?.protect_extras &&
+      (data.report.protect_extras.deeper_rewrites.length > 0 ||
+        data.report.protect_extras.fallback_positions.length > 0 ||
+        data.report.protect_extras.negotiation_plan.length > 0 ||
+        data.report.protect_extras.advanced_clause_coverage.length > 0)
+  );
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8 lg:px-12">
@@ -287,13 +313,22 @@ export default async function ResultPage({ params }: Props) {
           <article className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-2xl text-[var(--pt-ink)]">Risk Summary</h2>
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-semibold ${riskLabelClass(
-                  data.report.risk.label
-                )}`}
-              >
-                {data.report.risk.label.toUpperCase()}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${riskLabelClass(
+                    data.report.risk.label
+                  )}`}
+                >
+                  {data.report.risk.label.toUpperCase()}
+                </span>
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${reportTierClass(
+                    reportTier
+                  )}`}
+                >
+                  {REPORT_TIER_LABELS[reportTier]}
+                </span>
+              </div>
             </div>
             <p className="mt-3 text-[15px] leading-7 text-[var(--pt-muted)]">
               Risk score: <strong className="text-[var(--pt-ink)]">{data.report.risk.score}/100</strong>
@@ -308,6 +343,22 @@ export default async function ResultPage({ params }: Props) {
             <p className="mt-3 text-sm text-[var(--pt-muted)]">
               {annotateLegalTerms(data.report.recommendation.reason, "recommendation-reason")}
             </p>
+            {isScanTier && (
+              <div className="mt-3 rounded-xl border border-sky-300 bg-sky-50 p-3 text-sm text-sky-800">
+                This is the Scan preview tier. Upgrade for complete clause coverage and deeper
+                guidance.
+              </div>
+            )}
+            {isReportTier && data.report.protect_upsell?.should_upsell_protect && (
+              <div className="mt-3 rounded-xl border border-indigo-300 bg-indigo-50 p-3 text-sm text-indigo-800">
+                Protect tier is recommended for this agreement based on its risk profile.
+              </div>
+            )}
+            {data.report.risk.label === "high" && (
+              <div className="mt-3 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                High-risk result detected. Attorney review is strongly recommended before signing.
+              </div>
+            )}
             {data.report.creator_contract && (
               <p className="mt-2 text-xs font-semibold text-[var(--pt-muted)]">
                 Creator/Model contract signals detected.
@@ -423,6 +474,135 @@ export default async function ResultPage({ params }: Props) {
                   <li key={`q-${idx}`}>{annotateLegalTerms(question, `question-${idx}`)}</li>
                 ))}
               </ul>
+            </article>
+          ) : null}
+
+          {hasProtectExtras && data.report.protect_extras ? (
+            <article className="rounded-[var(--pt-radius)] border border-indigo-200 bg-indigo-50/40 p-5">
+              <h2 className="text-2xl text-[var(--pt-ink)]">Protect Extras</h2>
+              {data.report.protect_extras.deeper_rewrites.length > 0 && (
+                <div className="mt-4 grid gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                    Deeper rewrites
+                  </p>
+                  {data.report.protect_extras.deeper_rewrites.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-indigo-200 bg-[var(--pt-surface)] p-3"
+                    >
+                      <p className="text-sm font-semibold text-[var(--pt-ink)]">
+                        {annotateLegalTerms(item.issue, `rewrite-issue-${item.id}`)}
+                      </p>
+                      <p className="mt-1 text-sm text-[var(--pt-muted)]">
+                        {annotateLegalTerms(item.suggestion, `rewrite-suggestion-${item.id}`)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {data.report.protect_extras.fallback_positions.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                    Fallback positions
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[var(--pt-muted)]">
+                    {data.report.protect_extras.fallback_positions.map((item) => (
+                      <li key={item.id}>
+                        {annotateLegalTerms(item.position, `fallback-position-${item.id}`)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {data.report.protect_extras.negotiation_plan.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                    Negotiation plan
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[var(--pt-muted)]">
+                    {data.report.protect_extras.negotiation_plan.map((step, idx) => (
+                      <li key={`protect-plan-${idx}`}>
+                        {annotateLegalTerms(step, `protect-plan-${idx}`)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {data.report.protect_extras.advanced_clause_coverage.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                    Advanced clause coverage
+                  </p>
+                  <div className="mt-2 grid gap-2">
+                    {data.report.protect_extras.advanced_clause_coverage.map((clause, idx) => (
+                      <div
+                        key={`advanced-clause-${clause.key ?? idx}`}
+                        className="rounded-xl border border-indigo-200 bg-[var(--pt-surface)] p-3 text-sm text-[var(--pt-muted)]"
+                      >
+                        <span className="font-semibold text-[var(--pt-ink)]">
+                          {annotateLegalTerms(
+                            clause.title || clause.key || `Clause ${idx + 1}`,
+                            `advanced-clause-title-${idx}`
+                          )}
+                        </span>
+                        {clause.status && (
+                          <span className="ml-2 text-xs uppercase tracking-wide">{clause.status}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </article>
+          ) : null}
+
+          {showReportTierTeaser && data.report.teaser_report_69 ? (
+            <article className="rounded-[var(--pt-radius)] border border-sky-200 bg-sky-50/50 p-5">
+              <h2 className="text-2xl text-[var(--pt-ink)]">{data.report.teaser_report_69.headline}</h2>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--pt-muted)]">
+                {data.report.teaser_report_69.bullets.map((bullet, idx) => (
+                  <li key={`teaser-report-${idx}`}>
+                    {annotateLegalTerms(bullet, `teaser-report-${idx}`)}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-[var(--pt-muted)]">
+                Upgrade path can be started by running another checkout from the analyze page.
+              </p>
+            </article>
+          ) : null}
+
+          {showProtectTierTeaser && data.report.teaser_protect_99 ? (
+            <article className="rounded-[var(--pt-radius)] border border-indigo-200 bg-indigo-50/50 p-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-2xl text-[var(--pt-ink)]">{data.report.teaser_protect_99.headline}</h2>
+                {data.report.teaser_protect_99.recommended && (
+                  <span className="rounded-full border border-indigo-300 bg-indigo-100 px-2 py-1 text-[11px] font-semibold text-indigo-800">
+                    Recommended
+                  </span>
+                )}
+              </div>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[var(--pt-muted)]">
+                {data.report.teaser_protect_99.bullets.map((bullet, idx) => (
+                  <li key={`teaser-protect-${idx}`}>
+                    {annotateLegalTerms(bullet, `teaser-protect-${idx}`)}
+                  </li>
+                ))}
+              </ul>
+              {protectUpsellReasons.length > 0 && (
+                <div className="mt-3 rounded-xl border border-indigo-200 bg-[var(--pt-surface)] p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                    Why this is recommended
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[var(--pt-muted)]">
+                    {protectUpsellReasons.map((reason, idx) => (
+                      <li key={`protect-reason-${idx}`}>
+                        {annotateLegalTerms(reason, `protect-reason-${idx}`)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </article>
           ) : null}
         </section>

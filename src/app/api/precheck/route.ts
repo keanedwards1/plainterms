@@ -12,6 +12,14 @@ const PrecheckResponse = z.object({
   precheckPassed: z.boolean(),
   precheckToken: z.string().min(1),
   expiresInSec: z.number().int().positive().optional(),
+  checks: z
+    .object({
+      fileType: z.enum(["passed", "failed", "not_run"]).optional(),
+      fileSize: z.enum(["passed", "failed", "not_run"]).optional(),
+      malwareScan: z.enum(["passed", "failed", "not_run"]).optional(),
+      textExtractionPrecheck: z.enum(["passed", "failed", "not_run"]).optional(),
+    })
+    .optional(),
   extraction: z
     .object({
       detectedType: z.string().min(1),

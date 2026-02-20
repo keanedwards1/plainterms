@@ -41,6 +41,7 @@ export const PtRiskLabel = z.enum(["low", "medium", "high"]);
 export const PtRecommendationAction = z.enum(["sign", "negotiate", "do_not_sign_yet"]);
 export const PtFlagSeverity = z.enum(["low", "medium", "high"]);
 export const PtClauseStatus = z.enum(["present", "unclear", "missing"]);
+export const PtReportTier = z.enum(["scan_39", "report_69", "protect_99"]);
 
 export const PtReportFlag = z.object({
   id: z.string(),
@@ -59,7 +60,48 @@ export const PtReportClause = z.object({
   evidence: z.string().optional(),
 });
 
+export const PtTierTeaser = z.object({
+  headline: z.string(),
+  bullets: z.array(z.string()),
+  recommended: z.boolean().optional(),
+  reasons: z.array(z.string()).optional(),
+});
+
+export const PtProtectUpsell = z.object({
+  should_upsell_protect: z.boolean(),
+  high_risk_or_critical: z.boolean(),
+  advanced_risk_clause_set_detected: z.boolean(),
+  high_severity_flags_threshold_met: z.boolean(),
+  high_severity_flags: z.number().int().nonnegative(),
+  reasons: z.array(z.string()),
+});
+
+export const PtProtectExtras = z.object({
+  deeper_rewrites: z.array(
+    z.object({
+      id: z.string(),
+      issue: z.string(),
+      suggestion: z.string(),
+    })
+  ),
+  fallback_positions: z.array(
+    z.object({
+      id: z.string(),
+      position: z.string(),
+    })
+  ),
+  negotiation_plan: z.array(z.string()),
+  advanced_clause_coverage: z.array(
+    z.object({
+      key: z.string().optional(),
+      title: z.string().optional(),
+      status: z.string().optional(),
+    })
+  ),
+});
+
 export const PtReport = z.object({
+  tier: PtReportTier.optional(),
   risk: z.object({
     score: z.number().min(0).max(100),
     label: PtRiskLabel,
@@ -80,6 +122,10 @@ export const PtReport = z.object({
     .optional(),
   questions_to_ask: z.array(z.string()).optional(),
   creator_contract: z.boolean().optional(),
+  protect_upsell: PtProtectUpsell.optional(),
+  teaser_report_69: PtTierTeaser.optional(),
+  teaser_protect_99: PtTierTeaser.optional(),
+  protect_extras: PtProtectExtras.optional(),
 });
 
 export const SECTION_TITLES: Record<z.infer<typeof PtSection>["key"], string> = {

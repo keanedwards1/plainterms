@@ -133,3 +133,8 @@ Append future answers in this thread as:
 - Question: Do we have enough answers to begin backend implementation improvements now?
 - Answer: Yes, begin building now.
 - Decision impact: Shift from discovery mode to implementation mode for reliability/security upgrades.
+
+- Date: 2026-02-20
+- Question: What should we prioritize next for higher-tier value expansion?
+- Answer: Add an email draft function, full rewrite option, and negotiation strategy support to higher tiers.
+- Decision impact: Expands tier differentiation and increases practical post-analysis utility for paid plans.

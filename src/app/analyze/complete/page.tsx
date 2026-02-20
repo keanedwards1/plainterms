@@ -48,6 +48,7 @@ export default function AnalyzeCompletePage() {
   const [sessionId, setSessionId] = React.useState<string | null | undefined>(undefined);
   const [error, setError] = React.useState<string | null>(null);
   const [stageIndex, setStageIndex] = React.useState(0);
+  const [showStillWorking, setShowStillWorking] = React.useState(false);
 
   React.useEffect(() => {
     const url = new URL(window.location.href);
@@ -103,6 +104,14 @@ export default function AnalyzeCompletePage() {
     return () => window.clearInterval(timer);
   }, [error]);
 
+  React.useEffect(() => {
+    if (error || sessionId === undefined) return;
+    const timer = window.setTimeout(() => {
+      setShowStillWorking(true);
+    }, 8000);
+    return () => window.clearTimeout(timer);
+  }, [error, sessionId]);
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
       <h1 className="text-3xl text-[var(--pt-ink)]">Finalizing your analysis</h1>
@@ -154,6 +163,13 @@ export default function AnalyzeCompletePage() {
               />
             ))}
           </div>
+
+          {showStillWorking && (
+            <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+              Still working. Secure processing continues in the background and can take up to 5
+              minutes for larger files.
+            </div>
+          )}
         </section>
       )}
     </main>

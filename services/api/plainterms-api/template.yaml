@@ -14,7 +14,19 @@ Parameters:
   StripePriceIdParamName:
     Type: String
     Default: /plainterms/stripe/price-id
-    Description: SSM parameter name containing Stripe price ID (String).
+    Description: Legacy fallback SSM parameter name containing Stripe price ID (String).
+  StripeReportPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/price-id
+    Description: SSM parameter name containing Stripe report tier price ID (String).
+  StripeScanPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/price-id
+    Description: SSM parameter name containing Stripe scan tier price ID (String).
+  StripeProtectPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/price-id
+    Description: SSM parameter name containing Stripe protect tier price ID (String).
   AnalysisMode:
     Type: String
     Default: rules
@@ -39,12 +51,27 @@ Parameters:
     Type: String
     Default: /plainterms/precheck/token-secret
     Description: SSM parameter name used to sign/verify precheck tokens (SecureString).
+  ApiDefaultRateLimit:
+    Type: Number
+    Default: 10
+    Description: API Gateway stage-level steady-state requests per second.
+  ApiDefaultBurstLimit:
+    Type: Number
+    Default: 20
+    Description: API Gateway stage-level burst request limit.
+  WafGlobalIpLimitPer5Min:
+    Type: Number
+    Default: 1500
+    Description: WAF per-IP request cap over 5 minutes across all routes.
 
 Globals:
   Function:
     Runtime: nodejs20.x
     Timeout: 10
     MemorySize: 256
+    Environment:
+      Variables:
+        ALLOWED_ORIGIN: !Ref AppBaseUrl
 
 Resources:
   PlainTermsApi:
@@ -56,7 +83,12 @@ Resources:
       Cors:
         AllowMethods: "'GET,POST,OPTIONS'"
         AllowHeaders: "'content-type'"
-        AllowOrigin: "'*'"
+        AllowOrigin: !Sub "'${AppBaseUrl}'"
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingRateLimit: !Ref ApiDefaultRateLimit
+          ThrottlingBurstLimit: !Ref ApiDefaultBurstLimit
 
   UploadBucket:
     Type: AWS::S3::Bucket
@@ -64,7 +96,7 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:
-              - "https://plainterms.vercel.app"
+              - !Ref AppBaseUrl
             AllowedMethods:
               - PUT
               - POST
@@ -77,7 +109,7 @@ Resources:
         Rules:
           - Id: ExpireUploads
             Status: Enabled
-            ExpirationInDays: 1
+            ExpirationInDays: 30
 
   ResultsTable:
     Type: AWS::DynamoDB::Table
@@ -93,6 +125,37 @@ Resources:
       KeySchema:
         - AttributeName: result_id
           KeyType: HASH
+
+  PlainTermsApiWebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub "${AWS::StackName}-plainterms-api-webacl"
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${AWS::StackName}-plainterms-api-webacl"
+        SampledRequestsEnabled: true
+      Rules:
+        - Name: ip-rate-limit-global
+          Priority: 0
+          Action:
+            Block: {}
+          Statement:
+            RateBasedStatement:
+              AggregateKeyType: IP
+              Limit: !Ref WafGlobalIpLimitPer5Min
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${AWS::StackName}-ip-rate-limit-global"
+            SampledRequestsEnabled: true
+
+  PlainTermsApiWebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Sub arn:aws:apigateway:${AWS::Region}::/restapis/${PlainTermsApi}/stages/Prod
+      WebACLArn: !GetAtt PlainTermsApiWebAcl.Arn
 
   UploadUrlFunction:
     Type: AWS::Serverless::Function
@@ -117,48 +180,6 @@ Resources:
           Properties:
             RestApiId: !Ref PlainTermsApi
             Path: /upload-url
-            Method: OPTIONS
-
-  AnalyzeFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: lambdas/
-      Handler: analyze.handler
-      Timeout: 45
-      MemorySize: 512
-      Environment:
-        Variables:
-          RESULTS_TABLE: !Ref ResultsTable
-          RESULT_TTL_DAYS: "7"
-          UPLOAD_BUCKET: !Ref UploadBucket
-          UPLOAD_MAX_BYTES: "26214400"
-          ANALYSIS_MODE: !Ref AnalysisMode
-          LLM_BASE_URL: "https://api.openai.com/v1"
-          LLM_MODEL: !Ref LlmModel
-          LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ResultsTable
-        - S3ReadPolicy:
-            BucketName: !Ref UploadBucket
-        - Statement:
-            Effect: Allow
-            Action:
-              - ssm:GetParameter
-            Resource:
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
-      Events:
-        AnalyzePost:
-          Type: Api
-          Properties:
-            RestApiId: !Ref PlainTermsApi
-            Path: /analyze
-            Method: POST
-        AnalyzeOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref PlainTermsApi
-            Path: /analyze
             Method: OPTIONS
 
   PrecheckFunction:
@@ -207,6 +228,9 @@ Resources:
         Variables:
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
           STRIPE_PRICE_ID_PARAM: !Ref StripePriceIdParamName
+          STRIPE_PRICE_ID_REPORT_PARAM: !Ref StripeReportPriceIdParamName
+          STRIPE_PRICE_ID_SCAN_PARAM: !Ref StripeScanPriceIdParamName
+          STRIPE_PRICE_ID_PROTECT_PARAM: !Ref StripeProtectPriceIdParamName
           APP_BASE_URL: !Ref AppBaseUrl
           PRECHECK_TOKEN_SECRET_PARAM: !Ref PrecheckTokenSecretParamName
       Policies:
@@ -217,6 +241,9 @@ Resources:
             Resource:
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripePriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeReportPriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeScanPriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeProtectPriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${PrecheckTokenSecretParamName}
       Events:
         CheckoutPost:
@@ -237,13 +264,14 @@ Resources:
     Properties:
       CodeUri: lambdas/
       Handler: verifyCheckout.handler
-      Timeout: 45
+      Timeout: 330
       MemorySize: 512
       Environment:
         Variables:
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
           RESULTS_TABLE: !Ref ResultsTable
-          RESULT_TTL_DAYS: "7"
+          RESULT_TTL_DAYS: "30"
+          ANALYSIS_TIMEOUT_MS: "300000"
           UPLOAD_BUCKET: !Ref UploadBucket
           UPLOAD_MAX_BYTES: "26214400"
           ANALYSIS_MODE: !Ref AnalysisMode
@@ -284,7 +312,7 @@ Resources:
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
-          RESULT_TTL_DAYS: "7"
+          RESULT_TTL_DAYS: "30"
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref ResultsTable

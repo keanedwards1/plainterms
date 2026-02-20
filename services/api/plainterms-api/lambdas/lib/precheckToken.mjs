@@ -47,6 +47,8 @@ export async function createPrecheckToken({
   filename,
   contentType,
   size,
+  scanPassed,
+  textExtractionPrecheckPassed,
 }) {
   const nowSec = Math.floor(Date.now() / 1000);
   const ttlSec = getTokenTtlSec();
@@ -58,6 +60,8 @@ export async function createPrecheckToken({
     filename: String(filename),
     contentType: String(contentType),
     size: Number(size),
+    scanPassed: scanPassed === true,
+    textExtractionPrecheckPassed: textExtractionPrecheckPassed === true,
   };
 
   const payloadEncoded = base64UrlEncodeJson(payload);
@@ -100,7 +104,9 @@ export async function verifyPrecheckToken(token) {
     typeof payload.contentType !== "string" ||
     typeof payload.size !== "number" ||
     !Number.isInteger(payload.size) ||
-    payload.size <= 0
+    payload.size <= 0 ||
+    typeof payload.scanPassed !== "boolean" ||
+    typeof payload.textExtractionPrecheckPassed !== "boolean"
   ) {
     return { ok: false, error: "precheck_token_payload_shape_invalid" };
   }
@@ -112,6 +118,8 @@ export async function verifyPrecheckToken(token) {
       filename: payload.filename,
       contentType: payload.contentType,
       size: payload.size,
+      scanPassed: payload.scanPassed,
+      textExtractionPrecheckPassed: payload.textExtractionPrecheckPassed,
       exp,
       iat: Number(payload.iat ?? 0),
       v: Number(payload.v ?? 0),

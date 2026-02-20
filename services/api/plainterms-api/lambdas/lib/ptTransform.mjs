@@ -19,6 +19,7 @@ const UI_STATUS_VALUES = new Set(["present", "unclear"]);
 const UI_RISK_LABELS = new Set(["low", "medium", "high"]);
 const UI_FLAG_SEVERITIES = new Set(["low", "medium", "high"]);
 const UI_RECOMMENDATION_ACTIONS = new Set(["sign", "negotiate", "do_not_sign_yet"]);
+const UI_REPORT_TIERS = new Set(["scan_39", "report_69", "protect_99"]);
 
 function isObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -124,6 +125,12 @@ function ensureRecommendationAction(value) {
   return UI_RECOMMENDATION_ACTIONS.has(v) ? v : "negotiate";
 }
 
+function ensureReportTier(value) {
+  if (typeof value !== "string") return "report_69";
+  const v = value.trim().toLowerCase();
+  return UI_REPORT_TIERS.has(v) ? v : "report_69";
+}
+
 function toUiFlag(flag, idx) {
   if (!isObject(flag)) return null;
   const title = ensureString(flag.title).trim();
@@ -157,6 +164,105 @@ function toUiClause(clause) {
     what_it_means: whatItMeans,
     why_it_matters: whyItMatters,
     evidence,
+  };
+}
+
+function toUiTeaser(teaser) {
+  if (!isObject(teaser)) return null;
+  const headline = ensureString(teaser.headline).trim();
+  const bullets = asArray(teaser.bullets)
+    .filter((x) => typeof x === "string")
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (!headline || bullets.length === 0) return null;
+
+  const out = { headline, bullets };
+  if (typeof teaser.recommended === "boolean") {
+    out.recommended = teaser.recommended;
+  }
+  const reasons = asArray(teaser.reasons)
+    .filter((x) => typeof x === "string")
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (reasons.length > 0) {
+    out.reasons = reasons;
+  }
+  return out;
+}
+
+function toUiProtectUpsell(raw) {
+  if (!isObject(raw)) return null;
+  return {
+    should_upsell_protect: Boolean(raw.should_upsell_protect),
+    high_risk_or_critical: Boolean(raw.high_risk_or_critical),
+    advanced_risk_clause_set_detected: Boolean(raw.advanced_risk_clause_set_detected),
+    high_severity_flags_threshold_met: Boolean(raw.high_severity_flags_threshold_met),
+    high_severity_flags:
+      typeof raw.high_severity_flags === "number" && Number.isFinite(raw.high_severity_flags)
+        ? Math.max(0, Math.round(raw.high_severity_flags))
+        : 0,
+    reasons: asArray(raw.reasons)
+      .filter((x) => typeof x === "string")
+      .map((x) => x.trim())
+      .filter(Boolean),
+  };
+}
+
+function toUiProtectExtras(raw) {
+  if (!isObject(raw)) return null;
+
+  const deeperRewrites = asArray(raw.deeper_rewrites)
+    .map((item, idx) => {
+      if (!isObject(item)) return null;
+      const issue = ensureString(item.issue).trim();
+      const suggestion = ensureString(item.suggestion).trim();
+      if (!issue || !suggestion) return null;
+      return {
+        id: ensureString(item.id, `rw_${idx + 1}`),
+        issue,
+        suggestion,
+      };
+    })
+    .filter(Boolean);
+
+  const fallbackPositions = asArray(raw.fallback_positions)
+    .map((item, idx) => {
+      if (!isObject(item)) return null;
+      const position = ensureString(item.position).trim();
+      if (!position) return null;
+      return {
+        id: ensureString(item.id, `fb_${idx + 1}`),
+        position,
+      };
+    })
+    .filter(Boolean);
+
+  const negotiationPlan = asArray(raw.negotiation_plan)
+    .filter((x) => typeof x === "string")
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+  const advancedClauseCoverage = asArray(raw.advanced_clause_coverage)
+    .map((item) => {
+      if (!isObject(item)) return null;
+      const key = ensureString(item.key).trim();
+      const title = ensureString(item.title).trim();
+      const status = ensureString(item.status).trim().toLowerCase();
+      const out = {};
+      if (key) out.key = key;
+      if (title) out.title = title;
+      if (["present", "unclear", "missing"].includes(status)) {
+        out.status = status;
+      }
+      return Object.keys(out).length > 0 ? out : null;
+    })
+    .filter(Boolean);
+
+  return {
+    deeper_rewrites: deeperRewrites,
+    fallback_positions: fallbackPositions,
+    negotiation_plan: negotiationPlan,
+    advanced_clause_coverage: advancedClauseCoverage,
   };
 }
 
@@ -202,6 +308,7 @@ export function transformPtV1ToUiV1(ptV1) {
   }
 
   const reportObj = isObject(ptV1.report) ? ptV1.report : null;
+  const reportTier = ensureReportTier(reportObj?.tier);
   const uiFlags = asArray(reportObj?.red_flags)
     .map((flag, idx) => toUiFlag(flag, idx))
     .filter(Boolean);
@@ -244,10 +351,15 @@ export function transformPtV1ToUiV1(ptV1) {
     negotiationBullets.high.length > 0 ||
     negotiationBullets.medium.length > 0 ||
     negotiationBullets.low.length > 0;
+  const protectUpsell = toUiProtectUpsell(reportObj?.protect_upsell);
+  const teaserReport69 = toUiTeaser(reportObj?.teaser_report_69);
+  const teaserProtect99 = toUiTeaser(reportObj?.teaser_protect_99);
+  const protectExtras = toUiProtectExtras(reportObj?.protect_extras);
 
   const report =
     reportObj || uiFlags.length > 0 || uiClauses.length > 0
       ? {
+          tier: reportTier,
           risk: risk ?? { score: 50, label: "medium" },
           recommendation:
             recommendation ?? {
@@ -264,6 +376,10 @@ export function transformPtV1ToUiV1(ptV1) {
             (x) => typeof x === "string"
           ),
           creator_contract: Boolean(reportObj?.creator_contract),
+          ...(protectUpsell ? { protect_upsell: protectUpsell } : {}),
+          ...(teaserReport69 ? { teaser_report_69: teaserReport69 } : {}),
+          ...(teaserProtect99 ? { teaser_protect_99: teaserProtect99 } : {}),
+          ...(protectExtras ? { protect_extras: protectExtras } : {}),
         }
       : undefined;
 
@@ -309,6 +425,7 @@ export function assertPtUiV1Contract(ptUiV1) {
 
   if (ptUiV1.report !== undefined) {
     assert(isObject(ptUiV1.report), "pt.ui.v1 report must be an object when present");
+    assert(UI_REPORT_TIERS.has(ptUiV1.report.tier), "pt.ui.v1 report.tier invalid");
     assert(isObject(ptUiV1.report.risk), "pt.ui.v1 report.risk must be an object");
     assert(
       typeof ptUiV1.report.risk.score === "number" &&
@@ -361,6 +478,105 @@ export function assertPtUiV1Contract(ptUiV1) {
       assert(
         typeof clause.why_it_matters === "string" && clause.why_it_matters,
         "pt.ui.v1 report clause why_it_matters required"
+      );
+    }
+
+    if (ptUiV1.report.protect_upsell !== undefined) {
+      assert(
+        isObject(ptUiV1.report.protect_upsell),
+        "pt.ui.v1 report.protect_upsell must be an object"
+      );
+      assert(
+        typeof ptUiV1.report.protect_upsell.should_upsell_protect === "boolean",
+        "pt.ui.v1 report.protect_upsell.should_upsell_protect must be boolean"
+      );
+      assert(
+        typeof ptUiV1.report.protect_upsell.high_risk_or_critical === "boolean",
+        "pt.ui.v1 report.protect_upsell.high_risk_or_critical must be boolean"
+      );
+      assert(
+        typeof ptUiV1.report.protect_upsell.advanced_risk_clause_set_detected === "boolean",
+        "pt.ui.v1 report.protect_upsell.advanced_risk_clause_set_detected must be boolean"
+      );
+      assert(
+        typeof ptUiV1.report.protect_upsell.high_severity_flags_threshold_met === "boolean",
+        "pt.ui.v1 report.protect_upsell.high_severity_flags_threshold_met must be boolean"
+      );
+      assert(
+        typeof ptUiV1.report.protect_upsell.high_severity_flags === "number" &&
+          Number.isFinite(ptUiV1.report.protect_upsell.high_severity_flags),
+        "pt.ui.v1 report.protect_upsell.high_severity_flags must be numeric"
+      );
+      assert(
+        Array.isArray(ptUiV1.report.protect_upsell.reasons),
+        "pt.ui.v1 report.protect_upsell.reasons must be an array"
+      );
+    }
+
+    if (ptUiV1.report.teaser_report_69 !== undefined) {
+      assert(
+        isObject(ptUiV1.report.teaser_report_69),
+        "pt.ui.v1 report.teaser_report_69 must be an object"
+      );
+      assert(
+        typeof ptUiV1.report.teaser_report_69.headline === "string" &&
+          ptUiV1.report.teaser_report_69.headline,
+        "pt.ui.v1 report.teaser_report_69.headline required"
+      );
+      assert(
+        Array.isArray(ptUiV1.report.teaser_report_69.bullets),
+        "pt.ui.v1 report.teaser_report_69.bullets must be an array"
+      );
+    }
+
+    if (ptUiV1.report.teaser_protect_99 !== undefined) {
+      assert(
+        isObject(ptUiV1.report.teaser_protect_99),
+        "pt.ui.v1 report.teaser_protect_99 must be an object"
+      );
+      assert(
+        typeof ptUiV1.report.teaser_protect_99.headline === "string" &&
+          ptUiV1.report.teaser_protect_99.headline,
+        "pt.ui.v1 report.teaser_protect_99.headline required"
+      );
+      assert(
+        Array.isArray(ptUiV1.report.teaser_protect_99.bullets),
+        "pt.ui.v1 report.teaser_protect_99.bullets must be an array"
+      );
+      if (ptUiV1.report.teaser_protect_99.recommended !== undefined) {
+        assert(
+          typeof ptUiV1.report.teaser_protect_99.recommended === "boolean",
+          "pt.ui.v1 report.teaser_protect_99.recommended must be boolean when present"
+        );
+      }
+      if (ptUiV1.report.teaser_protect_99.reasons !== undefined) {
+        assert(
+          Array.isArray(ptUiV1.report.teaser_protect_99.reasons),
+          "pt.ui.v1 report.teaser_protect_99.reasons must be an array when present"
+        );
+      }
+    }
+
+    if (ptUiV1.report.protect_extras !== undefined) {
+      assert(
+        isObject(ptUiV1.report.protect_extras),
+        "pt.ui.v1 report.protect_extras must be an object"
+      );
+      assert(
+        Array.isArray(ptUiV1.report.protect_extras.deeper_rewrites),
+        "pt.ui.v1 report.protect_extras.deeper_rewrites must be an array"
+      );
+      assert(
+        Array.isArray(ptUiV1.report.protect_extras.fallback_positions),
+        "pt.ui.v1 report.protect_extras.fallback_positions must be an array"
+      );
+      assert(
+        Array.isArray(ptUiV1.report.protect_extras.negotiation_plan),
+        "pt.ui.v1 report.protect_extras.negotiation_plan must be an array"
+      );
+      assert(
+        Array.isArray(ptUiV1.report.protect_extras.advanced_clause_coverage),
+        "pt.ui.v1 report.protect_extras.advanced_clause_coverage must be an array"
       );
     }
   }
