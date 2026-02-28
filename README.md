@@ -211,3 +211,12 @@ Backend retention behavior:
 - `POST /checkout` -> create Stripe Checkout session
 - `POST /checkout/verify` -> verify paid session and create/reuse result
 - `GET /result/{id}` -> return result, `202` processing, or `410` expired
+
+## TODO
+
+- Implement pricing A/B split test:
+  - Assign persistent variant (`A` or `B`) with cookie (50/50)
+  - Render different pricing sets on `/` based on variant
+  - Include `variant` in funnel metrics events (`pricing_view`, `checkout_start`, `checkout_success`)
+  - Pass `variant` through checkout request and Stripe metadata
+  - Compare variants by revenue per visitor, conversion rate, and refunds before choosing winner

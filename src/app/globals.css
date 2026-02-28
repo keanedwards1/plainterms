@@ -1,15 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --pt-bg: #fffaf2;
-  --pt-ink: #1f2330;
-  --pt-muted: #5c6273;
-  --pt-surface: #ffffff;
-  --pt-surface-soft: #fff2d9;
-  --pt-border: #e8dcc2;
-  --pt-accent: #ff6b3d;
-  --pt-accent-ink: #ffffff;
-  --pt-accent-soft: #ffe2d8;
+  --pt-bg: #f5eddc;
+  --pt-ink: #1f2b3d;
+  --pt-muted: #536378;
+  --pt-surface: #fffaf0;
+  --pt-surface-soft: #f3e9d6;
+  --pt-border: #d9c7a9;
+  --pt-accent: #f1765d;
+  --pt-accent-soft: #ffd8ce;
+  --pt-accent-ink: #fff8f2;
+  --pt-teal: #24b4ae;
+  --pt-teal-deep: #134554;
+  --pt-shadow: rgba(53, 42, 24, 0.18);
   --pt-radius: 18px;
   --font-sans: var(--font-body);
   --font-heading: var(--font-heading);
@@ -26,8 +29,8 @@
 
 .pt-body {
   background:
-    radial-gradient(1200px 700px at 88% -8%, #ffd9b8 0%, rgba(255, 217, 184, 0) 60%),
-    radial-gradient(900px 540px at -4% 8%, #ffeabf 0%, rgba(255, 234, 191, 0) 55%),
+    radial-gradient(900px 460px at 12% -8%, rgba(241, 118, 93, 0.2) 0%, transparent 62%),
+    radial-gradient(820px 430px at 100% 18%, rgba(36, 180, 174, 0.14) 0%, transparent 64%),
     var(--pt-bg);
   color: var(--pt-ink);
   font-family: var(--font-sans);
@@ -43,4 +46,158 @@ h4 {
 
 a {
   color: inherit;
+}
+
+.pt-app-shell {
+  min-height: 100vh;
+}
+
+.pt-nav {
+  border-bottom: 1px solid var(--pt-border);
+  background: color-mix(in oklab, var(--pt-surface) 92%, var(--pt-bg) 8%);
+}
+
+.pt-card {
+  border: 1px solid var(--pt-border);
+  border-radius: var(--pt-radius);
+  background: var(--pt-surface);
+  box-shadow: 0 18px 34px -26px var(--pt-shadow);
+}
+
+.pt-card-soft {
+  border: 1px solid var(--pt-border);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--pt-surface-soft) 74%, white 26%);
+}
+
+.pt-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--pt-border);
+  background: var(--pt-surface);
+  padding: 0.3rem 0.72rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pt-muted);
+}
+
+.pt-btn-primary {
+  border: 1px solid #d9654f;
+  border-radius: 999px;
+  background: var(--pt-accent);
+  color: var(--pt-accent-ink);
+  box-shadow: 0 12px 20px -14px var(--pt-shadow);
+  transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+}
+
+.pt-btn-primary:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.06);
+  box-shadow: 0 16px 22px -14px var(--pt-shadow);
+}
+
+.pt-btn-secondary {
+  border: 1px solid #80c5bd;
+  border-radius: 999px;
+  background: #dbf2ee;
+  color: #134f4b;
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.pt-btn-secondary:hover {
+  transform: translateY(-1px);
+  background: #ceebe5;
+  border-color: #67b8af;
+}
+
+.pt-grid-paper {
+  background-image:
+    linear-gradient(to right, rgba(31, 43, 61, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 43, 61, 0.055) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.pt-pill {
+  border: 1px solid var(--pt-border);
+  border-radius: 999px;
+  background: var(--pt-surface);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pt-muted);
+}
+
+.pt-alert-danger {
+  border: 1px solid #efbaab;
+  border-radius: 12px;
+  background: #fff2ec;
+  color: #954331;
+}
+
+.pt-alert-warn {
+  border: 1px solid #ecd9ab;
+  border-radius: 12px;
+  background: #fff7e8;
+  color: #8b6829;
+}
+
+.pt-teal-panel {
+  border: 1px solid #7ebfb7;
+  border-radius: 14px;
+  background: #daf2ee;
+}
+
+.pt-ink-panel {
+  border: 1px solid #1c5566;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1d5869 0%, #154352 100%);
+  color: #e6f5f2;
+}
+
+.pt-scan-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.pt-scan-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(241, 118, 93, 0.14) 45%,
+    rgba(241, 118, 93, 0.06) 58%,
+    transparent 100%
+  );
+  animation: pt-scan 1.8s ease-out forwards;
+}
+
+@keyframes pt-scan {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-btn-primary,
+  .pt-btn-secondary {
+    transition: none;
+  }
+
+  .pt-scan-line::after {
+    animation: none;
+    display: none;
+  }
 }

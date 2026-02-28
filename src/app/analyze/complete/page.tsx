@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
+import Image from "next/image";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 
 type VerifyResponse = {
@@ -113,14 +114,15 @@ export default function AnalyzeCompletePage() {
   }, [error, sessionId]);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
-      <h1 className="text-3xl text-[var(--pt-ink)]">Finalizing your analysis</h1>
+    <main className="px-5 pb-12 pt-8 sm:px-8 lg:px-12">
+      <div className="mx-auto max-w-4xl">
+      <h1 className="text-3xl text-[var(--pt-ink)]">Final safety checks</h1>
       <p className="mt-3 text-[var(--pt-muted)]">
-        We are confirming payment and preparing your result.
+        Confirming payment and preparing your secure report.
       </p>
 
       {error ? (
-        <div className="mt-6 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+        <div className="pt-alert-danger mt-6 p-4 text-sm">
           <p>{error}</p>
           <p className="mt-3">
             <Link href="/analyze" className="font-semibold underline">
@@ -129,7 +131,7 @@ export default function AnalyzeCompletePage() {
           </p>
         </div>
       ) : (
-        <section className="mt-6 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
+        <section className="mt-6 pt-card p-5">
           <div className="flex items-center gap-4">
             <div className="relative h-12 w-12 shrink-0">
               <span className="absolute inset-0 rounded-full border-2 border-[var(--pt-border)]" />
@@ -144,6 +146,13 @@ export default function AnalyzeCompletePage() {
                 This usually takes under a minute once payment is confirmed.
               </p>
             </div>
+            <Image
+              src="/graphics/icon-shield.svg"
+              alt=""
+              width={58}
+              height={58}
+              className="ml-auto hidden rounded-xl border border-[var(--pt-border)] bg-white p-2 sm:block"
+            />
           </div>
 
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--pt-border)]">
@@ -165,13 +174,14 @@ export default function AnalyzeCompletePage() {
           </div>
 
           {showStillWorking && (
-            <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+            <div className="pt-alert-warn mt-4 p-3 text-xs">
               Still working. Secure processing continues in the background and can take up to 5
               minutes for larger files.
             </div>
           )}
         </section>
       )}
+      </div>
     </main>
   );
 }
