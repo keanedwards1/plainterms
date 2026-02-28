@@ -163,7 +163,7 @@ export default async function ResultPage({ params }: Props) {
   const createdAtLabel = formatResultDate(data.created_at);
 
   return (
-    <main className="px-5 py-5 sm:px-8 lg:px-12">
+    <main className="px-5 py-5 sm:px-8 lg:px-12 [--pt-muted:#7f7466]">
       <TrackResultViewed resultId={data.result_id} />
 
       <div className="mx-auto flex max-w-[1280px] flex-col gap-5">

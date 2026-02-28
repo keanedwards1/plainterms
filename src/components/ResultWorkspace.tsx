@@ -185,8 +185,8 @@ export default function ResultWorkspace({ data, retentionDays }: ResultWorkspace
                   onClick={() => setActiveReportTab(tab.key)}
                   className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
                     activeReportTab === tab.key
-                      ? "border-[#67b8af] bg-[#dbf2ee] text-[#134f4b]"
-                      : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#67b8af] hover:text-[var(--pt-ink)]"
+                      ? "border-[#de8f79] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.15)]"
+                      : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#de8f79] hover:text-[var(--pt-ink)]"
                   }`}
                 >
                   <span>{tab.label}</span>
@@ -271,8 +271,8 @@ export default function ResultWorkspace({ data, retentionDays }: ResultWorkspace
                   onClick={() => setActiveBasicTab(tab.key)}
                   className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
                     activeBasicTab === tab.key
-                      ? "border-[#67b8af] bg-[#dbf2ee] text-[#134f4b]"
-                      : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#67b8af] hover:text-[var(--pt-ink)]"
+                      ? "border-[#de8f79] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.35)]"
+                      : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#de8f79] hover:text-[var(--pt-ink)]"
                   }`}
                 >
                   {tab.label}
