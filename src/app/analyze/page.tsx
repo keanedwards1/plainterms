@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import {
   DEFAULT_ANALYSIS_MODE,
@@ -289,75 +288,153 @@ export default function AnalyzePage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8 lg:px-12">
-      <Link href="/" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
-        ← Back to home
-      </Link>
+    <main className="relative mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8 lg:px-12">
+      <div className="pt-grid-pattern pointer-events-none absolute inset-0 opacity-20" />
 
-      <section className="mt-5 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="relative grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
-          <p className="mb-3 inline-flex rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-1 text-sm font-semibold text-[var(--pt-muted)]">
+          <p className="pt-kicker mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-accent)]" />
             Step 1 of 3
           </p>
           <h1 className="text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
-            Upload your agreement for plain-English analysis.
+            Upload your contract for analysis.
           </h1>
           <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)]">
-            v1 supports independent contractor and services agreements. Upload a PDF or DOCX, then
-            we validate readability before secure checkout.
+            Supports brand deals, management agreements, licensing contracts, and more. Upload a
+            PDF or DOCX — we validate readability before secure checkout.
           </p>
         </div>
 
-        <aside className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5 text-sm text-[var(--pt-muted)]">
-          <h2 className="text-lg text-[var(--pt-ink)]">What to expect</h2>
-          <ul className="mt-3 grid gap-2">
-            <li>• Calm, neutral summary language.</li>
-            <li>• Missing details are called out explicitly.</li>
-            <li>• Informational only, not legal advice.</li>
+        <aside className="pt-card rounded-[var(--pt-radius)] p-5 text-sm text-[var(--pt-muted)] shadow-[0_16px_26px_-24px_var(--pt-shadow)]">
+          <h2 className="text-lg text-[var(--pt-ink)]">Review Flow</h2>
+          <ul className="mt-3 space-y-2">
+            <li className="flex items-center gap-2">
+              <span className="text-[var(--pt-accent)]">●</span> Plain-English clause breakdown
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-[var(--pt-accent)]">●</span> Risk score with red flags
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-[var(--pt-accent)]">●</span> Sign / Negotiate / Don&apos;t sign guidance
+            </li>
+            <li className="flex items-center gap-2 text-xs">
+              <span className="text-[var(--pt-muted)]">—</span> Informational only, not legal advice
+            </li>
           </ul>
+          <div className="mt-4 rounded-xl border border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_70%,white_30%)] p-3 text-xs leading-relaxed">
+            <p className="font-semibold text-[var(--pt-ink)]">Cost context</p>
+            <p className="mt-1">
+              Traditional attorney review often starts in the hundreds. PlainTerms starts at $39.
+            </p>
+          </div>
         </aside>
       </section>
 
-      <section className="mt-8 rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-sm">
+      <section className="relative mt-8 rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-[0_24px_40px_-34px_var(--pt-shadow)]">
         <form onSubmit={onSubmit}>
+          {/* Upload zone */}
           <label className="mb-3 block text-sm font-semibold text-[var(--pt-ink)]">
             Contract file (PDF or DOCX)
           </label>
 
-          <div className="rounded-2xl border-2 border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-5">
+          <div className="rounded-2xl border-2 border-dashed border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_72%,white_28%)] p-8 text-center transition-colors hover:border-[var(--pt-muted)]/40">
+            <div className="mb-5 flex flex-col items-center">
+              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface)]">
+                <svg
+                  className="h-6 w-6 text-[var(--pt-muted)]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+                  />
+                </svg>
+              </div>
+              {file ? (
+                <div>
+                  <p className="font-semibold text-[var(--pt-ink)]">{file.name}</p>
+                  <p className="mt-1 text-sm text-[var(--pt-muted)]">{prettyFileSize(file.size)}</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="font-semibold text-[var(--pt-ink)]">Drop your contract here</p>
+                  <p className="mt-1 text-sm text-[var(--pt-muted)]">or click to browse — PDF or DOCX</p>
+                </div>
+              )}
+            </div>
             <input
               type="file"
               accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--pt-accent)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--pt-accent-ink)] hover:file:brightness-95"
+              className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-[var(--pt-accent)] file:px-5 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:brightness-95"
             />
-            {file && (
-              <p className="mt-3 text-sm text-[var(--pt-muted)]">
-                Selected: <span className="font-semibold text-[var(--pt-ink)]">{file.name}</span>{" "}
-                ({prettyFileSize(file.size)})
-              </p>
-            )}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-              Testing controls
-            </p>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          {/* Tier selection — shown once file is chosen */}
+          {file && (
+            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_76%,white_24%)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                Choose your report depth
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {REPORT_TIER_OPTIONS.map((tier) => {
+                  const selected = reportTier === tier;
+                  return (
+                    <label
+                      key={tier}
+                      className={`cursor-pointer rounded-xl border p-4 transition-all ${
+                        selected
+                          ? "border-[var(--pt-accent)] bg-[var(--pt-surface)] shadow-sm ring-1 ring-[var(--pt-accent)]/20"
+                          : "border-[var(--pt-border)] bg-[var(--pt-surface)] hover:border-[var(--pt-muted)]/40"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="report-tier"
+                        value={tier}
+                        checked={selected}
+                        onChange={() => setReportTier(tier)}
+                        className="sr-only"
+                      />
+                      <p className="text-sm font-semibold text-[var(--pt-ink)]">
+                        {REPORT_TIER_LABELS[tier]}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--pt-muted)]">
+                        {REPORT_TIER_DESCRIPTIONS[tier]}
+                      </p>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Testing controls — collapsed */}
+          <details className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_76%,white_24%)]">
+            <summary className="cursor-pointer px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
+              Internal testing controls
+            </summary>
+            <div className="grid gap-4 px-4 pb-4 pt-1 sm:grid-cols-2">
               <label className="grid gap-2 text-sm text-[var(--pt-muted)]">
-                Analysis engine
+                Analysis profile
                 <select
                   value={analysisMode}
                   onChange={(e) => setAnalysisMode(e.target.value as AnalysisModeOption)}
                   className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)]"
                 >
-                  <option value="rules">Rules (no LLM)</option>
-                  <option value="llm">LLM</option>
+                  <option value="rules">Standard review</option>
+                  <option value="llm">Deep review (internal)</option>
                 </select>
               </label>
 
               <label className="grid gap-2 text-sm text-[var(--pt-muted)]">
-                LLM model
+                Model profile (internal)
                 <select
                   value={llmModel}
                   disabled={analysisMode !== "llm"}
@@ -372,65 +449,29 @@ export default function AnalyzePage() {
                 </select>
               </label>
             </div>
-            <p className="mt-3 text-xs text-[var(--pt-muted)]">
+            <p className="px-4 pb-3 text-xs text-[var(--pt-muted)]">
               Current run:{" "}
               <span className="font-semibold text-[var(--pt-ink)]">
-                {analysisMode === "rules" ? "Rules engine" : `LLM (${llmModel})`}
+                {analysisMode === "rules" ? "Standard review profile" : `Deep review profile (${llmModel})`}
               </span>
             </p>
-          </div>
+          </details>
 
-          {file && (
-            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                Choose your depth of analysis and report detail
-              </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {REPORT_TIER_OPTIONS.map((tier) => {
-                  const selected = reportTier === tier;
-                  return (
-                    <label
-                      key={tier}
-                      className={`cursor-pointer rounded-xl border p-3 ${
-                        selected
-                          ? "border-[var(--pt-accent)] bg-[var(--pt-surface)]"
-                          : "border-[var(--pt-border)] bg-[var(--pt-surface)]"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="report-tier"
-                        value={tier}
-                        checked={selected}
-                        onChange={() => setReportTier(tier)}
-                        className="sr-only"
-                      />
-                      <p className="text-sm font-semibold text-[var(--pt-ink)]">
-                        {REPORT_TIER_LABELS[tier]}
-                      </p>
-                      <p className="mt-1 text-xs text-[var(--pt-muted)]">
-                        {REPORT_TIER_DESCRIPTIONS[tier]}
-                      </p>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-full bg-[var(--pt-accent)] px-6 py-3 text-sm font-semibold text-[var(--pt-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="pt-btn-primary rounded-full px-7 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Processing..." : "Continue"}
+              {isSubmitting ? "Processing..." : "Continue to payment →"}
             </button>
-            {isSubmitting && step && <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>}
+            {isSubmitting && step && (
+              <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>
+            )}
           </div>
 
           {isSubmitting && step && (
-            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_76%,white_24%)] p-4">
               <div className="flex items-center gap-3">
                 <span className="relative inline-flex h-3 w-3">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--pt-accent)] opacity-35" />
@@ -440,7 +481,7 @@ export default function AnalyzePage() {
               </div>
               <p className="mt-1 text-sm text-[var(--pt-muted)]">{SUBMIT_STEP_DESCRIPTIONS[step]}</p>
 
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--pt-border)]">
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--pt-border)]">
                 <div
                   className="h-full rounded-full bg-[var(--pt-accent)] transition-all duration-500"
                   style={{
@@ -457,9 +498,9 @@ export default function AnalyzePage() {
                   return (
                     <div key={item} className="flex items-center gap-2">
                       <span
-                        className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                        className={`inline-flex h-2 w-2 rounded-full ${
                           completed
-                            ? "bg-emerald-500"
+                            ? "bg-[var(--pt-teal)]"
                             : active
                               ? "animate-pulse bg-[var(--pt-accent)]"
                               : "bg-[var(--pt-border)]"
@@ -480,13 +521,13 @@ export default function AnalyzePage() {
           )}
 
           {error && (
-            <div className="mt-5 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+            <div className="mt-5 rounded-xl border border-[#f3b2a0] bg-[#fff0ea] p-3 text-sm text-[#9f3f2b]">
               {error}
             </div>
           )}
 
           {checkoutCanceled && !error && (
-            <div className="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+            <div className="mt-5 rounded-xl border border-[#f2d59d] bg-[#fff6e3] p-3 text-sm text-[#8a6121]">
               Checkout was canceled. You can continue to payment again when ready.
             </div>
           )}

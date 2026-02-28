@@ -113,51 +113,61 @@ export default function AnalyzeCompletePage() {
   }, [error, sessionId]);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
-      <h1 className="text-3xl text-[var(--pt-ink)]">Finalizing your analysis</h1>
-      <p className="mt-3 text-[var(--pt-muted)]">
-        We are confirming payment and preparing your result.
-      </p>
+    <main className="relative mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center justify-center px-5 py-10 sm:px-8">
+      <div className="pt-grid-pattern pointer-events-none absolute inset-0 opacity-20" />
+
+      <div className="relative w-full text-center">
+        <p className="pt-kicker mb-2 inline-flex">
+          Step 3 of 3
+        </p>
+        <h1 className="text-3xl text-[var(--pt-ink)] sm:text-4xl">Final safety checks</h1>
+        <p className="mt-3 text-[var(--pt-muted)]">
+          Confirming payment and preparing your secure report.
+        </p>
+      </div>
 
       {error ? (
-        <div className="mt-6 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+        <div className="relative mt-8 w-full rounded-2xl border border-[#f3b2a0] bg-[#fff0ea] p-5 text-sm text-[#9f3f2b] shadow-[0_16px_26px_-24px_var(--pt-shadow)]">
           <p>{error}</p>
-          <p className="mt-3">
-            <Link href="/analyze" className="font-semibold underline">
-              Return to upload
+          <p className="mt-4">
+            <Link
+              href="/analyze"
+              className="pt-btn-secondary rounded-full px-4 py-2 text-xs font-semibold"
+            >
+              ← Return to upload
             </Link>
           </p>
         </div>
       ) : (
-        <section className="mt-6 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5">
-          <div className="flex items-center gap-4">
-            <div className="relative h-12 w-12 shrink-0">
+        <section className="relative mt-8 w-full rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-[0_24px_40px_-34px_var(--pt-shadow)]">
+          <div className="flex items-start gap-4">
+            <div className="relative mt-1 h-12 w-12 shrink-0">
               <span className="absolute inset-0 rounded-full border-2 border-[var(--pt-border)]" />
               <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-[var(--pt-accent)]" />
               <span className="absolute inset-[10px] animate-pulse rounded-full bg-[var(--pt-accent-soft)]" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[var(--pt-ink)]">
+              <p className="text-base font-semibold text-[var(--pt-ink)]">
                 {PROCESSING_STAGES[stageIndex]}
               </p>
-              <p className="mt-1 text-xs text-[var(--pt-muted)]">
+              <p className="mt-1 text-sm text-[var(--pt-muted)]">
                 This usually takes under a minute once payment is confirmed.
               </p>
             </div>
           </div>
 
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--pt-border)]">
+          <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[var(--pt-border)]">
             <div
               className="h-full rounded-full bg-[var(--pt-accent)] transition-all duration-700"
               style={{ width: `${((stageIndex + 1) / PROCESSING_STAGES.length) * 100}%` }}
             />
           </div>
 
-          <div className="mt-3 flex items-center gap-1.5">
+          <div className="mt-3 flex items-center gap-2">
             {PROCESSING_STAGES.map((stage, idx) => (
               <span
                 key={stage}
-                className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                className={`inline-flex h-2 w-2 rounded-full transition-colors ${
                   idx <= stageIndex ? "bg-[var(--pt-accent)]" : "bg-[var(--pt-border)]"
                 } ${idx === stageIndex ? "animate-pulse" : ""}`}
               />
@@ -165,9 +175,8 @@ export default function AnalyzeCompletePage() {
           </div>
 
           {showStillWorking && (
-            <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-              Still working. Secure processing continues in the background and can take up to 5
-              minutes for larger files.
+            <div className="mt-5 rounded-xl border border-[#f2d59d] bg-[#fff6e3] p-3 text-xs text-[#8a6121]">
+              Still working — secure processing can take up to 5 minutes for larger files.
             </div>
           )}
         </section>

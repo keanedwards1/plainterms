@@ -58,44 +58,87 @@ function getRetentionDays() {
 }
 
 function riskLabelClass(label: "low" | "medium" | "high") {
-  if (label === "high") return "bg-red-100 text-red-800 border-red-200";
-  if (label === "medium") return "bg-amber-100 text-amber-800 border-amber-200";
-  return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  if (label === "high") return "bg-[#fff0ea] text-[#9f3f2b] border-[#f3b2a0]";
+  if (label === "medium") return "bg-[#fff6e3] text-[#8a6121] border-[#f2d59d]";
+  return "bg-[#ebfaf6] text-[#1f6e61] border-[#b6e2d8]";
 }
 
 function recommendationClass(action: "sign" | "negotiate" | "do_not_sign_yet") {
-  if (action === "do_not_sign_yet") return "bg-red-100 text-red-800 border-red-200";
-  if (action === "negotiate") return "bg-amber-100 text-amber-800 border-amber-200";
-  return "bg-emerald-100 text-emerald-800 border-emerald-200";
+  if (action === "do_not_sign_yet") return "bg-[#fff0ea] text-[#9f3f2b] border-[#f3b2a0]";
+  if (action === "negotiate") return "bg-[#fff6e3] text-[#8a6121] border-[#f2d59d]";
+  return "bg-[#ebfaf6] text-[#1f6e61] border-[#b6e2d8]";
 }
 
 function clauseStatusClass(status: "present" | "unclear" | "missing") {
-  if (status === "missing") return "bg-red-100 text-red-800";
-  if (status === "unclear") return "bg-amber-100 text-amber-800";
-  return "bg-emerald-100 text-emerald-800";
+  if (status === "missing") return "bg-[#ffe8e2] text-[#9f3f2b]";
+  if (status === "unclear") return "bg-[#fff4dc] text-[#8a6121]";
+  return "bg-[#e4f6f0] text-[#1f6e61]";
 }
 
 function reportTierClass(tier: ReportTier) {
-  if (tier === "scan_39") return "bg-slate-100 text-slate-800 border-slate-300";
-  if (tier === "protect_99") return "bg-indigo-100 text-indigo-800 border-indigo-200";
-  return "bg-sky-100 text-sky-800 border-sky-200";
+  if (tier === "scan_39") return "bg-[#edf8ff] text-[#1f5b77] border-[#bdd4df]";
+  if (tier === "protect_99") return "bg-[#f5f1ff] text-[#4a3b86] border-[#cdc0f2]";
+  return "bg-[#eafaf8] text-[#1d6e64] border-[#b4e3dc]";
 }
 
 function sectionStatusClass(status: "present" | "unclear") {
-  if (status === "unclear") return "bg-amber-100 text-amber-800";
+  if (status === "unclear") return "bg-[#fff4dc] text-[#8a6121]";
   return "bg-[var(--pt-accent-soft)] text-[var(--pt-ink)]";
 }
 
 function flagSeverityClass(severity: "low" | "medium" | "high") {
-  if (severity === "high") return "bg-red-100 text-red-800";
-  if (severity === "medium") return "bg-amber-100 text-amber-800";
-  return "bg-emerald-100 text-emerald-800";
+  if (severity === "high") return "bg-[#ffe8e2] text-[#9f3f2b]";
+  if (severity === "medium") return "bg-[#fff4dc] text-[#8a6121]";
+  return "bg-[#e4f6f0] text-[#1f6e61]";
 }
 
 function riskMeterClass(label: "low" | "medium" | "high") {
   if (label === "high") return "bg-red-500";
   if (label === "medium") return "bg-amber-500";
   return "bg-emerald-500";
+}
+
+function RiskGauge({ score, label }: { score: number; label: "low" | "medium" | "high" }) {
+  const r = 54;
+  const cx = 70;
+  const cy = 68;
+  const circumference = Math.PI * r;
+  const filled = circumference * (score / 100);
+  const strokeColor =
+    label === "high" ? "#ef6f4e" : label === "medium" ? "#d2a24e" : "#1a998a";
+  const d = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+
+  return (
+    <svg
+      viewBox="0 0 140 80"
+      className="w-full max-w-[180px]"
+      aria-label={`Risk score ${score} out of 100`}
+    >
+      <path d={d} fill="none" stroke="#d5c3a5" strokeWidth="10" strokeLinecap="round" />
+      <path
+        d={d}
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="10"
+        strokeLinecap="round"
+        strokeDasharray={`${filled} ${circumference}`}
+      />
+      <text
+        x={cx}
+        y={cy - 10}
+        textAnchor="middle"
+        fontSize="24"
+        fontWeight="700"
+        fill="#1c2b3f"
+        fontFamily="Georgia, serif"
+      >
+        {score}
+      </text>
+      <text x={cx} y={cy + 4} textAnchor="middle" fontSize="9" fill="#5f6d82">
+        / 100
+      </text>
+    </svg>
+  );
 }
 
 function formatResultDate(raw: string) {
@@ -328,15 +371,16 @@ export default async function ResultPage({ params }: Props) {
     : null;
   const highPriorityNegotiationCount = data.report?.negotiation_bullets?.high.length ?? 0;
   const cardClass =
-    "rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5 shadow-sm";
+    "rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5 shadow-[0_16px_26px_-24px_var(--pt-shadow)]";
   const softCardClass =
-    "rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4";
+    "rounded-xl border border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_78%,white_22%)] p-4";
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[1220px] px-5 py-8 sm:px-8 lg:px-12">
+    <main className="relative mx-auto min-h-screen w-full max-w-[1220px] px-5 py-8 sm:px-8 lg:px-12">
       <TrackResultViewed resultId={data.result_id} />
+      <div className="pt-grid-pattern pointer-events-none absolute inset-0 opacity-20" />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.72fr)_minmax(300px,1fr)]">
+      <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.72fr)_minmax(300px,1fr)]">
         <section className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
@@ -348,11 +392,12 @@ export default async function ResultPage({ params }: Props) {
             <p className="text-xs text-[var(--pt-muted)]">Result ID: {data.result_id}</p>
           </div>
 
-          <section className="overflow-hidden rounded-[26px] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-sm">
-            <div className="grid gap-5 lg:grid-cols-[1.45fr_0.55fr]">
+          <section className="overflow-hidden rounded-[26px] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-[0_26px_46px_-36px_var(--pt-shadow)]">
+            <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
               <div>
-                <p className="inline-flex rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                  Summary dashboard
+                <p className="inline-flex items-center gap-2 rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-widest text-[var(--pt-muted)]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-accent)]" />
+                  Analysis Report
                 </p>
                 <h1 className="mt-3 text-3xl leading-tight text-[var(--pt-ink)] sm:text-4xl">
                   {data.headline}
@@ -361,41 +406,48 @@ export default async function ResultPage({ params }: Props) {
                   {annotateLegalTerms(data.overview, "overview")}
                 </p>
                 <p className="mt-3 text-xs text-[var(--pt-muted)]">
-                  Underlined legal terms include quick plain-English definitions (hover or
-                  tap/click).
+                  Underlined legal terms include quick plain-English definitions (hover or tap/click).
                 </p>
-              </div>
-
-              <div className="grid gap-3">
-                <div className={softCardClass}>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                    Generated
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--pt-ink)]">
-                    {createdAtLabel}
-                  </p>
-                </div>
-
-                <div className={softCardClass}>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                    Sections extracted
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--pt-ink)]">
-                    {data.sections.length}
-                  </p>
-                </div>
-
-                {data.report && (
-                  <div className={softCardClass}>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <div className={softCardClass + " inline-flex flex-col"}>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                      Plan tier
+                      Generated
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--pt-ink)]">
-                      {REPORT_TIER_LABELS[reportTier]}
+                    <p className="mt-0.5 text-sm font-semibold text-[var(--pt-ink)]">
+                      {createdAtLabel}
                     </p>
                   </div>
-                )}
+                  <div className={softCardClass + " inline-flex flex-col"}>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                      Sections
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold text-[var(--pt-ink)]">
+                      {data.sections.length} extracted
+                    </p>
+                  </div>
+                  {data.report && (
+                    <div className={softCardClass + " inline-flex flex-col"}>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                        Plan
+                      </p>
+                      <p className="mt-0.5 text-sm font-semibold text-[var(--pt-ink)]">
+                        {REPORT_TIER_LABELS[reportTier]}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {data.report && (
+                <div className="flex flex-col items-center justify-center gap-2 lg:pl-4">
+                  <RiskGauge score={data.report.risk.score} label={data.report.risk.label} />
+                  <span
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${riskLabelClass(data.report.risk.label)}`}
+                  >
+                    {data.report.risk.label.toUpperCase()} RISK
+                  </span>
+                </div>
+              )}
             </div>
 
             {data.gentle_notice && (
@@ -422,7 +474,7 @@ export default async function ResultPage({ params }: Props) {
                   Score{" "}
                   <strong className="text-[var(--pt-ink)]">{data.report.risk.score}/100</strong>
                 </p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e6d8c2]">
                   <div
                     className={`h-full rounded-full ${riskMeterClass(data.report.risk.label)}`}
                     style={{ width: `${Math.max(data.report.risk.score, 6)}%` }}
@@ -506,18 +558,18 @@ export default async function ResultPage({ params }: Props) {
                   {annotateLegalTerms(data.report.recommendation.reason, "recommendation-reason")}
                 </p>
                 {isScanTier && (
-                  <div className="mt-3 rounded-xl border border-sky-300 bg-sky-50 p-3 text-sm text-sky-800">
+                  <div className="mt-3 rounded-xl border border-[#bdd4df] bg-[#edf8ff] p-3 text-sm text-[#1f5b77]">
                     This is the Scan preview tier. Upgrade for complete clause coverage and deeper
                     guidance.
                   </div>
                 )}
                 {isReportTier && data.report.protect_upsell?.should_upsell_protect && (
-                  <div className="mt-3 rounded-xl border border-indigo-300 bg-indigo-50 p-3 text-sm text-indigo-800">
+                  <div className="mt-3 rounded-xl border border-[#cdc0f2] bg-[#f5f1ff] p-3 text-sm text-[#4a3b86]">
                     Protect tier is recommended for this agreement based on its risk profile.
                   </div>
                 )}
                 {data.report.risk.label === "high" && (
-                  <div className="mt-3 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                  <div className="mt-3 rounded-xl border border-[#f3b2a0] bg-[#fff0ea] p-3 text-sm text-[#9f3f2b]">
                     High-risk result detected. Attorney review is strongly recommended before
                     signing.
                   </div>
@@ -646,7 +698,7 @@ export default async function ResultPage({ params }: Props) {
               ) : null}
 
               {hasProtectExtras && data.report.protect_extras ? (
-                <article className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-5 shadow-sm">
+                <article className="rounded-2xl border border-[#cdc0f2] bg-[#f8f4ff] p-5 shadow-[0_16px_26px_-24px_var(--pt-shadow)]">
                   <h2 className="text-2xl text-[var(--pt-ink)]">Protect Extras</h2>
                   {data.report.protect_extras.deeper_rewrites.length > 0 && (
                     <div className="mt-4 grid gap-3">
@@ -656,7 +708,7 @@ export default async function ResultPage({ params }: Props) {
                       {data.report.protect_extras.deeper_rewrites.map((item) => (
                         <div
                           key={item.id}
-                          className="rounded-xl border border-indigo-200 bg-[var(--pt-surface)] p-3"
+                          className="rounded-xl border border-[#cdc0f2] bg-[var(--pt-surface)] p-3"
                         >
                           <p className="text-sm font-semibold text-[var(--pt-ink)]">
                             {annotateLegalTerms(item.issue, `rewrite-issue-${item.id}`)}
@@ -705,7 +757,7 @@ export default async function ResultPage({ params }: Props) {
                         {data.report.protect_extras.advanced_clause_coverage.map((clause, idx) => (
                           <div
                             key={`advanced-clause-${clause.key ?? idx}`}
-                            className="rounded-xl border border-indigo-200 bg-[var(--pt-surface)] p-3 text-sm text-[var(--pt-muted)]"
+                            className="rounded-xl border border-[#cdc0f2] bg-[var(--pt-surface)] p-3 text-sm text-[var(--pt-muted)]"
                           >
                             <span className="font-semibold text-[var(--pt-ink)]">
                               {annotateLegalTerms(
@@ -727,7 +779,7 @@ export default async function ResultPage({ params }: Props) {
               ) : null}
 
               {showReportTierTeaser && data.report.teaser_report_69 ? (
-                <article className="rounded-2xl border border-sky-200 bg-sky-50/50 p-5 shadow-sm">
+                <article className="rounded-2xl border border-[#bdd4df] bg-[#edf8ff] p-5 shadow-[0_16px_26px_-24px_var(--pt-shadow)]">
                   <h2 className="text-2xl text-[var(--pt-ink)]">
                     {data.report.teaser_report_69.headline}
                   </h2>
@@ -745,13 +797,13 @@ export default async function ResultPage({ params }: Props) {
               ) : null}
 
               {showProtectTierTeaser && data.report.teaser_protect_99 ? (
-                <article className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 shadow-sm">
+                <article className="rounded-2xl border border-[#cdc0f2] bg-[#f5f1ff] p-5 shadow-[0_16px_26px_-24px_var(--pt-shadow)]">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-2xl text-[var(--pt-ink)]">
                       {data.report.teaser_protect_99.headline}
                     </h2>
                     {data.report.teaser_protect_99.recommended && (
-                      <span className="rounded-full border border-indigo-300 bg-indigo-100 px-2 py-1 text-[11px] font-semibold text-indigo-800">
+                      <span className="rounded-full border border-[#cdc0f2] bg-[#ede5ff] px-2 py-1 text-[11px] font-semibold text-[#4a3b86]">
                         Recommended
                       </span>
                     )}
@@ -764,7 +816,7 @@ export default async function ResultPage({ params }: Props) {
                     ))}
                   </ul>
                   {protectUpsellReasons.length > 0 && (
-                    <div className="mt-3 rounded-xl border border-indigo-200 bg-[var(--pt-surface)] p-3">
+                    <div className="mt-3 rounded-xl border border-[#cdc0f2] bg-[var(--pt-surface)] p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
                         Why this is recommended
                       </p>
@@ -917,14 +969,14 @@ export default async function ResultPage({ params }: Props) {
                 Clearly stated in the contract
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-[var(--pt-surface-soft)] px-3 py-2">
-                <span className="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-800">
+                <span className="rounded-full bg-[#fff4dc] px-2 py-1 text-[11px] font-semibold text-[#8a6121]">
                   unclear
                 </span>
                 Mentioned, but details may be incomplete
               </div>
               {data.report && (
                 <div className="flex items-center gap-2 rounded-lg bg-[var(--pt-surface-soft)] px-3 py-2">
-                  <span className="rounded-full bg-red-100 px-2 py-1 text-[11px] font-semibold text-red-800">
+                  <span className="rounded-full bg-[#ffe8e2] px-2 py-1 text-[11px] font-semibold text-[#9f3f2b]">
                     missing
                   </span>
                   Important clause was not found in the text
