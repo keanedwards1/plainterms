@@ -50,25 +50,30 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${headingFont.variable} ${bodyFont.variable} pt-body antialiased`}>
-        <nav className="sticky top-0 z-50 border-b border-[var(--pt-border)] bg-[var(--pt-bg)]/84 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 sm:px-8">
+        <nav className="sticky top-0 z-50 border-b border-[var(--pt-border)] bg-[#eaf2fc]/94 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 sm:px-8 lg:px-12">
             <Link href="/" className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--pt-accent)] shadow-sm shadow-black/10">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path d="M6 0.5L11.5 6L6 11.5L0.5 6L6 0.5Z" fill="#FFFDF7" />
-                </svg>
-              </span>
-              <span style={{ fontFamily: "var(--font-heading), Georgia, serif" }} className="text-[1.45rem] font-semibold tracking-tight text-[var(--pt-ink)]">
-                PlainTerms
+              <span className="text-[2.1rem] leading-none tracking-tight text-[var(--pt-ink)] md:text-[2.35rem]">
+                <span className="font-bold">Plain</span>
+                <span className="font-medium text-[var(--pt-accent)]">Terms</span>
               </span>
             </Link>
 
-            <div className="flex items-center gap-2.5 sm:gap-3">
-              <Link
-                href="/analyze"
-                className="pt-btn-primary rounded-full px-5 py-2 text-sm font-semibold"
-              >
-                Analyze Contract
+            <div className="hidden items-center gap-10 text-sm md:flex">
+              <Link href="/how-it-works" className="pt-nav-link">
+                How It Works
+              </Link>
+              <Link href="/pricing" className="pt-nav-link">
+                Pricing
+              </Link>
+              <Link href="/faq" className="pt-nav-link">
+                FAQ
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <Link href="/analyze" className="pt-btn-primary rounded-lg px-6 py-2 text-sm font-semibold">
+                Sign In
               </Link>
             </div>
           </div>

@@ -288,61 +288,48 @@ export default function AnalyzePage() {
   }
 
   return (
-    <main className="relative mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8 lg:px-12">
+    <main className="relative mx-auto min-h-screen w-full max-w-6xl px-5 pb-16 pt-12 sm:px-8 lg:px-12">
       <div className="pt-grid-pattern pointer-events-none absolute inset-0 opacity-20" />
 
-      <section className="relative grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <div>
-          <p className="pt-kicker mb-3">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-accent)]" />
-            Step 1 of 3
-          </p>
-          <h1 className="text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
-            Upload your contract for analysis.
-          </h1>
-          <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)]">
-            Supports brand deals, management agreements, licensing contracts, and more. Upload a
-            PDF or DOCX — we validate readability before secure checkout.
-          </p>
-        </div>
-
-        <aside className="pt-card rounded-[var(--pt-radius)] p-5 text-sm text-[var(--pt-muted)] shadow-[0_16px_26px_-24px_var(--pt-shadow)]">
-          <h2 className="text-lg text-[var(--pt-ink)]">Review Flow</h2>
-          <ul className="mt-3 space-y-2">
-            <li className="flex items-center gap-2">
-              <span className="text-[var(--pt-accent)]">●</span> Plain-English clause breakdown
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-[var(--pt-accent)]">●</span> Risk score with red flags
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-[var(--pt-accent)]">●</span> Sign / Negotiate / Don&apos;t sign guidance
-            </li>
-            <li className="flex items-center gap-2 text-xs">
-              <span className="text-[var(--pt-muted)]">—</span> Informational only, not legal advice
-            </li>
-          </ul>
-          <div className="mt-4 rounded-xl border border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_70%,white_30%)] p-3 text-xs leading-relaxed">
-            <p className="font-semibold text-[var(--pt-ink)]">Cost context</p>
-            <p className="mt-1">
-              Traditional attorney review often starts in the hundreds. PlainTerms starts at $39.
-            </p>
-          </div>
-        </aside>
+      <section className="relative text-center">
+        <p className="pt-kicker inline-flex">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-accent)]" />
+          Step 1 of 3
+        </p>
+        <h1 className="mx-auto mt-4 max-w-4xl text-5xl leading-[0.98] text-[var(--pt-ink)] sm:text-6xl">
+          Upload Your Contract
+        </h1>
+        <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-[var(--pt-muted)]">
+          Upload your agreement and we&apos;ll validate it before sending you to secure checkout.
+        </p>
       </section>
 
-      <section className="relative mt-8 rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-[0_24px_40px_-34px_var(--pt-shadow)]">
+      <section className="relative mt-9 grid gap-4 lg:grid-cols-3">
+        <article className="pt-card rounded-2xl p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--pt-muted)]">Coverage</p>
+          <p className="mt-2 text-sm text-[var(--pt-muted)]">Brand, management, licensing, and services contracts.</p>
+        </article>
+        <article className="pt-card rounded-2xl p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--pt-muted)]">Security</p>
+          <p className="mt-2 text-sm text-[var(--pt-muted)]">Encrypted upload and controlled retention window.</p>
+        </article>
+        <article className="pt-card rounded-2xl p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--pt-muted)]">Output</p>
+          <p className="mt-2 text-sm text-[var(--pt-muted)]">Risk score, red flags, questions, and clause guidance.</p>
+        </article>
+      </section>
+
+      <section className="relative mt-6 rounded-[24px] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-[0_28px_46px_-32px_var(--pt-shadow)] sm:p-8">
         <form onSubmit={onSubmit}>
-          {/* Upload zone */}
-          <label className="mb-3 block text-sm font-semibold text-[var(--pt-ink)]">
+          <label className="block text-sm font-semibold text-[var(--pt-ink)]">
             Contract file (PDF or DOCX)
           </label>
 
-          <div className="rounded-2xl border-2 border-dashed border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_72%,white_28%)] p-8 text-center transition-colors hover:border-[var(--pt-muted)]/40">
+          <div className="mt-3 rounded-2xl border-2 border-dashed border-[#b7cfef] bg-[#f4f8ff] p-8 text-center transition-colors hover:border-[#95b6e4]">
             <div className="mb-5 flex flex-col items-center">
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface)]">
+              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-white">
                 <svg
-                  className="h-6 w-6 text-[var(--pt-muted)]"
+                  className="h-6 w-6 text-[#4f73a8]"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -358,13 +345,13 @@ export default function AnalyzePage() {
               </div>
               {file ? (
                 <div>
-                  <p className="font-semibold text-[var(--pt-ink)]">{file.name}</p>
+                  <p className="text-base font-semibold text-[var(--pt-ink)]">{file.name}</p>
                   <p className="mt-1 text-sm text-[var(--pt-muted)]">{prettyFileSize(file.size)}</p>
                 </div>
               ) : (
                 <div>
-                  <p className="font-semibold text-[var(--pt-ink)]">Drop your contract here</p>
-                  <p className="mt-1 text-sm text-[var(--pt-muted)]">or click to browse — PDF or DOCX</p>
+                  <p className="text-base font-semibold text-[var(--pt-ink)]">Drop your contract here</p>
+                  <p className="mt-1 text-sm text-[var(--pt-muted)]">or click to browse files</p>
                 </div>
               )}
             </div>
@@ -372,15 +359,14 @@ export default function AnalyzePage() {
               type="file"
               accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-[var(--pt-accent)] file:px-5 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:brightness-95"
+              className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:cursor-pointer file:rounded-xl file:border-0 file:bg-[#4e9378] file:px-5 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:brightness-95"
             />
           </div>
 
-          {/* Tier selection — shown once file is chosen */}
           {file && (
-            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_76%,white_24%)] p-4">
+            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[#f4f8ff] p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                Choose your report depth
+                Choose report depth
               </p>
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 {REPORT_TIER_OPTIONS.map((tier) => {
@@ -390,8 +376,8 @@ export default function AnalyzePage() {
                       key={tier}
                       className={`cursor-pointer rounded-xl border p-4 transition-all ${
                         selected
-                          ? "border-[var(--pt-accent)] bg-[var(--pt-surface)] shadow-sm ring-1 ring-[var(--pt-accent)]/20"
-                          : "border-[var(--pt-border)] bg-[var(--pt-surface)] hover:border-[var(--pt-muted)]/40"
+                          ? "border-[var(--pt-accent)] bg-white shadow-sm ring-1 ring-[var(--pt-accent)]/20"
+                          : "border-[var(--pt-border)] bg-white hover:border-[#9ab8e3]"
                       }`}
                     >
                       <input
@@ -402,9 +388,7 @@ export default function AnalyzePage() {
                         onChange={() => setReportTier(tier)}
                         className="sr-only"
                       />
-                      <p className="text-sm font-semibold text-[var(--pt-ink)]">
-                        {REPORT_TIER_LABELS[tier]}
-                      </p>
+                      <p className="text-sm font-semibold text-[var(--pt-ink)]">{REPORT_TIER_LABELS[tier]}</p>
                       <p className="mt-1 text-xs leading-relaxed text-[var(--pt-muted)]">
                         {REPORT_TIER_DESCRIPTIONS[tier]}
                       </p>
@@ -415,8 +399,7 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          {/* Testing controls — collapsed */}
-          <details className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_76%,white_24%)]">
+          <details className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[#f4f8ff]">
             <summary className="cursor-pointer px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
               Internal testing controls
             </summary>
@@ -426,7 +409,7 @@ export default function AnalyzePage() {
                 <select
                   value={analysisMode}
                   onChange={(e) => setAnalysisMode(e.target.value as AnalysisModeOption)}
-                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)]"
+                  className="rounded-xl border border-[var(--pt-border)] bg-white px-3 py-2 text-sm text-[var(--pt-ink)]"
                 >
                   <option value="rules">Standard review</option>
                   <option value="llm">Deep review (internal)</option>
@@ -439,7 +422,7 @@ export default function AnalyzePage() {
                   value={llmModel}
                   disabled={analysisMode !== "llm"}
                   onChange={(e) => setLlmModel(e.target.value as LlmModelOption)}
-                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-[var(--pt-border)] bg-white px-3 py-2 text-sm text-[var(--pt-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {LLM_MODEL_OPTIONS.map((model) => (
                     <option key={model} value={model}>
@@ -461,17 +444,15 @@ export default function AnalyzePage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="pt-btn-primary rounded-full px-7 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              className="pt-btn-success rounded-xl px-7 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Processing..." : "Continue to payment →"}
+              {isSubmitting ? "Processing..." : "Continue to payment"}
             </button>
-            {isSubmitting && step && (
-              <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>
-            )}
+            {isSubmitting && step && <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>}
           </div>
 
           {isSubmitting && step && (
-            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[color-mix(in_oklab,var(--pt-surface-soft)_76%,white_24%)] p-4">
+            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[#f4f8ff] p-4">
               <div className="flex items-center gap-3">
                 <span className="relative inline-flex h-3 w-3">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--pt-accent)] opacity-35" />
@@ -500,17 +481,13 @@ export default function AnalyzePage() {
                       <span
                         className={`inline-flex h-2 w-2 rounded-full ${
                           completed
-                            ? "bg-[var(--pt-teal)]"
+                            ? "bg-[var(--pt-success)]"
                             : active
                               ? "animate-pulse bg-[var(--pt-accent)]"
                               : "bg-[var(--pt-border)]"
                         }`}
                       />
-                      <span
-                        className={`text-xs ${
-                          completed || active ? "text-[var(--pt-ink)]" : "text-[var(--pt-muted)]"
-                        }`}
-                      >
+                      <span className={`text-xs ${completed || active ? "text-[var(--pt-ink)]" : "text-[var(--pt-muted)]"}`}>
                         {stepLabel(item)}
                       </span>
                     </div>
@@ -521,20 +498,19 @@ export default function AnalyzePage() {
           )}
 
           {error && (
-            <div className="mt-5 rounded-xl border border-[#f3b2a0] bg-[#fff0ea] p-3 text-sm text-[#9f3f2b]">
+            <div className="mt-5 rounded-xl border border-[var(--pt-danger)]/30 bg-[var(--pt-danger-soft)] p-3 text-sm text-[var(--pt-danger)]">
               {error}
             </div>
           )}
 
           {checkoutCanceled && !error && (
-            <div className="mt-5 rounded-xl border border-[#f2d59d] bg-[#fff6e3] p-3 text-sm text-[#8a6121]">
+            <div className="mt-5 rounded-xl border border-[var(--pt-warning)]/30 bg-[var(--pt-warning-soft)] p-3 text-sm text-[var(--pt-warning)]">
               Checkout was canceled. You can continue to payment again when ready.
             </div>
           )}
 
           <p className="mt-5 text-xs text-[var(--pt-muted)]">
-            Results are typically available for about {RESULT_RETENTION_DAYS} days and may expire
-            automatically after that window.
+            Results are typically available for about {RESULT_RETENTION_DAYS} days and may expire automatically after that window.
           </p>
         </form>
       </section>

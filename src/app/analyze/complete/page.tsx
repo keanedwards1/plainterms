@@ -113,26 +113,24 @@ export default function AnalyzeCompletePage() {
   }, [error, sessionId]);
 
   return (
-    <main className="relative mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center justify-center px-5 py-10 sm:px-8">
+    <main className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-5 py-10 sm:px-8">
       <div className="pt-grid-pattern pointer-events-none absolute inset-0 opacity-20" />
 
       <div className="relative w-full text-center">
-        <p className="pt-kicker mb-2 inline-flex">
-          Step 3 of 3
-        </p>
-        <h1 className="text-3xl text-[var(--pt-ink)] sm:text-4xl">Final safety checks</h1>
-        <p className="mt-3 text-[var(--pt-muted)]">
-          Confirming payment and preparing your secure report.
+        <p className="pt-kicker mb-2 inline-flex">Step 3 of 3</p>
+        <h1 className="text-5xl text-[var(--pt-ink)] sm:text-6xl">Final Safety Checks</h1>
+        <p className="mx-auto mt-3 max-w-xl text-lg text-[var(--pt-muted)]">
+          Confirming payment and preparing your secure analysis report.
         </p>
       </div>
 
       {error ? (
-        <div className="relative mt-8 w-full rounded-2xl border border-[#f3b2a0] bg-[#fff0ea] p-5 text-sm text-[#9f3f2b] shadow-[0_16px_26px_-24px_var(--pt-shadow)]">
+        <div className="relative mt-8 w-full rounded-2xl border border-[var(--pt-danger)]/35 bg-[var(--pt-danger-soft)] p-5 text-sm text-[var(--pt-danger)] shadow-[0_16px_26px_-24px_var(--pt-shadow)]">
           <p>{error}</p>
           <p className="mt-4">
             <Link
               href="/analyze"
-              className="pt-btn-secondary rounded-full px-4 py-2 text-xs font-semibold"
+              className="pt-btn-secondary rounded-xl px-4 py-2 text-xs font-semibold"
             >
               ← Return to upload
             </Link>
@@ -147,7 +145,7 @@ export default function AnalyzeCompletePage() {
               <span className="absolute inset-[10px] animate-pulse rounded-full bg-[var(--pt-accent-soft)]" />
             </div>
             <div>
-              <p className="text-base font-semibold text-[var(--pt-ink)]">
+              <p className="text-lg font-semibold text-[var(--pt-ink)]">
                 {PROCESSING_STAGES[stageIndex]}
               </p>
               <p className="mt-1 text-sm text-[var(--pt-muted)]">
@@ -175,7 +173,7 @@ export default function AnalyzeCompletePage() {
           </div>
 
           {showStillWorking && (
-            <div className="mt-5 rounded-xl border border-[#f2d59d] bg-[#fff6e3] p-3 text-xs text-[#8a6121]">
+            <div className="mt-5 rounded-xl border border-[var(--pt-warning)]/30 bg-[var(--pt-warning-soft)] p-3 text-xs text-[var(--pt-warning)]">
               Still working — secure processing can take up to 5 minutes for larger files.
             </div>
           )}
