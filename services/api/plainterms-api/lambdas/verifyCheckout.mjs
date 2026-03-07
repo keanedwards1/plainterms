@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { runAnalysis } from "./lib/runAnalysis.mjs";
 import { getStripeSecretKey } from "./lib/stripeConfig.mjs";
 import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
+import { parseSelectedAddonsCsv } from "./lib/addonSelection.mjs";
 import { corsHeaders } from "./lib/cors.mjs";
 
 function json(event, statusCode, bodyObj) {
@@ -21,12 +22,12 @@ function getAnalysisTimeoutMs() {
   return Math.floor(raw);
 }
 
-async function runAnalysisWithTimeout(args, analysisSelection) {
+async function runAnalysisWithTimeout(args, analysisSelection, addonSelection) {
   const timeoutMs = getAnalysisTimeoutMs();
   let timer = null;
   try {
     return await Promise.race([
-      runAnalysis(args, analysisSelection),
+      runAnalysis(args, analysisSelection, addonSelection),
       new Promise((_, reject) => {
         timer = setTimeout(() => {
           reject(
@@ -176,6 +177,7 @@ export const handler = async (event) => {
     const analysisSelection = selectionCheck.ok
       ? selectionCheck.selection
       : { analysisMode: null, llmModel: null, reportTier: "report_69" };
+    const selectedAddons = parseSelectedAddonsCsv(session.metadata?.selectedAddons);
 
     if (!objectKey || !filename || !contentType || !Number.isFinite(size)) {
       return json(event, 500, {
@@ -192,7 +194,8 @@ export const handler = async (event) => {
           contentType,
           size,
         },
-        analysisSelection
+        analysisSelection,
+        { selectedAddons }
       );
       resultId = analysis.resultId;
     } catch (analysisErr) {

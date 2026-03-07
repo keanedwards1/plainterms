@@ -34,10 +34,14 @@ export async function getStripeConfig() {
     process.env.STRIPE_PRICE_ID_REPORT_PARAM ?? process.env.STRIPE_PRICE_ID_PARAM;
   const scanPriceParam = process.env.STRIPE_PRICE_ID_SCAN_PARAM;
   const protectPriceParam = process.env.STRIPE_PRICE_ID_PROTECT_PARAM;
+  const rewriteAddonPriceParam = process.env.STRIPE_ADDON_REWRITE_PRICE_PARAM;
+  const updateEmailAddonPriceParam = process.env.STRIPE_ADDON_UPDATE_EMAIL_PRICE_PARAM;
 
   const reportPriceId = await maybeReadParameter(reportPriceParam, false);
   const scanPriceId = await maybeReadParameter(scanPriceParam, false);
   const protectPriceId = await maybeReadParameter(protectPriceParam, false);
+  const rewriteAddonPriceId = await maybeReadParameter(rewriteAddonPriceParam, false);
+  const updateEmailAddonPriceId = await maybeReadParameter(updateEmailAddonPriceParam, false);
 
   if (!reportPriceId) {
     throw new Error(
@@ -51,6 +55,10 @@ export async function getStripeConfig() {
       scan_39: scanPriceId ?? reportPriceId,
       report_69: reportPriceId,
       protect_99: protectPriceId ?? reportPriceId,
+    },
+    stripeAddonPriceIds: {
+      rewrite_contract: rewriteAddonPriceId,
+      update_email: updateEmailAddonPriceId,
     },
   };
   return cachedConfig;

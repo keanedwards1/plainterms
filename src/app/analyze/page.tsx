@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import {
   DEFAULT_ANALYSIS_MODE,
@@ -251,20 +252,20 @@ export default function AnalyzePage() {
       currentStep = "starting-checkout";
       setStep(currentStep);
       void trackFunnelMetric({ event: "checkout_start", funnelId });
-      const checkoutRes = await fetch("/api/checkout", {
+          const checkoutRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          objectKey: uploadJson.objectKey,
-          filename: file.name,
-          contentType: file.type || "application/octet-stream",
-          size: file.size,
-          precheckToken: precheckJson.precheckToken,
-          analysisMode,
-          reportTier,
-          ...(analysisMode === "llm" ? { llmModel } : {}),
-        }),
-      });
+          body: JSON.stringify({
+            objectKey: uploadJson.objectKey,
+            filename: file.name,
+            contentType: file.type || "application/octet-stream",
+            size: file.size,
+            precheckToken: precheckJson.precheckToken,
+            analysisMode,
+            reportTier,
+            ...(analysisMode === "llm" ? { llmModel } : {}),
+          }),
+        });
 
       if (!checkoutRes.ok) {
         const detail = await readErrorResponse(checkoutRes);
@@ -289,36 +290,45 @@ export default function AnalyzePage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-10 sm:px-8 lg:px-12">
-      <Link href="/" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
-        ← Back to home
-      </Link>
+    <main className="px-5 pb-12 pt-8 sm:px-8 lg:px-12">
+      <div className="mx-auto max-w-6xl">
+        <Link href="/" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
+          ← Back to home
+        </Link>
 
-      <section className="mt-5 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="mt-5 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div>
-          <p className="mb-3 inline-flex rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-1 text-sm font-semibold text-[var(--pt-muted)]">
+          <p className="pt-kicker mb-3">
             Step 1 of 3
           </p>
           <h1 className="text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
-            Upload your agreement for plain-English analysis.
+            Upload your contract for a clear review.
           </h1>
           <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)]">
-            v1 supports independent contractor and services agreements. Upload a PDF or DOCX, then
-            we validate readability before secure checkout.
+            Upload a PDF or DOCX and receive a structured summary, key risks, and next-step
+            guidance before signing.
           </p>
         </div>
 
-        <aside className="rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5 text-sm text-[var(--pt-muted)]">
-          <h2 className="text-lg text-[var(--pt-ink)]">What to expect</h2>
-          <ul className="mt-3 grid gap-2">
-            <li>• Calm, neutral summary language.</li>
-            <li>• Missing details are called out explicitly.</li>
-            <li>• Informational only, not legal advice.</li>
+        <aside className="pt-card p-5 text-sm text-[var(--pt-muted)]">
+          <h2 className="text-lg text-[var(--pt-ink)]">Secure review flow</h2>
+          <ul className="mt-3 space-y-2">
+            <li>• Private upload and validation</li>
+            <li>• Plain-English clause explanations</li>
+            <li>• Action plan before signature</li>
+            <li>• Informational only, not legal advice</li>
           </ul>
+          <Image
+            src="/graphics/icon-shield.svg"
+            alt=""
+            width={88}
+            height={88}
+            className="mt-4 h-20 w-20 rounded-xl border border-[var(--pt-border)] bg-white p-2"
+          />
         </aside>
       </section>
 
-      <section className="mt-8 rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-[var(--pt-surface)] p-6 shadow-sm">
+      <section className="mt-8 pt-card p-6">
         <form onSubmit={onSubmit}>
           <label className="mb-3 block text-sm font-semibold text-[var(--pt-ink)]">
             Contract file (PDF or DOCX)
@@ -339,25 +349,25 @@ export default function AnalyzePage() {
             )}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+          <div className="mt-5 pt-card-soft p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-              Testing controls
+              Internal settings
             </p>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm text-[var(--pt-muted)]">
-                Analysis engine
+                Review profile
                 <select
                   value={analysisMode}
                   onChange={(e) => setAnalysisMode(e.target.value as AnalysisModeOption)}
                   className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)]"
                 >
-                  <option value="rules">Rules (no LLM)</option>
-                  <option value="llm">LLM</option>
+                  <option value="rules">Standard review</option>
+                  <option value="llm">Deep review (internal)</option>
                 </select>
               </label>
 
               <label className="grid gap-2 text-sm text-[var(--pt-muted)]">
-                LLM model
+                Model option (internal)
                 <select
                   value={llmModel}
                   disabled={analysisMode !== "llm"}
@@ -375,13 +385,13 @@ export default function AnalyzePage() {
             <p className="mt-3 text-xs text-[var(--pt-muted)]">
               Current run:{" "}
               <span className="font-semibold text-[var(--pt-ink)]">
-                {analysisMode === "rules" ? "Rules engine" : `LLM (${llmModel})`}
+                {analysisMode === "rules" ? "Standard review profile" : `Deep review (${llmModel})`}
               </span>
             </p>
           </div>
 
           {file && (
-            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+            <div className="mt-5 pt-card-soft p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
                 Choose your depth of analysis and report detail
               </p>
@@ -422,15 +432,15 @@ export default function AnalyzePage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-full bg-[var(--pt-accent)] px-6 py-3 text-sm font-semibold text-[var(--pt-accent-ink)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="pt-btn-primary px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Processing..." : "Continue"}
+              {isSubmitting ? "Processing..." : "Continue to payment"}
             </button>
             {isSubmitting && step && <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>}
           </div>
 
           {isSubmitting && step && (
-            <div className="mt-5 rounded-2xl border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+            <div className="mt-5 pt-card-soft p-4">
               <div className="flex items-center gap-3">
                 <span className="relative inline-flex h-3 w-3">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--pt-accent)] opacity-35" />
@@ -480,13 +490,13 @@ export default function AnalyzePage() {
           )}
 
           {error && (
-            <div className="mt-5 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+            <div className="pt-alert-danger mt-5 p-3 text-sm">
               {error}
             </div>
           )}
 
           {checkoutCanceled && !error && (
-            <div className="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+            <div className="pt-alert-warn mt-5 p-3 text-sm">
               Checkout was canceled. You can continue to payment again when ready.
             </div>
           )}
@@ -497,6 +507,7 @@ export default function AnalyzePage() {
           </p>
         </form>
       </section>
+      </div>
     </main>
   );
 }

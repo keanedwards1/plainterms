@@ -1,6 +1,7 @@
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
 import { getLogContext, logApiError } from "@/lib/observability";
 import { ANALYSIS_MODE_OPTIONS, LLM_MODEL_OPTIONS } from "@/lib/analysisOptions";
+import { ADDON_OPTIONS } from "@/lib/addonOptions";
 import { REPORT_TIER_OPTIONS } from "@/lib/pricingOptions";
 import { z } from "zod";
 
@@ -13,6 +14,7 @@ const CheckoutRequest = z.object({
   analysisMode: z.enum(ANALYSIS_MODE_OPTIONS).optional(),
   llmModel: z.enum(LLM_MODEL_OPTIONS).optional(),
   reportTier: z.enum(REPORT_TIER_OPTIONS).optional(),
+  selectedAddons: z.array(z.enum(ADDON_OPTIONS)).optional(),
 });
 
 const CheckoutResponse = z.object({

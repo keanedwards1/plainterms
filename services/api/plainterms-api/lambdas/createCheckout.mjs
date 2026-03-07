@@ -3,6 +3,7 @@ import { getStripeConfig } from "./lib/stripeConfig.mjs";
 import { validateObjectKey, validateUploadMeta } from "./lib/uploadPolicy.mjs";
 import { verifyPrecheckToken } from "./lib/precheckToken.mjs";
 import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
+import { formatSelectedAddonsCsv, parseAddonSelection } from "./lib/addonSelection.mjs";
 import { corsHeaders } from "./lib/cors.mjs";
 
 function json(event, statusCode, bodyObj) {
@@ -38,6 +39,7 @@ export const handler = async (event) => {
   const size = payload.size;
   const precheckToken = payload.precheckToken;
   const selectionCheck = parseAnalysisSelection(payload);
+  const addonCheck = parseAddonSelection(payload);
 
   if (!objectKey || !filename || !contentType || typeof size !== "number") {
     return json(event, 400, {
@@ -47,6 +49,9 @@ export const handler = async (event) => {
 
   if (!selectionCheck.ok) {
     return json(event, 400, { error: selectionCheck.error });
+  }
+  if (!addonCheck.ok) {
+    return json(event, 400, { error: addonCheck.error });
   }
 
   if (typeof precheckToken !== "string" || !precheckToken.trim()) {
@@ -103,7 +108,7 @@ export const handler = async (event) => {
       });
     }
 
-    const { stripeSecretKey, stripePriceIds } = await getStripeConfig();
+    const { stripeSecretKey, stripePriceIds, stripeAddonPriceIds } = await getStripeConfig();
     const selectedTier = selectionCheck.selection.reportTier;
     const selectedPriceId = stripePriceIds?.[selectedTier];
     if (!selectedPriceId) {
@@ -111,6 +116,19 @@ export const handler = async (event) => {
         error: `Missing Stripe price configuration for tier: ${selectedTier}`,
       });
     }
+    const selectedAddons = addonCheck.selection.selectedAddons;
+    const addonLineItems = [];
+    for (const addon of selectedAddons) {
+      const addonPriceId = stripeAddonPriceIds?.[addon];
+      if (!addonPriceId) {
+        return json(event, 400, {
+          error: `Add-on "${addon}" is not available right now.`,
+          code: "addon_not_configured",
+        });
+      }
+      addonLineItems.push({ price: addonPriceId, quantity: 1 });
+    }
+
     const appBaseUrl = (process.env.APP_BASE_URL ?? "").replace(/\/+$/, "");
     if (!appBaseUrl) {
       return json(event, 500, { error: "Missing required env var: APP_BASE_URL" });
@@ -121,7 +139,7 @@ export const handler = async (event) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: [{ price: selectedPriceId, quantity: 1 }],
+      line_items: [{ price: selectedPriceId, quantity: 1 }, ...addonLineItems],
       success_url: `${appBaseUrl}/analyze/complete?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appBaseUrl}/analyze?canceled=1`,
       metadata: {
@@ -133,6 +151,7 @@ export const handler = async (event) => {
         scanPassed: "true",
         textExtractionPrecheckPassed: "true",
         reportTier: selectedTier,
+        selectedAddons: formatSelectedAddonsCsv(selectedAddons),
         ...(selection.analysisMode ? { analysisMode: selection.analysisMode } : {}),
         ...(selection.llmModel ? { llmModel: selection.llmModel } : {}),
       },

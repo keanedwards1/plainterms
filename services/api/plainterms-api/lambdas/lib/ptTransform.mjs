@@ -20,6 +20,7 @@ const UI_RISK_LABELS = new Set(["low", "medium", "high"]);
 const UI_FLAG_SEVERITIES = new Set(["low", "medium", "high"]);
 const UI_RECOMMENDATION_ACTIONS = new Set(["sign", "negotiate", "do_not_sign_yet"]);
 const UI_REPORT_TIERS = new Set(["scan_39", "report_69", "protect_99"]);
+const UI_ADDON_STATES = new Set(["not_purchased", "purchased", "processing", "ready"]);
 
 function isObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -129,6 +130,12 @@ function ensureReportTier(value) {
   if (typeof value !== "string") return "report_69";
   const v = value.trim().toLowerCase();
   return UI_REPORT_TIERS.has(v) ? v : "report_69";
+}
+
+function ensureAddonState(value) {
+  if (typeof value !== "string") return "not_purchased";
+  const v = value.trim().toLowerCase();
+  return UI_ADDON_STATES.has(v) ? v : "not_purchased";
 }
 
 function toUiFlag(flag, idx) {
@@ -355,6 +362,14 @@ export function transformPtV1ToUiV1(ptV1) {
   const teaserReport69 = toUiTeaser(reportObj?.teaser_report_69);
   const teaserProtect99 = toUiTeaser(reportObj?.teaser_protect_99);
   const protectExtras = toUiProtectExtras(reportObj?.protect_extras);
+  const addons = {
+    rewrite_contract: {
+      state: ensureAddonState(ptV1?.addons?.rewrite_contract),
+    },
+    update_email: {
+      state: ensureAddonState(ptV1?.addons?.update_email),
+    },
+  };
 
   const report =
     reportObj || uiFlags.length > 0 || uiClauses.length > 0
@@ -395,6 +410,7 @@ export function transformPtV1ToUiV1(ptV1) {
         ensureString(ptV1?.notices?.not_legal_advice).trim() ||
         "This summary is for informational purposes only and is not legal advice.",
     },
+    addons,
     ...(report ? { report } : {}),
   };
 }
@@ -408,6 +424,23 @@ export function assertPtUiV1Contract(ptUiV1) {
   assert(typeof ptUiV1.overview === "string" && ptUiV1.overview, "pt.ui.v1 overview required");
   assert(Array.isArray(ptUiV1.sections), "pt.ui.v1 sections must be an array");
   assert(isObject(ptUiV1.notices), "pt.ui.v1 notices must be an object");
+  assert(isObject(ptUiV1.addons), "pt.ui.v1 addons must be an object");
+  assert(
+    isObject(ptUiV1.addons.rewrite_contract),
+    "pt.ui.v1 addons.rewrite_contract must be an object"
+  );
+  assert(
+    isObject(ptUiV1.addons.update_email),
+    "pt.ui.v1 addons.update_email must be an object"
+  );
+  assert(
+    UI_ADDON_STATES.has(ptUiV1.addons.rewrite_contract.state),
+    "pt.ui.v1 addons.rewrite_contract.state invalid"
+  );
+  assert(
+    UI_ADDON_STATES.has(ptUiV1.addons.update_email.state),
+    "pt.ui.v1 addons.update_email.state invalid"
+  );
   assert(
     typeof ptUiV1.notices.not_legal_advice === "string" && ptUiV1.notices.not_legal_advice,
     "pt.ui.v1 notices.not_legal_advice required"

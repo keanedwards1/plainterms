@@ -144,6 +144,8 @@ Stripe checkout configuration (SAM parameters -> Lambda env):
 - `StripeReportPriceIdParamName` (SSM string for `Report ($69)` price ID)
 - `StripeScanPriceIdParamName` (SSM string for `Scan ($39)` price ID)
 - `StripeProtectPriceIdParamName` (SSM string for `Protect ($99)` price ID)
+- `StripeAddonRewritePriceIdParamName` (SSM string for `Rewrite Contract` add-on price ID)
+- `StripeAddonUpdateEmailPriceIdParamName` (SSM string for `Create Update Email` add-on price ID)
 - `StripePriceIdParamName` (legacy fallback; also defaults to report price path)
 - `AppBaseUrl` (for example `https://plainterms.vercel.app`)
 - `PrecheckTokenSecretParamName` (SSM secure string for precheck token signing)
@@ -211,3 +213,12 @@ Backend retention behavior:
 - `POST /checkout` -> create Stripe Checkout session
 - `POST /checkout/verify` -> verify paid session and create/reuse result
 - `GET /result/{id}` -> return result, `202` processing, or `410` expired
+
+## TODO
+
+- Implement pricing A/B split test:
+  - Assign persistent variant (`A` or `B`) with cookie (50/50)
+  - Render different pricing sets on `/` based on variant
+  - Include `variant` in funnel metrics events (`pricing_view`, `checkout_start`, `checkout_success`)
+  - Pass `variant` through checkout request and Stripe metadata
+  - Compare variants by revenue per visitor, conversion rate, and refunds before choosing winner
