@@ -11,6 +11,8 @@ import { buildReportInsights } from "./reportEngine.mjs";
 
 const db = new DynamoDBClient({});
 const REPORT_TIERS = new Set(["scan_39", "report_69", "protect_99"]);
+const ADDON_KEYS = ["rewrite_contract", "update_email"];
+const ADDON_KEY_SET = new Set(ADDON_KEYS);
 const CRITICAL_CLAUSE_KEYS = new Set(["scope", "payment", "termination", "ip", "liability"]);
 const ADVANCED_RISK_CLAUSE_KEYS = new Set([
   "liability",
@@ -35,6 +37,28 @@ function normalizeReportTier(value) {
   const normalized =
     typeof value === "string" && value.trim() ? value.trim().toLowerCase() : "report_69";
   return REPORT_TIERS.has(normalized) ? normalized : "report_69";
+}
+
+function normalizeSelectedAddons(value) {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set();
+  const selected = [];
+  for (const item of value) {
+    if (typeof item !== "string") continue;
+    const normalized = item.trim().toLowerCase();
+    if (!normalized || !ADDON_KEY_SET.has(normalized) || seen.has(normalized)) continue;
+    seen.add(normalized);
+    selected.push(normalized);
+  }
+  return selected;
+}
+
+function buildAddonStates(selectedAddons) {
+  const selected = new Set(normalizeSelectedAddons(selectedAddons));
+  return {
+    rewrite_contract: selected.has("rewrite_contract") ? "purchased" : "not_purchased",
+    update_email: selected.has("update_email") ? "purchased" : "not_purchased",
+  };
 }
 
 function asArray(value) {
@@ -196,7 +220,7 @@ function makeOverviewFallback({ report }) {
   }.`;
 }
 
-function makePtV1({ resultId, createdAt, payload, extraction, analysis, report }) {
+function makePtV1({ resultId, createdAt, payload, extraction, analysis, report, selectedAddons }) {
   const filename = typeof payload.filename === "string" ? payload.filename : "Contract document";
   const llmFields = analysis?.fields;
   const notes = [...extraction.extraction.notes];
@@ -402,6 +426,7 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report }
       limits: [],
       tone_policy: [],
     },
+    addons: buildAddonStates(selectedAddons),
     report: {
       ...report,
     },
@@ -409,7 +434,7 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report }
   };
 }
 
-export async function runAnalysis(payload, analysisSelection = {}) {
+export async function runAnalysis(payload, analysisSelection = {}, addonSelection = {}) {
   const objectKeyCheck = validateObjectKey(payload?.objectKey);
   if (!objectKeyCheck.ok) {
     throw new Error(objectKeyCheck.error);
@@ -475,6 +500,7 @@ export async function runAnalysis(payload, analysisSelection = {}) {
     extraction,
     analysis: llmAnalysis,
     report: tieredReportInsights,
+    selectedAddons: addonSelection?.selectedAddons,
   });
   assertPtV1Contract(ptV1);
   const uiResult = transformPtV1ToUiV1(ptV1);

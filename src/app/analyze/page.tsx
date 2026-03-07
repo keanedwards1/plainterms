@@ -252,20 +252,20 @@ export default function AnalyzePage() {
       currentStep = "starting-checkout";
       setStep(currentStep);
       void trackFunnelMetric({ event: "checkout_start", funnelId });
-      const checkoutRes = await fetch("/api/checkout", {
+          const checkoutRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          objectKey: uploadJson.objectKey,
-          filename: file.name,
-          contentType: file.type || "application/octet-stream",
-          size: file.size,
-          precheckToken: precheckJson.precheckToken,
-          analysisMode,
-          reportTier,
-          ...(analysisMode === "llm" ? { llmModel } : {}),
-        }),
-      });
+          body: JSON.stringify({
+            objectKey: uploadJson.objectKey,
+            filename: file.name,
+            contentType: file.type || "application/octet-stream",
+            size: file.size,
+            precheckToken: precheckJson.precheckToken,
+            analysisMode,
+            reportTier,
+            ...(analysisMode === "llm" ? { llmModel } : {}),
+          }),
+        });
 
       if (!checkoutRes.ok) {
         const detail = await readErrorResponse(checkoutRes);

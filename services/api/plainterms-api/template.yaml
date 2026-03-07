@@ -27,6 +27,14 @@ Parameters:
     Type: String
     Default: /plainterms/stripe/price-id
     Description: SSM parameter name containing Stripe protect tier price ID (String).
+  StripeAddonRewritePriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/price-id
+    Description: SSM parameter name containing Stripe add-on price ID for rewrite contract (String).
+  StripeAddonUpdateEmailPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/price-id
+    Description: SSM parameter name containing Stripe add-on price ID for update email draft (String).
   AnalysisMode:
     Type: String
     Default: rules
@@ -231,6 +239,8 @@ Resources:
           STRIPE_PRICE_ID_REPORT_PARAM: !Ref StripeReportPriceIdParamName
           STRIPE_PRICE_ID_SCAN_PARAM: !Ref StripeScanPriceIdParamName
           STRIPE_PRICE_ID_PROTECT_PARAM: !Ref StripeProtectPriceIdParamName
+          STRIPE_ADDON_REWRITE_PRICE_PARAM: !Ref StripeAddonRewritePriceIdParamName
+          STRIPE_ADDON_UPDATE_EMAIL_PRICE_PARAM: !Ref StripeAddonUpdateEmailPriceIdParamName
           APP_BASE_URL: !Ref AppBaseUrl
           PRECHECK_TOKEN_SECRET_PARAM: !Ref PrecheckTokenSecretParamName
       Policies:
@@ -244,6 +254,8 @@ Resources:
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeReportPriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeScanPriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeProtectPriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeAddonRewritePriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeAddonUpdateEmailPriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${PrecheckTokenSecretParamName}
       Events:
         CheckoutPost:

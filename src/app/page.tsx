@@ -187,7 +187,7 @@ export default function HomePage() {
               </div>
             </article>
 
-            <article id="services" className="rounded-[18px] border border-[#37a7a2] bg-[#2eb7b1] p-6 text-white">
+            <article id="services" className="rounded-[18px] border border-[#37a7a2] bg-[var(--pt-teal)] p-6 text-white">
               <h3 className="text-3xl">What You Get</h3>
               <ul className="mt-4 space-y-2 text-base">
                 <li>• Spot red flags</li>

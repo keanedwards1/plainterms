@@ -42,6 +42,16 @@ export const PtRecommendationAction = z.enum(["sign", "negotiate", "do_not_sign_
 export const PtFlagSeverity = z.enum(["low", "medium", "high"]);
 export const PtClauseStatus = z.enum(["present", "unclear", "missing"]);
 export const PtReportTier = z.enum(["scan_39", "report_69", "protect_99"]);
+export const PtAddonState = z.enum(["not_purchased", "purchased", "processing", "ready"]);
+
+export const PtAddons = z.object({
+  rewrite_contract: z.object({
+    state: PtAddonState,
+  }),
+  update_email: z.object({
+    state: PtAddonState,
+  }),
+});
 
 export const PtReportFlag = z.object({
   id: z.string(),
@@ -154,6 +164,7 @@ export const PtResult = z.object({
   gentle_notice: z.string().optional(), // Option B: gentle early notice
   sections: z.array(PtSection),
   report: PtReport.optional(),
+  addons: PtAddons.optional(),
   notices: z.object({
     not_legal_advice: z.string()
   })
