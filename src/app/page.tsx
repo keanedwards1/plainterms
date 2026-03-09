@@ -44,6 +44,7 @@ const PLAN_PREVIEW = [
     name: "Scan",
     price: "$39",
     body: "Quick risk read before signing pressure.",
+    featured: false,
   },
   {
     name: "Report",
@@ -55,6 +56,7 @@ const PLAN_PREVIEW = [
     name: "Protect",
     price: "$99",
     body: "Deeper fallback strategy for complex terms.",
+    featured: false,
   },
 ] as const;
 

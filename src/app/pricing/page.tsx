@@ -8,6 +8,7 @@ const TIERS = [
     description: "Fast risk check before signing pressure.",
     bullets: ["Risk score", "Top red flags", "Plain-English summary"],
     bestFor: "Early-stage review when you need a quick read",
+    featured: false,
   },
   {
     name: "Report",
@@ -23,6 +24,7 @@ const TIERS = [
     description: "Deep strategy and fallback language.",
     bullets: ["Everything in Report", "Advanced rewrites", "Fallback positions"],
     bestFor: "Higher-risk deals needing layered fallback strategy",
+    featured: false,
   },
 ] as const;
 
