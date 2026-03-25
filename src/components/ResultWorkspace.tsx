@@ -434,7 +434,7 @@ export default function ResultWorkspace({ data, retentionDays }: ResultWorkspace
             <div className="space-y-3">
               {activeReportTab === "summary" && (
                 <>
-                  <article className="overflow-hidden rounded-lg border border-[var(--pt-border)] bg-gradient-to-r from-[#fff4ef] via-[#fff9f6] to-[#eef7f4] p-4">
+                  <article className="overflow-hidden rounded-lg border border-[var(--pt-border)] bg-gradient-to-r from-[#fff4ef] via-[#fff9f6] to-[#fff2dc] p-4">
                     <div className="flex flex-wrap items-center gap-3">
                       <Image
                         src="/graphics/icon-doc.svg"
@@ -570,7 +570,7 @@ export default function ResultWorkspace({ data, retentionDays }: ResultWorkspace
 
               {activeReportTab === "insights" && (
                 <>
-                  <article className="rounded-lg border border-[#c9d7f7] bg-gradient-to-r from-[#eef4ff] via-[#f8fbff] to-[#edf9f7] p-4">
+                  <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff6ea] via-[#fff9f2] to-[#ffeed8] p-4">
                     <div className="flex items-center gap-2">
                       <Image
                         src="/graphics/icon-search.svg"
@@ -900,7 +900,7 @@ export default function ResultWorkspace({ data, retentionDays }: ResultWorkspace
                 <>
                   {questionsToAsk.length > 0 ? (
                     <>
-                      <article className="rounded-lg border border-[var(--pt-border)] bg-gradient-to-r from-[#fff8f3] to-[#eff8f5] p-3">
+                      <article className="rounded-lg border border-[var(--pt-border)] bg-gradient-to-r from-[#fff8f3] to-[#fff1dd] p-3">
                         <div className="flex items-center gap-2">
                           <Image
                             src="/globe.svg"
