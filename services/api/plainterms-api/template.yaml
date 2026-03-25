@@ -80,6 +80,7 @@ Globals:
     Environment:
       Variables:
         ALLOWED_ORIGIN: !Ref AppBaseUrl
+        ALLOWED_ORIGINS: !Sub "${AppBaseUrl},http://localhost:3000,https://plainterms-*.vercel.app"
 
 Resources:
   PlainTermsApi:
@@ -115,6 +116,7 @@ Resources:
           - AllowedOrigins:
               - !Ref AppBaseUrl
               - http://localhost:3000
+              - https://plainterms-*.vercel.app
             AllowedMethods:
               - PUT
               - POST
