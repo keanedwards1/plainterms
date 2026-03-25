@@ -69,22 +69,22 @@ async function main() {
   assert(typeof uploadUrlJson.uploadUrl === "string", "upload-url response missing uploadUrl.");
   assert(typeof uploadUrlJson.objectKey === "string", "upload-url response missing objectKey.");
 
-  logStep("3) POST /api/upload-file");
+  logStep("3) PUT signed S3 uploadUrl");
   const pdfBytes = Buffer.from(
     "%PDF-1.4\n1 0 obj\n<<>>\nendobj\nBT (This contract includes payment and termination terms.) Tj ET\n%%EOF\n",
     "utf8"
   );
-  const form = new FormData();
-  form.set("uploadUrl", uploadUrlJson.uploadUrl);
-  form.set("file", new File([pdfBytes], filename, { type: "application/pdf" }));
-
-  const uploadFileRes = await request("/api/upload-file", {
-    method: "POST",
-    body: form,
+  const uploadFileRes = await fetch(uploadUrlJson.uploadUrl, {
+    method: "PUT",
+    headers: {
+      "content-type": "application/pdf",
+    },
+    body: new File([pdfBytes], filename, { type: "application/pdf" }),
+    redirect: "manual",
   });
   if (!uploadFileRes.ok) {
     const body = await readBody(uploadFileRes);
-    fail(`POST /api/upload-file failed (${uploadFileRes.status}): ${short(JSON.stringify(body))}`);
+    fail(`PUT signed uploadUrl failed (${uploadFileRes.status}): ${short(JSON.stringify(body))}`);
   }
 
   logStep("4) POST /api/precheck");
@@ -145,9 +145,12 @@ async function main() {
     const verifyJson = await readBody(verifyRes);
     assert(typeof verifyJson === "object" && verifyJson, "verify response was not JSON.");
     assert(typeof verifyJson.resultId === "string", "verify response missing resultId.");
+    assert(typeof verifyJson.accessKey === "string", "verify response missing accessKey.");
     logStep(`checkout/verify returned 200 with resultId=${verifyJson.resultId}`);
 
-    const resultRes = await request(`/api/result/${encodeURIComponent(verifyJson.resultId)}`);
+    const resultRes = await request(
+      `/api/result/${encodeURIComponent(verifyJson.resultId)}?k=${encodeURIComponent(verifyJson.accessKey)}`
+    );
     assert(
       resultRes.status === 200 || resultRes.status === 202,
       `GET /api/result/${verifyJson.resultId} failed (${resultRes.status})`

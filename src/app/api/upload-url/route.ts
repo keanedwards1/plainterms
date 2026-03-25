@@ -30,12 +30,11 @@ export async function POST(req: Request) {
     });
 
     if (!upstream.ok) {
-      const detail = await upstream.text().catch(() => "");
+      await upstream.text().catch(() => "");
       return Response.json(
         {
           error: "Upstream /upload-url failed.",
           upstreamStatus: upstream.status,
-          detail: detail || upstream.statusText,
         },
         { status: upstream.status }
       );
@@ -54,8 +53,7 @@ export async function POST(req: Request) {
     }
 
     return Response.json(parsed.data);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return Response.json({ error: `Upload URL request failed: ${message}` }, { status: 502 });
+  } catch {
+    return Response.json({ error: "Upload URL request failed." }, { status: 502 });
   }
 }

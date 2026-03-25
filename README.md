@@ -84,7 +84,7 @@ After deploy, verify one full flow on both Preview and Production:
 1. Open `/analyze`, upload a file, click Continue.
 2. Confirm network calls return 200 for:
    - `POST /api/upload-url`
-   - `POST /api/upload-file`
+   - `PUT <signed S3 uploadUrl>`
    - `POST /api/precheck`
    - `POST /api/checkout`
    - `POST /api/checkout/verify` (via `/analyze/complete`)
@@ -103,10 +103,11 @@ A scheduled GitHub Actions workflow runs `scripts/smoke-funnel.mjs` every 6 hour
 What it verifies against your deployed frontend URL:
 1. `GET /analyze` returns success.
 2. `POST /api/upload-url` returns `uploadUrl` + `objectKey`.
-3. `POST /api/upload-file` uploads a tiny PDF to S3.
+3. `PUT uploadUrl` uploads a tiny PDF directly to S3.
 4. `POST /api/precheck` validates file type/readability and returns `precheckToken`.
 5. `POST /api/checkout` returns Stripe checkout session fields.
 6. `POST /api/checkout/verify` returns expected unpaid status (`409`) or a valid paid result (`200`).
+   - On `200`, response now includes `resultId` and `accessKey`.
 
 Set repository variable:
 - `SMOKE_BASE_URL` (for example `https://plainterms.vercel.app`)
@@ -211,8 +212,8 @@ Backend retention behavior:
 - `POST /upload-url` -> create S3 presigned upload URL
 - `POST /precheck` -> validate file type/size/readability and issue `precheckToken`
 - `POST /checkout` -> create Stripe Checkout session
-- `POST /checkout/verify` -> verify paid session and create/reuse result
-- `GET /result/{id}` -> return result, `202` processing, or `410` expired
+- `POST /checkout/verify` -> verify paid session and create/reuse result; returns `resultId` + `accessKey`
+- `GET /result/{id}?k=<accessKey>` -> return result, `202` processing, or `410` expired
 
 ## TODO
 

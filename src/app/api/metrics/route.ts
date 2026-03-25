@@ -18,10 +18,60 @@ function clientIp(req: Request): string | undefined {
   return raw.split(",")[0]?.trim() || undefined;
 }
 
+function candidateTrustedOrigins(req: Request): string[] {
+  const allowed = new Set<string>();
+  const host = req.headers.get("host");
+  if (host) {
+    allowed.add(`https://${host}`);
+    allowed.add(`http://${host}`);
+  }
+
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (configuredSiteUrl) {
+    try {
+      allowed.add(new URL(configuredSiteUrl).origin);
+    } catch {
+      // ignore invalid config
+    }
+  }
+
+  return [...allowed];
+}
+
+function hasTrustedRequestOrigin(req: Request): boolean {
+  const trustedOrigins = candidateTrustedOrigins(req);
+  if (trustedOrigins.length === 0) return false;
+
+  const origin = req.headers.get("origin");
+  if (origin && trustedOrigins.includes(origin)) {
+    return true;
+  }
+
+  const referer = req.headers.get("referer");
+  if (!referer) return false;
+
+  try {
+    const refererOrigin = new URL(referer).origin;
+    return trustedOrigins.includes(refererOrigin);
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: Request) {
   const ctx = getLogContext(req, "/api/metrics");
 
   try {
+    if (!hasTrustedRequestOrigin(req)) {
+      return Response.json(
+        {
+          error: "Forbidden origin.",
+          requestId: ctx.requestId,
+        },
+        { status: 403 }
+      );
+    }
+
     const payloadJson = await req.json();
     const payload = FunnelMetricPayload.safeParse(payloadJson);
 

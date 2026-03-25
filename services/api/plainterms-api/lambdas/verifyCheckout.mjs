@@ -1,9 +1,13 @@
+import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import Stripe from "stripe";
 import { runAnalysis } from "./lib/runAnalysis.mjs";
 import { getStripeSecretKey } from "./lib/stripeConfig.mjs";
 import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
 import { parseSelectedAddonsCsv } from "./lib/addonSelection.mjs";
 import { corsHeaders } from "./lib/cors.mjs";
+import { createResultAccessKey, hashResultAccessKey } from "./lib/resultAccessKey.mjs";
+
+const db = new DynamoDBClient({});
 
 function json(event, statusCode, bodyObj) {
   return {
@@ -47,6 +51,31 @@ function paymentIntentIdFromSession(session) {
   if (typeof value === "string") return value;
   if (typeof value === "object" && value.id) return value.id;
   return null;
+}
+
+async function issueResultAccessKeyForResult(resultId) {
+  const tableName = process.env.RESULTS_TABLE;
+  if (!tableName) {
+    throw new Error("Missing required env var: RESULTS_TABLE");
+  }
+
+  const accessKey = createResultAccessKey();
+  const accessKeyHash = hashResultAccessKey(accessKey);
+  await db.send(
+    new UpdateItemCommand({
+      TableName: tableName,
+      Key: {
+        result_id: { S: String(resultId) },
+      },
+      ConditionExpression: "attribute_exists(result_id)",
+      UpdateExpression: "SET access_key_hash = :hash",
+      ExpressionAttributeValues: {
+        ":hash": { S: accessKeyHash },
+      },
+    })
+  );
+
+  return accessKey;
 }
 
 async function safeUpdateSessionMetadata(stripe, sessionId, metadataPatch) {
@@ -151,8 +180,26 @@ export const handler = async (event) => {
     }
 
     const existingResultId = session.metadata?.resultId;
+    const existingResultAccessKey = session.metadata?.resultAccessKey;
+    if (existingResultId && existingResultAccessKey) {
+      return json(event, 200, {
+        resultId: existingResultId,
+        accessKey: existingResultAccessKey,
+        reused: true,
+      });
+    }
     if (existingResultId) {
-      return json(event, 200, { resultId: existingResultId, reused: true });
+      const rotatedAccessKey = await issueResultAccessKeyForResult(existingResultId);
+      await safeUpdateSessionMetadata(stripe, sessionId, {
+        ...(session.metadata ?? {}),
+        resultId: String(existingResultId),
+        resultAccessKey: rotatedAccessKey,
+      });
+      return json(event, 200, {
+        resultId: existingResultId,
+        accessKey: rotatedAccessKey,
+        reused: true,
+      });
     }
 
     if (session.metadata?.refundId) {
@@ -186,6 +233,7 @@ export const handler = async (event) => {
     }
 
     let resultId;
+    let resultAccessKey;
     try {
       const analysis = await runAnalysisWithTimeout(
         {
@@ -198,6 +246,10 @@ export const handler = async (event) => {
         { selectedAddons }
       );
       resultId = analysis.resultId;
+      resultAccessKey = analysis.accessKey;
+      if (!resultAccessKey) {
+        throw new Error("Analysis completed without access key.");
+      }
     } catch (analysisErr) {
       const analysisMessage =
         analysisErr instanceof Error ? analysisErr.message : "Unknown analysis error";
@@ -221,10 +273,15 @@ export const handler = async (event) => {
       metadata: {
         ...(session.metadata ?? {}),
         resultId: String(resultId),
+        resultAccessKey: String(resultAccessKey),
       },
     });
 
-    return json(event, 200, { resultId, reused: false });
+    return json(event, 200, {
+      resultId,
+      accessKey: resultAccessKey,
+      reused: false,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return json(event, 500, { error: `Checkout verification failed: ${message}` });

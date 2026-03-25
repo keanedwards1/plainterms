@@ -2,6 +2,7 @@
 
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { corsHeaders } from "./lib/cors.mjs";
+import { hashResultAccessKey, secureEqualStrings } from "./lib/resultAccessKey.mjs";
 
 const db = new DynamoDBClient({});
 
@@ -36,6 +37,11 @@ export const handler = async (event) => {
     return json(event, 400, { error: "Missing result id" });
   }
 
+  const accessKey = event?.queryStringParameters?.k ?? event?.queryStringParameters?.key;
+  if (typeof accessKey !== "string" || !accessKey.trim()) {
+    return json(event, 401, { error: "Missing result access key." });
+  }
+
   const cmd = new GetItemCommand({
     TableName: process.env.RESULTS_TABLE,
     Key: {
@@ -47,6 +53,18 @@ export const handler = async (event) => {
 
   if (!res.Item) {
     return json(event, 404, { error: "Result not found", status: "not_found" });
+  }
+
+  const expectedAccessKeyHash = res.Item.access_key_hash?.S ?? "";
+  if (!expectedAccessKeyHash) {
+    return json(event, 401, {
+      error: "This result requires a refreshed secure access link. Please verify checkout again.",
+    });
+  }
+
+  const providedAccessKeyHash = hashResultAccessKey(accessKey.trim());
+  if (!secureEqualStrings(providedAccessKeyHash, expectedAccessKeyHash)) {
+    return json(event, 403, { error: "Invalid result access key." });
   }
 
   const nowEpoch = Math.floor(Date.now() / 1000);

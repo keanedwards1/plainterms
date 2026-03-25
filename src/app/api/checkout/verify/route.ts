@@ -8,6 +8,7 @@ const VerifyRequest = z.object({
 
 const VerifyResponse = z.object({
   resultId: z.string().min(1),
+  accessKey: z.string().min(1),
   reused: z.boolean().optional(),
 });
 
@@ -48,7 +49,6 @@ export async function POST(req: Request) {
         {
           error: "Upstream /checkout/verify failed.",
           upstreamStatus: upstream.status,
-          detail: detail || upstream.statusText,
           requestId: ctx.requestId,
         },
         { status: upstream.status }
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       message,
     });
     return Response.json(
-      { error: `Checkout verify request failed: ${message}`, requestId: ctx.requestId },
+      { error: "Checkout verify request failed.", requestId: ctx.requestId },
       { status: 502 }
     );
   }

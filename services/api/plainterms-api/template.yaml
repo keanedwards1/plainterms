@@ -101,10 +101,20 @@ Resources:
   UploadBucket:
     Type: AWS::S3::Bucket
     Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:
               - !Ref AppBaseUrl
+              - http://localhost:3000
             AllowedMethods:
               - PUT
               - POST
@@ -118,6 +128,24 @@ Resources:
           - Id: ExpireUploads
             Status: Enabled
             ExpirationInDays: 30
+
+  UploadBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref UploadBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !Sub arn:aws:s3:::${UploadBucket}
+              - !Sub arn:aws:s3:::${UploadBucket}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: false
 
   ResultsTable:
     Type: AWS::DynamoDB::Table

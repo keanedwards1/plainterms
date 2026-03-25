@@ -7,6 +7,7 @@ import ResultWorkspace from "@/components/ResultWorkspace";
 
 type Props = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ k?: string; key?: string }>;
 };
 
 function getRetentionDays() {
@@ -85,12 +86,26 @@ async function readFailureDetail(res: Response): Promise<string> {
   return res.statusText || "Unknown error";
 }
 
-export default async function ResultPage({ params }: Props) {
+export default async function ResultPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const query = await searchParams;
+  const accessKey = (query.k ?? query.key ?? "").trim();
   const baseUrl = getApiBaseUrl();
   const retentionDays = getRetentionDays();
 
-  const res = await fetch(`${baseUrl}/result/${id}`, {
+  if (!accessKey) {
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
+        <h1 className="text-3xl text-[var(--pt-ink)]">Secure link required</h1>
+        <p className="mt-3 text-[var(--pt-muted)]">
+          This result requires a secure access link from checkout. Please return to upload and run
+          verification again.
+        </p>
+      </main>
+    );
+  }
+
+  const res = await fetch(`${baseUrl}/result/${id}?k=${encodeURIComponent(accessKey)}`, {
     cache: "no-store",
   });
 

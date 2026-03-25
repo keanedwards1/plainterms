@@ -59,7 +59,6 @@ export async function POST(req: Request) {
         {
           error: "Upstream /checkout failed.",
           upstreamStatus: upstream.status,
-          detail: detail || upstream.statusText,
           requestId: ctx.requestId,
         },
         { status: upstream.status }
@@ -94,9 +93,6 @@ export async function POST(req: Request) {
       status: 502,
       message,
     });
-    return Response.json(
-      { error: `Checkout request failed: ${message}`, requestId: ctx.requestId },
-      { status: 502 }
-    );
+    return Response.json({ error: "Checkout request failed.", requestId: ctx.requestId }, { status: 502 });
   }
 }

@@ -212,13 +212,12 @@ export default function AnalyzePage() {
 
       currentStep = "uploading-file";
       setStep(currentStep);
-      const uploadForm = new FormData();
-      uploadForm.set("uploadUrl", uploadJson.uploadUrl);
-      uploadForm.set("file", file);
-
-      const s3PutRes = await fetch("/api/upload-file", {
-        method: "POST",
-        body: uploadForm,
+      const s3PutRes = await fetch(uploadJson.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "content-type": file.type || "application/octet-stream",
+        },
+        body: file,
       });
 
       if (!s3PutRes.ok) {

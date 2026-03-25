@@ -8,6 +8,7 @@ import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 
 type VerifyResponse = {
   resultId: string;
+  accessKey: string;
   reused?: boolean;
 };
 
@@ -80,8 +81,8 @@ export default function AnalyzeCompletePage() {
       }
 
       const data = (await res.json()) as VerifyResponse;
-      if (!data.resultId) {
-        setError("Checkout verified but no resultId was returned.");
+      if (!data.resultId || !data.accessKey) {
+        setError("Checkout verified but the secure result link data was incomplete.");
         return;
       }
 
@@ -91,7 +92,9 @@ export default function AnalyzeCompletePage() {
         resultId: data.resultId,
         sessionId,
       });
-      router.replace(`/result/${data.resultId}`);
+      router.replace(
+        `/result/${encodeURIComponent(data.resultId)}?k=${encodeURIComponent(data.accessKey)}`
+      );
     }
 
     void verifyAndFinalize();

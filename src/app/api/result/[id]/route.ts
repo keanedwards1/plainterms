@@ -11,7 +11,14 @@ export async function GET(_req: Request, { params }: Props) {
 
   try {
     const { id } = await params;
-    const upstream = await fetch(`${getApiBaseUrl()}/result/${id}`, {
+    const requestUrl = new URL(_req.url);
+    const accessKey = requestUrl.searchParams.get("k") ?? requestUrl.searchParams.get("key") ?? "";
+    const upstreamUrl = new URL(`${getApiBaseUrl()}/result/${id}`);
+    if (accessKey.trim()) {
+      upstreamUrl.searchParams.set("k", accessKey.trim());
+    }
+
+    const upstream = await fetch(upstreamUrl.toString(), {
       cache: "no-store",
     });
 
@@ -38,7 +45,6 @@ export async function GET(_req: Request, { params }: Props) {
         {
           error: "Upstream /result failed.",
           upstreamStatus: upstream.status,
-          detail: detail || upstream.statusText,
           requestId: ctx.requestId,
         },
         { status: upstream.status }
@@ -73,9 +79,6 @@ export async function GET(_req: Request, { params }: Props) {
       status: 502,
       message,
     });
-    return Response.json(
-      { error: `Result request failed: ${message}`, requestId: ctx.requestId },
-      { status: 502 }
-    );
+    return Response.json({ error: "Result request failed.", requestId: ctx.requestId }, { status: 502 });
   }
 }

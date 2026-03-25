@@ -1,4 +1,5 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import crypto from "node:crypto";
 import {
   assertPtUiV1Contract,
   assertPtV1Contract,
@@ -8,6 +9,7 @@ import { extractDocumentTextFromUpload } from "./extractDocumentText.mjs";
 import { analyzeExtractedTextWithLlm } from "./llmAnalyze.mjs";
 import { validateObjectKey, validateUploadMeta } from "./uploadPolicy.mjs";
 import { buildReportInsights } from "./reportEngine.mjs";
+import { createResultAccessKey, hashResultAccessKey } from "./resultAccessKey.mjs";
 
 const db = new DynamoDBClient({});
 const REPORT_TIERS = new Set(["scan_39", "report_69", "protect_99"]);
@@ -23,8 +25,7 @@ const ADVANCED_RISK_CLAUSE_KEYS = new Set([
 ]);
 
 function makeResultId() {
-  const rand = Math.random().toString(36).slice(2, 10);
-  return `demo_${Date.now()}_${rand}`;
+  return `pt_${Date.now()}_${crypto.randomUUID()}`;
 }
 
 function getRetentionDays() {
@@ -458,6 +459,8 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   };
 
   const resultId = makeResultId();
+  const resultAccessKey = createResultAccessKey();
+  const resultAccessKeyHash = hashResultAccessKey(resultAccessKey);
   const createdAt = new Date().toISOString();
   const expiresAtEpoch = Math.floor(Date.now() / 1000) + getRetentionDays() * 24 * 60 * 60;
 
@@ -513,6 +516,7 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
       created_at: { S: createdAt },
       expires_at: { N: String(expiresAtEpoch) },
       object_key: { S: normalizedPayload.objectKey },
+      access_key_hash: { S: resultAccessKeyHash },
       status: { S: "complete" },
       pt_v1_result: { S: JSON.stringify(ptV1) },
       ui_result: { S: JSON.stringify(uiResult) },
@@ -520,5 +524,5 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   });
 
   await db.send(cmd);
-  return { resultId };
+  return { resultId, accessKey: resultAccessKey };
 }
