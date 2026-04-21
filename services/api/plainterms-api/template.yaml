@@ -5,8 +5,12 @@ Description: PlainTerms API
 Parameters:
   AppBaseUrl:
     Type: String
-    Default: https://plainterms.vercel.app
+    Default: https://www.plainterms.us
     Description: Frontend base URL used for Stripe success/cancel redirects.
+  AppSecondaryBaseUrl:
+    Type: String
+    Default: https://plainterms.us
+    Description: Additional frontend origin allowed for CORS and uploads (for apex/www support).
   StripeSecretKeyParamName:
     Type: String
     Default: /plainterms/stripe/secret-key
@@ -59,18 +63,7 @@ Parameters:
     Type: String
     Default: /plainterms/precheck/token-secret
     Description: SSM parameter name used to sign/verify precheck tokens (SecureString).
-  ApiDefaultRateLimit:
-    Type: Number
-    Default: 10
-    Description: API Gateway stage-level steady-state requests per second.
-  ApiDefaultBurstLimit:
-    Type: Number
-    Default: 20
-    Description: API Gateway stage-level burst request limit.
-  WafGlobalIpLimitPer5Min:
-    Type: Number
-    Default: 1500
-    Description: WAF per-IP request cap over 5 minutes across all routes.
+
 
 Globals:
   Function:
@@ -80,7 +73,7 @@ Globals:
     Environment:
       Variables:
         ALLOWED_ORIGIN: !Ref AppBaseUrl
-        ALLOWED_ORIGINS: !Sub "${AppBaseUrl},http://localhost:3000,https://plainterms-*.vercel.app"
+        ALLOWED_ORIGINS: !Sub "${AppBaseUrl},${AppSecondaryBaseUrl},https://plainterms.vercel.app,http://localhost:3000,https://plainterms-*.vercel.app"
 
 Resources:
   PlainTermsApi:
@@ -96,8 +89,8 @@ Resources:
       MethodSettings:
         - ResourcePath: "/*"
           HttpMethod: "*"
-          ThrottlingRateLimit: !Ref ApiDefaultRateLimit
-          ThrottlingBurstLimit: !Ref ApiDefaultBurstLimit
+          ThrottlingRateLimit: 10
+          ThrottlingBurstLimit: 20
 
   UploadBucket:
     Type: AWS::S3::Bucket
@@ -115,6 +108,8 @@ Resources:
         CorsRules:
           - AllowedOrigins:
               - !Ref AppBaseUrl
+              - !Ref AppSecondaryBaseUrl
+              - https://plainterms.vercel.app
               - http://localhost:3000
               - https://plainterms-*.vercel.app
             AllowedMethods:
@@ -183,7 +178,7 @@ Resources:
           Statement:
             RateBasedStatement:
               AggregateKeyType: IP
-              Limit: !Ref WafGlobalIpLimitPer5Min
+              Limit: 1500
           VisibilityConfig:
             CloudWatchMetricsEnabled: true
             MetricName: !Sub "${AWS::StackName}-ip-rate-limit-global"

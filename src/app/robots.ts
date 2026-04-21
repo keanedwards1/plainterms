@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: ["/", "/analyze", "/privacy", "/terms"],
       disallow: ["/result/", "/api/"],
     },
-    sitemap: "https://plainterms.vercel.app/sitemap.xml",
+    sitemap: "https://www.plainterms.us/sitemap.xml",
   };
 }

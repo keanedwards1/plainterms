@@ -1,4 +1,11 @@
-const DEFAULT_ALLOWED_ORIGIN = "https://plainterms.vercel.app";
+const DEFAULT_ALLOWED_ORIGIN = "https://www.plainterms.us";
+const BASE_ALLOWED_ORIGIN_PATTERNS = [
+  DEFAULT_ALLOWED_ORIGIN,
+  "https://plainterms.us",
+  "https://plainterms.vercel.app",
+  "http://localhost:3000",
+  "https://plainterms-*.vercel.app",
+];
 
 function normalizeOrigin(value) {
   if (typeof value !== "string") return "";
@@ -25,20 +32,15 @@ function wildcardToRegex(pattern) {
 
 function getAllowedOriginPatterns() {
   const raw = process.env.ALLOWED_ORIGINS;
-  if (!raw || typeof raw !== "string") {
-    return [getAllowedOrigin()];
-  }
+  const configured =
+    raw && typeof raw === "string"
+      ? raw
+          .split(",")
+          .map((value) => normalizeOrigin(value))
+          .filter(Boolean)
+      : [];
 
-  const parsed = raw
-    .split(",")
-    .map((value) => normalizeOrigin(value))
-    .filter(Boolean);
-
-  if (parsed.length === 0) {
-    return [getAllowedOrigin()];
-  }
-
-  return parsed;
+  return [...new Set([...(configured.length > 0 ? configured : [getAllowedOrigin()]), ...BASE_ALLOWED_ORIGIN_PATTERNS])];
 }
 
 function isOriginAllowed(origin, allowedPatterns) {

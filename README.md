@@ -48,6 +48,10 @@ Frontend expects:
 ```bash
 API_BASE_URL=https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod
 NEXT_PUBLIC_RESULT_RETENTION_DAYS=30
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+# Use either of these for Search Console meta verification:
+# GOOGLE_SITE_VERIFICATION=your_verification_token
+# NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=your_verification_token
 # Optional: webhook endpoint for 5xx API alerts from Next.js routes
 # ALERT_WEBHOOK_URL=https://hooks.slack.com/services/...
 # Optional fallback for legacy code paths:
@@ -60,13 +64,27 @@ Set this in:
 
 `API_BASE_URL` is preferred because requests are proxied through Next.js API routes (avoids browser CORS issues).
 `NEXT_PUBLIC_RESULT_RETENTION_DAYS` controls user-facing retention messaging in the frontend.
+`NEXT_PUBLIC_GA_MEASUREMENT_ID` enables Google Analytics 4 tracking.
+`GOOGLE_SITE_VERIFICATION` (or `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) adds the Search Console verification meta tag.
 
 Quick Vercel CLI setup:
 
 ```bash
 vercel env add API_BASE_URL preview
 vercel env add API_BASE_URL production
+vercel env add NEXT_PUBLIC_GA_MEASUREMENT_ID preview
+vercel env add NEXT_PUBLIC_GA_MEASUREMENT_ID production
+vercel env add GOOGLE_SITE_VERIFICATION preview
+vercel env add GOOGLE_SITE_VERIFICATION production
 ```
+
+## Google Analytics + Search Console
+
+After setting the env vars and deploying:
+
+1. Open your site and confirm requests are sent to `https://www.googletagmanager.com/gtag/js`.
+2. In GA4 Realtime, confirm a page view appears when loading `/` and when navigating between pages.
+3. In Search Console, use the URL-prefix property for your production URL and click Verify (meta-tag method).
 
 ## Deployments
 
@@ -110,12 +128,12 @@ What it verifies against your deployed frontend URL:
    - On `200`, response now includes `resultId` and `accessKey`.
 
 Set repository variable:
-- `SMOKE_BASE_URL` (for example `https://plainterms.vercel.app`)
+- `SMOKE_BASE_URL` (for example `https://www.plainterms.us`)
 
 Run locally:
 
 ```bash
-SMOKE_BASE_URL=https://plainterms.vercel.app npm run smoke:funnel
+SMOKE_BASE_URL=https://www.plainterms.us npm run smoke:funnel
 ```
 
 ## Funnel Metrics
@@ -148,7 +166,8 @@ Stripe checkout configuration (SAM parameters -> Lambda env):
 - `StripeAddonRewritePriceIdParamName` (SSM string for `Rewrite Contract` add-on price ID)
 - `StripeAddonUpdateEmailPriceIdParamName` (SSM string for `Create Update Email` add-on price ID)
 - `StripePriceIdParamName` (legacy fallback; also defaults to report price path)
-- `AppBaseUrl` (for example `https://plainterms.vercel.app`)
+- `AppBaseUrl` (for example `https://www.plainterms.us`)
+- `AppSecondaryBaseUrl` (for example `https://plainterms.us`)
 - `PrecheckTokenSecretParamName` (SSM secure string for precheck token signing)
 - Security controls (from SAM parameters):
   - `ApiDefaultRateLimit` / `ApiDefaultBurstLimit` for stage-level throttling
@@ -176,10 +195,10 @@ cd services/api/plainterms-api
 sam build
 
 # Rules mode (current default behavior)
-sam deploy --parameter-overrides AppBaseUrl=https://plainterms.vercel.app AnalysisMode=rules LlmModel=gpt-4o-mini
+sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini
 
 # LLM mode with GPT-5.2
-sam deploy --parameter-overrides AppBaseUrl=https://plainterms.vercel.app AnalysisMode=llm LlmModel=gpt-5.2
+sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=llm LlmModel=gpt-5.2
 ```
 
 Quick UI switch for testing:
@@ -192,7 +211,7 @@ If your stack was originally created with guided prompts, update `samconfig.toml
 `parameter_overrides` includes:
 
 ```toml
-parameter_overrides = "AppBaseUrl=https://plainterms.vercel.app AnalysisMode=rules LlmModel=gpt-4o-mini"
+parameter_overrides = "AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini"
 ```
 
 Backend retention behavior:

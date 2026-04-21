@@ -23,7 +23,7 @@ const SERVICE_ITEMS = [
 const PRICING = [
   {
     name: "Core",
-    price: "$20",
+    price: "$29",
     popular: false,
     color: "bg-[#35b8b1] text-white",
     legalPackage: "Issue Spotting Brief",
@@ -37,7 +37,7 @@ const PRICING = [
   },
   {
     name: "Report",
-    price: "$60",
+    price: "$79",
     popular: true,
     color: "bg-[var(--pt-accent)] text-white",
     legalPackage: "Review Memorandum",
@@ -52,7 +52,7 @@ const PRICING = [
   },
   {
     name: "Protect",
-    price: "$100",
+    price: "$149",
     popular: false,
     color: "bg-[var(--pt-teal-deep)] text-white",
     legalPackage: "Negotiation Prep Package",
@@ -160,7 +160,7 @@ export default function HomePage() {
                   Report preview
                 </p>
                 <span className="rounded-full bg-[var(--pt-surface-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--pt-muted)]">
-                  Report $69
+                  Report $79
                 </span>
               </div>
 
@@ -168,7 +168,7 @@ export default function HomePage() {
                 Know exactly what to negotiate before you sign.
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-[var(--pt-muted)]">
-                Same sections as the live report UI, but focused on outcomes you can act on immediately.
+                A real look at what you get before you buy.
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
@@ -178,13 +178,19 @@ export default function HomePage() {
                   </span>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-[var(--pt-muted)]">
-                Preview snapshot only. In your real report these tabs are interactive and open full section details.
-              </p>
+
+              <ul className="mt-3 space-y-1">
+                {["Red flags", "Negotiation talking points", "Email draft included"].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-xs text-[var(--pt-muted)]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-accent)] flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
 
               <div className="mt-4 grid gap-3">
                 <div className="rounded-xl border border-[#f2d3a2] bg-[#fff8eb] p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6222]">Live example flag</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6222]">Example red flag</p>
                   <p className="mt-1 text-sm font-semibold text-[#6f4c1b]">
                     Perpetual usage rights extend beyond campaign timeline.
                   </p>
@@ -193,15 +199,21 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-[var(--pt-border)] bg-white p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Risk score</p>
-                    <p className="mt-1 text-2xl font-semibold text-[var(--pt-ink)]">73/100</p>
-                    <p className="text-xs text-[var(--pt-muted)]">Recommendation: Negotiate</p>
+                <div className="space-y-3">
+                  <div className="pt-card-soft p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Risk</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2.5 py-1 text-[11px] font-semibold text-[#8c6526]">MEDIUM</span>
+                      <span className="text-sm font-semibold text-[var(--pt-ink)]">43/100</span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e6d8c3]">
+                      <div className="h-full rounded-full bg-[#d8a84b]" style={{ width: "43%" }} />
+                    </div>
                   </div>
-                  <div className="rounded-xl border border-[var(--pt-border)] bg-white p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Action plan</p>
-                    <p className="mt-1 text-sm text-[var(--pt-ink)]">2 high-impact edits you can send today.</p>
+                  <div className="pt-card-soft p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Recommendation</p>
+                    <span className="mt-2 inline-flex rounded-full border border-[#ead3a1] bg-[#fff4df] px-2.5 py-1 text-[11px] font-semibold text-[#8c6526]">Negotiate</span>
+                    <p className="mt-2 text-sm leading-relaxed text-[var(--pt-ink)]/85">Important terms need clarification or balancing before signing.</p>
                   </div>
                 </div>
               </div>
@@ -219,7 +231,7 @@ export default function HomePage() {
         </section>
 
         <section className="pt-card p-7">
-          <h2 className="text-center text-4xl text-[var(--pt-ink)]">Trusted by Creators Across a Multitude of Platforms</h2>
+          <h2 className="text-center text-4xl text-[var(--pt-ink)]">Built for creators across a multitude of platforms</h2>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-4">
             {SOCIAL_PLATFORMS.map((item) => (
               <span
@@ -231,40 +243,51 @@ export default function HomePage() {
               </span>
             ))}
           </div>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-[var(--pt-border)] bg-white p-3 text-sm text-[var(--pt-muted)]">
-              &ldquo;This caught terms I would have missed.&rdquo;
-            </div>
-            <div className="rounded-xl border border-[var(--pt-border)] bg-white p-3 text-sm text-[var(--pt-muted)]">
-              &ldquo;I understood my contract in plain language.&rdquo;
-            </div>
-            <div className="rounded-xl border border-[var(--pt-border)] bg-white p-3 text-sm text-[var(--pt-muted)]">
-              &ldquo;Worth it before signing any deal.&rdquo;
-            </div>
-          </div>
         </section>
 
-        <section id="about" className="pt-card p-7">
-            <h2 className="text-4xl text-[var(--pt-ink)]">Our Mission: Empowering Creators</h2>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[var(--pt-muted)]">
-              PlainTerms helps creators review contract language with confidence. We focus on
-              practical clarity, risk awareness, and plain-English understanding before signature.
-            </p>
+        <section id="how-it-works" className="pt-card p-7">
+          <h2 className="text-4xl text-[var(--pt-ink)]">How it works</h2>
+          <p className="mt-2 text-sm text-[var(--pt-muted)]">From upload to negotiation-ready in minutes.</p>
+          <div className="mt-8">
+            {/* Timeline connector row */}
+            <div className="relative hidden sm:flex items-center justify-between px-[calc(100%/6)]">
+              <div className="absolute left-[calc(100%/6)] right-[calc(100%/6)] top-1/2 h-px -translate-y-1/2 bg-[var(--pt-border)]" />
+              {["01", "02", "03"].map((n) => (
+                <div key={n} className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[var(--pt-accent)] bg-white text-sm font-bold text-[var(--pt-accent)]">
+                  {n}
+                </div>
+              ))}
+            </div>
+
+            {/* Step content */}
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              {SERVICE_ITEMS.map((service) => (
-                <article key={service.title} className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-4">
-                  <Image
-                    src={service.icon}
-                    alt=""
-                    width={52}
-                    height={52}
-                    className="h-12 w-12 rounded-lg border border-[var(--pt-border)] bg-white object-contain p-1"
-                  />
-                  <h3 className="mt-3 text-xl text-[var(--pt-ink)]">{service.title}</h3>
-                  <p className="mt-1 text-sm text-[var(--pt-muted)]">{service.body}</p>
+              {[
+                {
+                  step: "01",
+                  title: "Upload your contract",
+                  body: "Securely upload any brand deal, sponsorship, or creator agreement in PDF or Word format.",
+                },
+                {
+                  step: "02",
+                  title: "Get your analysis in minutes",
+                  body: "PlainTerms breaks down every clause in plain English, flags red flags, and scores overall risk.",
+                },
+                {
+                  step: "03",
+                  title: "Know what you're signing.",
+                  body: "Walk into negotiations armed with talking points, fallback language, and a ready-to-send email draft.",
+                },
+              ].map((step) => (
+                <article key={step.step} className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5 sm:text-center">
+                  <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--pt-accent)] text-sm font-bold text-[var(--pt-accent)] sm:hidden">
+                    {step.step}
+                  </div>
+                  <h3 className="text-xl text-[var(--pt-ink)]">{step.title}</h3>
+                  <p className="mt-1 text-sm text-[var(--pt-muted)]">{step.body}</p>
                 </article>
               ))}
             </div>
+          </div>
         </section>
 
         <section id="pricing" className="pt-card p-7">
@@ -272,11 +295,7 @@ export default function HomePage() {
             <div>
               <h2 className="text-4xl text-[var(--pt-ink)]">Pricing</h2>
               <p className="mt-2 text-sm text-[var(--pt-muted)]">
-                Clear pricing with no subscription.
-              </p>
-              <p className="mt-1 text-xs text-[var(--pt-muted)]">
-                Traditional contract counsel is usually billed hourly, often several hundred dollars per
-                hour. These tiers are built as lower-cost alternatives.
+                Per-contract pricing, no subscription.
               </p>
             </div>
             <Link
@@ -334,7 +353,7 @@ export default function HomePage() {
         <footer className="pt-card-soft px-6 py-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="text-sm font-medium text-[var(--pt-muted)]">
-              PlainTerms is informational only and not legal advice.
+              Informational analysis, not legal advice. Always consult a lawyer for high-stakes decisions.
             </p>
             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--pt-muted)]">
               <Link
