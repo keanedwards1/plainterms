@@ -176,6 +176,7 @@ export default async function ResultPage({ params, searchParams }: Props) {
 
   const data = parsed.data;
   const createdAtLabel = formatResultDate(data.created_at);
+  const fileNameLabel = data.document?.file_name ?? "Contract document";
 
   return (
     <main className="px-5 py-5 sm:px-8 lg:px-12 [--pt-muted:#7f7466]">
@@ -191,8 +192,8 @@ export default async function ResultPage({ params, searchParams }: Props) {
               ← Analyze another file
             </Link>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--pt-muted)]">
-              <span>Result ID: {data.result_id}</span>
-              <span>Generated: {createdAtLabel}</span>
+              <span>File name: {fileNameLabel}</span>
+              <span>Reviewed: {createdAtLabel}</span>
             </div>
           </div>
 
@@ -206,7 +207,7 @@ export default async function ResultPage({ params, searchParams }: Props) {
           </div>
         </section>
 
-        <ResultWorkspace data={data} retentionDays={retentionDays} />
+        <ResultWorkspace data={data} retentionDays={retentionDays} accessKey={accessKey} />
       </div>
     </main>
   );

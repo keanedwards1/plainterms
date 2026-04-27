@@ -1,4 +1,4 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import crypto from "node:crypto";
 import {
   assertPtUiV1Contract,
@@ -10,11 +10,13 @@ import { analyzeExtractedTextWithLlm } from "./llmAnalyze.mjs";
 import { validateObjectKey, validateUploadMeta } from "./uploadPolicy.mjs";
 import { buildReportInsights } from "./reportEngine.mjs";
 import { createResultAccessKey, hashResultAccessKey } from "./resultAccessKey.mjs";
+import { ADDON_OPTIONS, REPORT_TIER_OPTIONS } from "./contractOptions.mjs";
 
 const db = new DynamoDBClient({});
-const REPORT_TIERS = new Set(["scan_39", "report_69", "protect_99"]);
-const ADDON_KEYS = ["rewrite_contract", "update_email"];
+const REPORT_TIERS = new Set(REPORT_TIER_OPTIONS);
+const ADDON_KEYS = [...ADDON_OPTIONS];
 const ADDON_KEY_SET = new Set(ADDON_KEYS);
+const MAX_EXTRACTED_TEXT_CHARS = 12000;
 const CRITICAL_CLAUSE_KEYS = new Set(["scope", "payment", "termination", "ip", "liability"]);
 const ADVANCED_RISK_CLAUSE_KEYS = new Set([
   "liability",
@@ -66,6 +68,70 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function hasMeaningfulRevisionTargets(uiResult) {
+  const flags = asArray(uiResult?.report?.red_flags);
+  const clauses = asArray(uiResult?.report?.clause_breakdown);
+  const hasPriorityFlags = flags.some((flag) => flag?.severity === "high" || flag?.severity === "medium");
+  const hasUnclearClauses = clauses.some(
+    (clause) => clause?.status === "missing" || clause?.status === "unclear"
+  );
+  return hasPriorityFlags || hasUnclearClauses;
+}
+
+function withDocumentRevision(uiResult, revision) {
+  return {
+    ...uiResult,
+    document: {
+      ...(uiResult?.document ?? {}),
+      revision,
+    },
+  };
+}
+
+function buildInitialDocumentRevision(uiResult) {
+  const extracted =
+    typeof uiResult?.document?.extracted_text === "string" ? uiResult.document.extracted_text : "";
+  if (!extracted.trim()) {
+    return {
+      status: "not_available",
+      message: "Document text was not available for revision generation.",
+    };
+  }
+  if (!hasMeaningfulRevisionTargets(uiResult)) {
+    return {
+      status: "not_needed",
+      message: "No material wording risks were identified for automated revision.",
+    };
+  }
+  return {
+    status: "processing",
+    message: "Generating revised wording in the background.",
+  };
+}
+
+function revisionWorkerNameFromEnv() {
+  return (
+    process.env.DOCUMENT_REVISION_FUNCTION_NAME ||
+    process.env.DOCUMENT_REVISION_FUNCTION_ARN ||
+    ""
+  ).trim();
+}
+
+async function queueDocumentRevisionJob(resultId) {
+  const workerName = revisionWorkerNameFromEnv();
+  if (!workerName) return false;
+
+  const { LambdaClient, InvokeCommand } = await import("@aws-sdk/client-lambda");
+  const lambda = new LambdaClient({});
+  const cmd = new InvokeCommand({
+    FunctionName: workerName,
+    InvocationType: "Event",
+    Payload: Buffer.from(JSON.stringify({ resultId })),
+  });
+  await lambda.send(cmd);
+  return true;
+}
+
 function buildProtectUpsellSignals(report) {
   const clauses = asArray(report?.clause_breakdown);
   const flags = asArray(report?.red_flags);
@@ -109,7 +175,7 @@ function applyTierToReport(baseReport, selectedTier) {
   report.tier = tier;
   report.protect_upsell = protectUpsell;
   report.teaser_report_69 = {
-    headline: "Upgrade to Report ($69)",
+    headline: "Upgrade to Report ($79)",
     bullets: [
       "Unlock full clause-by-clause breakdown.",
       "Get complete negotiation bullets and clearer next-step guidance.",
@@ -117,7 +183,7 @@ function applyTierToReport(baseReport, selectedTier) {
     ],
   };
   report.teaser_protect_99 = {
-    headline: "Upgrade to Protect ($99)",
+    headline: "Upgrade to Protect ($149)",
     bullets: [
       "Deeper rewrite suggestions with fallback positions.",
       "Advanced clause coverage and stronger negotiation plan.",
@@ -223,6 +289,9 @@ function makeOverviewFallback({ report }) {
 
 function makePtV1({ resultId, createdAt, payload, extraction, analysis, report, selectedAddons }) {
   const filename = typeof payload.filename === "string" ? payload.filename : "Contract document";
+  const extractedTextRaw = typeof extraction.extractedText === "string" ? extraction.extractedText : "";
+  const extractedTextPreview = extractedTextRaw.slice(0, MAX_EXTRACTED_TEXT_CHARS);
+  const extractedTextTruncated = extractedTextRaw.length > extractedTextPreview.length;
   const llmFields = analysis?.fields;
   const notes = [...extraction.extraction.notes];
   if (analysis?.usedLlm) {
@@ -334,11 +403,14 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report, 
     created_at: createdAt,
     document: {
       title: filename,
+      content_type: payload.contentType,
       contract_type: "independent_contractor_services_agreement",
       jurisdiction_hint: "not_found",
       page_count: 0,
       word_count: extraction.extractedText ? extraction.extractedText.split(/\s+/).length : 0,
       confidence_notes: notes,
+      extracted_text: extractedTextPreview,
+      extracted_text_truncated: extractedTextTruncated,
     },
     sections: {
       document_overview: {
@@ -506,7 +578,9 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
     selectedAddons: addonSelection?.selectedAddons,
   });
   assertPtV1Contract(ptV1);
-  const uiResult = transformPtV1ToUiV1(ptV1);
+  let uiResult = transformPtV1ToUiV1(ptV1);
+  const initialRevision = buildInitialDocumentRevision(uiResult);
+  uiResult = withDocumentRevision(uiResult, initialRevision);
   assertPtUiV1Contract(uiResult);
 
   const cmd = new PutItemCommand({
@@ -524,5 +598,29 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   });
 
   await db.send(cmd);
+  if (initialRevision.status === "processing") {
+    try {
+      await queueDocumentRevisionJob(resultId);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Revision generation could not be started.";
+      const failedUiResult = withDocumentRevision(uiResult, {
+        status: "failed",
+        message: `Background revision start failed: ${String(message).slice(0, 240)}`,
+      });
+      await db.send(
+        new UpdateItemCommand({
+          TableName: process.env.RESULTS_TABLE,
+          Key: {
+            result_id: { S: resultId },
+          },
+          UpdateExpression: "SET ui_result = :ui",
+          ExpressionAttributeValues: {
+            ":ui": { S: JSON.stringify(failedUiResult) },
+          },
+        })
+      );
+    }
+  }
   return { resultId, accessKey: resultAccessKey };
 }

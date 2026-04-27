@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/apiBaseUrl";
+import { postJsonProxy } from "@/lib/postJsonProxy";
 import { z } from "zod";
 
 const PrecheckRequest = z.object({
@@ -29,52 +29,26 @@ const PrecheckResponse = z.object({
 });
 
 export async function POST(req: Request) {
-  try {
-    const payloadJson = await req.json();
-    const payload = PrecheckRequest.safeParse(payloadJson);
-    if (!payload.success) {
-      return Response.json(
-        { error: "Invalid precheck payload.", details: payload.error.flatten() },
-        { status: 400 }
-      );
-    }
+  const upstreamResponse = await postJsonProxy({
+    req,
+    upstreamPath: "/precheck",
+    requestSchema: PrecheckRequest,
+    responseSchema: PrecheckResponse,
+    invalidPayloadError: "Invalid precheck payload.",
+    upstreamError: "Upstream /precheck failed.",
+    contractError: "Upstream /precheck response violated contract.",
+    requestFailedError: "Precheck request failed.",
+  });
 
-    const upstream = await fetch(`${getApiBaseUrl()}/precheck`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload.data),
-      cache: "no-store",
-    });
-
-    if (!upstream.ok) {
-      await upstream.text().catch(() => "");
-      return Response.json(
-        {
-          error: "Upstream /precheck failed.",
-          upstreamStatus: upstream.status,
-        },
-        { status: upstream.status }
-      );
-    }
-
-    const upstreamJson = await upstream.json();
-    const parsed = PrecheckResponse.safeParse(upstreamJson);
-    if (!parsed.success) {
-      return Response.json(
-        {
-          error: "Upstream /precheck response violated contract.",
-          details: parsed.error.flatten(),
-        },
-        { status: 502 }
-      );
-    }
-
-    if (!parsed.data.precheckPassed) {
-      return Response.json({ error: "Precheck did not pass." }, { status: 409 });
-    }
-
-    return Response.json(parsed.data);
-  } catch {
-    return Response.json({ error: "Precheck request failed." }, { status: 502 });
+  if (!upstreamResponse.ok) {
+    return upstreamResponse;
   }
+
+  const parsed = (await upstreamResponse.json()) as z.infer<typeof PrecheckResponse>;
+
+  if (!parsed.precheckPassed) {
+    return Response.json({ error: "Precheck did not pass." }, { status: 409 });
+  }
+
+  return Response.json(parsed);
 }

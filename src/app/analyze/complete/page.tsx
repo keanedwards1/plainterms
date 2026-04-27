@@ -54,7 +54,7 @@ export default function AnalyzeCompletePage() {
   const [progress, setProgress] = React.useState(0);
   const [done, setDone] = React.useState(false);
   const [showStillWorking, setShowStillWorking] = React.useState(false);
-  const startTimeRef = React.useRef<number>(Date.now());
+  const startTimeRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     const url = new URL(window.location.href);
@@ -109,8 +109,14 @@ export default function AnalyzeCompletePage() {
   }, [router, sessionId]);
 
   React.useEffect(() => {
+    if (startTimeRef.current === null) {
+      startTimeRef.current = Date.now();
+    }
     if (error || done) return;
     const tick = window.setInterval(() => {
+      if (startTimeRef.current === null) {
+        startTimeRef.current = Date.now();
+      }
       const elapsed = Date.now() - startTimeRef.current;
       const ratio = Math.min(elapsed / ESTIMATED_MS, 1);
       // sqrt curve: fast start, slows as it approaches the cap

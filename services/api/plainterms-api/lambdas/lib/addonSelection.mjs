@@ -1,12 +1,9 @@
-export const ALLOWED_ADDONS = ["rewrite_contract", "update_email"];
+import { ADDON_OPTIONS } from "./contractOptions.mjs";
+import { normalizeLowerTrimmedString } from "./stringNormalize.mjs";
+
+export const ALLOWED_ADDONS = [...ADDON_OPTIONS];
 
 const addonSet = new Set(ALLOWED_ADDONS);
-
-function normalizeString(value) {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim().toLowerCase();
-  return trimmed || null;
-}
 
 function normalizeSelectedAddons(value) {
   if (!Array.isArray(value)) return [];
@@ -15,7 +12,7 @@ function normalizeSelectedAddons(value) {
   const selected = [];
 
   for (const raw of value) {
-    const normalized = normalizeString(raw);
+    const normalized = normalizeLowerTrimmedString(raw);
     if (!normalized) continue;
     if (!addonSet.has(normalized)) continue;
     if (seen.has(normalized)) continue;
@@ -36,7 +33,7 @@ export function parseAddonSelection(input = {}) {
 
   if (Array.isArray(input.selectedAddons)) {
     const invalid = input.selectedAddons.filter((item) => {
-      const normalized = normalizeString(item);
+      const normalized = normalizeLowerTrimmedString(item);
       return !normalized || !addonSet.has(normalized);
     });
     if (invalid.length > 0) {

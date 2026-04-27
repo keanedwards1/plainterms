@@ -1,4 +1,6 @@
-export const ADDON_OPTIONS = ["rewrite_contract", "update_email"] as const;
+import { ADDON_OPTIONS as SHARED_ADDON_OPTIONS } from "../../shared/contractOptions.mjs";
+
+export const ADDON_OPTIONS = SHARED_ADDON_OPTIONS;
 
 export type AddonOption = (typeof ADDON_OPTIONS)[number];
 

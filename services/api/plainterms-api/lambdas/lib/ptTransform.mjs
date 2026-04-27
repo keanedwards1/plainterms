@@ -370,6 +370,21 @@ export function transformPtV1ToUiV1(ptV1) {
       state: ensureAddonState(ptV1?.addons?.update_email),
     },
   };
+  const documentTitle = ensureString(ptV1?.document?.title).trim();
+  const documentContentType = ensureString(ptV1?.document?.content_type).trim();
+  const documentWordCount =
+    typeof ptV1?.document?.word_count === "number" && Number.isFinite(ptV1.document.word_count)
+      ? Math.max(0, Math.round(ptV1.document.word_count))
+      : undefined;
+  const extractedText = ensureString(ptV1?.document?.extracted_text);
+  const extractedTextTruncated = ptV1?.document?.extracted_text_truncated === true;
+  const document = {
+    file_name: documentTitle || "Contract document",
+    ...(documentContentType ? { content_type: documentContentType } : {}),
+    ...(documentWordCount !== undefined ? { word_count: documentWordCount } : {}),
+    ...(extractedText ? { extracted_text: extractedText } : {}),
+    ...(extractedTextTruncated ? { extracted_text_truncated: true } : {}),
+  };
 
   const report =
     reportObj || uiFlags.length > 0 || uiClauses.length > 0
@@ -405,6 +420,7 @@ export function transformPtV1ToUiV1(ptV1) {
     headline: "Summary",
     overview: ensureString(overviewSummary).trim(),
     sections: uiSections,
+    document,
     notices: {
       not_legal_advice:
         ensureString(ptV1?.notices?.not_legal_advice).trim() ||
@@ -445,6 +461,40 @@ export function assertPtUiV1Contract(ptUiV1) {
     typeof ptUiV1.notices.not_legal_advice === "string" && ptUiV1.notices.not_legal_advice,
     "pt.ui.v1 notices.not_legal_advice required"
   );
+
+  if (ptUiV1.document !== undefined) {
+    assert(isObject(ptUiV1.document), "pt.ui.v1 document must be an object when present");
+    assert(
+      typeof ptUiV1.document.file_name === "string" && ptUiV1.document.file_name,
+      "pt.ui.v1 document.file_name required"
+    );
+    if (ptUiV1.document.content_type !== undefined) {
+      assert(
+        typeof ptUiV1.document.content_type === "string",
+        "pt.ui.v1 document.content_type must be a string when present"
+      );
+    }
+    if (ptUiV1.document.word_count !== undefined) {
+      assert(
+        typeof ptUiV1.document.word_count === "number" &&
+          Number.isFinite(ptUiV1.document.word_count) &&
+          ptUiV1.document.word_count >= 0,
+        "pt.ui.v1 document.word_count must be non-negative number when present"
+      );
+    }
+    if (ptUiV1.document.extracted_text !== undefined) {
+      assert(
+        typeof ptUiV1.document.extracted_text === "string",
+        "pt.ui.v1 document.extracted_text must be a string when present"
+      );
+    }
+    if (ptUiV1.document.extracted_text_truncated !== undefined) {
+      assert(
+        typeof ptUiV1.document.extracted_text_truncated === "boolean",
+        "pt.ui.v1 document.extracted_text_truncated must be a boolean when present"
+      );
+    }
+  }
 
   for (const section of ptUiV1.sections) {
     assert(isObject(section), "Each pt.ui.v1 section must be an object");

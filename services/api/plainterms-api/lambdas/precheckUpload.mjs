@@ -10,20 +10,10 @@ import {
   getPrecheckTokenTtlSec,
 } from "./lib/precheckToken.mjs";
 import { scanBufferForMalwareSignals } from "./lib/malwareScan.mjs";
-import { corsHeaders } from "./lib/cors.mjs";
+import { jsonResponse, methodGuard, parseJsonBody } from "./lib/http.mjs";
 
 const s3 = new S3Client({});
-
-function json(event, statusCode, bodyObj) {
-  return {
-    statusCode,
-    headers: {
-      ...corsHeaders(event, "POST,OPTIONS"),
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(bodyObj),
-  };
-}
+const METHODS = "POST,OPTIONS";
 
 function getPrecheckMinWords() {
   const raw = Number(process.env.PRECHECK_MIN_WORDS ?? "5");
@@ -50,29 +40,21 @@ function mapHeadError(err) {
 }
 
 export const handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders(event, "POST,OPTIONS"), body: "" };
-  }
-
-  if (event.httpMethod !== "POST") {
-    return json(event, 405, { error: "Method not allowed" });
-  }
+  const methodResponse = methodGuard(event, "POST", METHODS);
+  if (methodResponse) return methodResponse;
 
   const bucket = process.env.UPLOAD_BUCKET;
   if (!bucket) {
-    return json(event, 500, { error: "Upload bucket not configured" });
+    return jsonResponse(event, 500, { error: "Upload bucket not configured" }, METHODS);
   }
 
-  let payload = {};
-  try {
-    payload = event.body ? JSON.parse(event.body) : {};
-  } catch {
-    return json(event, 400, { error: "Invalid JSON body" });
-  }
+  const parsedPayload = parseJsonBody(event, METHODS);
+  if (!parsedPayload.ok) return parsedPayload.response;
+  const payload = parsedPayload.payload;
 
   const objectKeyCheck = validateObjectKey(payload.objectKey);
   if (!objectKeyCheck.ok) {
-    return json(event, 400, { error: objectKeyCheck.error });
+    return jsonResponse(event, 400, { error: objectKeyCheck.error }, METHODS);
   }
 
   const metaCheck = validateUploadMeta({
@@ -83,7 +65,7 @@ export const handler = async (event) => {
   });
   if (!metaCheck.ok) {
     const status = metaCheck.errorCode === "file_too_large" ? 413 : 400;
-    return json(event, status, { error: metaCheck.error });
+    return jsonResponse(event, status, { error: metaCheck.error }, METHODS);
   }
 
   let head;
@@ -96,24 +78,24 @@ export const handler = async (event) => {
     );
   } catch (err) {
     const mapped = mapHeadError(err);
-    return json(event, mapped.statusCode, { error: mapped.message });
+    return jsonResponse(event, mapped.statusCode, { error: mapped.message }, METHODS);
   }
 
   const headSize = Number(head?.ContentLength ?? 0);
   const uploadMaxBytes = getUploadMaxBytes();
   if (!Number.isFinite(headSize) || headSize <= 0) {
-    return json(event, 422, { error: "Uploaded file is empty or unreadable." });
+    return jsonResponse(event, 422, { error: "Uploaded file is empty or unreadable." }, METHODS);
   }
   if (headSize > uploadMaxBytes) {
-    return json(event, 413, {
+    return jsonResponse(event, 413, {
       error: `File exceeds maximum allowed size (${uploadMaxBytes} bytes).`,
-    });
+    }, METHODS);
   }
 
   if (headSize !== metaCheck.size) {
-    return json(event, 409, {
+    return jsonResponse(event, 409, {
       error: "Uploaded file metadata mismatch. Please upload again.",
-    });
+    }, METHODS);
   }
 
   const contentTypeCheck = validateUploadMeta({
@@ -124,7 +106,7 @@ export const handler = async (event) => {
     requireSize: true,
   });
   if (!contentTypeCheck.ok) {
-    return json(event, 400, { error: contentTypeCheck.error });
+    return jsonResponse(event, 400, { error: contentTypeCheck.error }, METHODS);
   }
 
   const extraction = await extractDocumentTextFromUpload({
@@ -139,7 +121,7 @@ export const handler = async (event) => {
   });
 
   if (malwareScan.status !== "passed") {
-    return json(event, 422, {
+    return jsonResponse(event, 422, {
       error:
         "Potentially unsafe file content detected. Please remove active content/macros and upload again.",
       malwareScan,
@@ -153,14 +135,14 @@ export const handler = async (event) => {
         malwareScan: "failed",
         textExtractionPrecheck: "not_run",
       },
-    });
+    }, METHODS);
   }
 
   const extractedWordCount = countWords(extraction.extractedText);
   const minWords = getPrecheckMinWords();
 
   if (extractedWordCount < minWords) {
-    return json(event, 422, {
+    return jsonResponse(event, 422, {
       error:
         "We could not read enough text from this file. Please upload a text-based PDF or DOCX.",
       extraction: {
@@ -174,7 +156,7 @@ export const handler = async (event) => {
         malwareScan: "passed",
         textExtractionPrecheck: "failed",
       },
-    });
+    }, METHODS);
   }
 
   const precheckToken = await createPrecheckToken({
@@ -186,7 +168,7 @@ export const handler = async (event) => {
     textExtractionPrecheckPassed: true,
   });
 
-  return json(event, 200, {
+  return jsonResponse(event, 200, {
     precheckPassed: true,
     precheckToken,
     expiresInSec: getPrecheckTokenTtlSec(),
@@ -200,5 +182,5 @@ export const handler = async (event) => {
       malwareScan: "passed",
       textExtractionPrecheck: "passed",
     },
-  });
+  }, METHODS);
 };

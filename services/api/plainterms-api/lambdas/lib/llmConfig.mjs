@@ -1,23 +1,11 @@
-import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 import { normalizeAnalysisMode, normalizeLlmModel } from "./analysisSelection.mjs";
+import { readParameter } from "./ssm.mjs";
 
-const ssm = new SSMClient({});
 let cachedApiKey = null;
 let cachedApiKeyParamName = null;
 
 function getEnv(name, fallback = "") {
   return process.env[name] ?? fallback;
-}
-
-async function readParameter(name, withDecryption = false) {
-  const cmd = new GetParameterCommand({
-    Name: name,
-    WithDecryption: withDecryption,
-  });
-  const res = await ssm.send(cmd);
-  const value = res?.Parameter?.Value;
-  if (!value) throw new Error(`SSM parameter has no value: ${name}`);
-  return value;
 }
 
 export async function getLlmConfig() {

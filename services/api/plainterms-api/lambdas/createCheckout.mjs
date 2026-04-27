@@ -4,34 +4,28 @@ import { validateObjectKey, validateUploadMeta } from "./lib/uploadPolicy.mjs";
 import { verifyPrecheckToken } from "./lib/precheckToken.mjs";
 import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
 import { formatSelectedAddonsCsv, parseAddonSelection } from "./lib/addonSelection.mjs";
-import { corsHeaders } from "./lib/cors.mjs";
+import { jsonResponse, methodGuard, parseJsonBody } from "./lib/http.mjs";
+const METHODS = "POST,OPTIONS";
 
-function json(event, statusCode, bodyObj) {
-  return {
-    statusCode,
-    headers: {
-      ...corsHeaders(event, "POST,OPTIONS"),
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(bodyObj),
-  };
+function logServerError(eventName, message, fields = {}) {
+  console.error(
+    JSON.stringify({
+      ts: new Date().toISOString(),
+      level: "error",
+      event: eventName,
+      message,
+      ...fields,
+    })
+  );
 }
 
 export const handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders(event, "POST,OPTIONS"), body: "" };
-  }
+  const methodResponse = methodGuard(event, "POST", METHODS);
+  if (methodResponse) return methodResponse;
 
-  if (event.httpMethod !== "POST") {
-    return json(event, 405, { error: "Method not allowed" });
-  }
-
-  let payload = {};
-  try {
-    payload = event.body ? JSON.parse(event.body) : {};
-  } catch {
-    return json(event, 400, { error: "Invalid JSON body" });
-  }
+  const parsedPayload = parseJsonBody(event, METHODS);
+  if (!parsedPayload.ok) return parsedPayload.response;
+  const payload = parsedPayload.payload;
 
   const objectKey = payload.objectKey;
   const filename = payload.filename;
@@ -42,20 +36,20 @@ export const handler = async (event) => {
   const addonCheck = parseAddonSelection(payload);
 
   if (!objectKey || !filename || !contentType || typeof size !== "number") {
-    return json(event, 400, {
+    return jsonResponse(event, 400, {
       error: "objectKey, filename, contentType, and numeric size are required",
-    });
+    }, METHODS);
   }
 
   if (!selectionCheck.ok) {
-    return json(event, 400, { error: selectionCheck.error });
+    return jsonResponse(event, 400, { error: selectionCheck.error }, METHODS);
   }
   if (!addonCheck.ok) {
-    return json(event, 400, { error: addonCheck.error });
+    return jsonResponse(event, 400, { error: addonCheck.error }, METHODS);
   }
 
   if (typeof precheckToken !== "string" || !precheckToken.trim()) {
-    return json(event, 400, { error: "precheckToken is required." });
+    return jsonResponse(event, 400, { error: "precheckToken is required." }, METHODS);
   }
 
   const uploadMeta = validateUploadMeta({
@@ -66,21 +60,21 @@ export const handler = async (event) => {
   });
   if (!uploadMeta.ok) {
     const status = uploadMeta.errorCode === "file_too_large" ? 413 : 400;
-    return json(event, status, { error: uploadMeta.error });
+    return jsonResponse(event, status, { error: uploadMeta.error }, METHODS);
   }
 
   const objectKeyCheck = validateObjectKey(objectKey);
   if (!objectKeyCheck.ok) {
-    return json(event, 400, { error: objectKeyCheck.error });
+    return jsonResponse(event, 400, { error: objectKeyCheck.error }, METHODS);
   }
 
   try {
     const precheck = await verifyPrecheckToken(precheckToken);
     if (!precheck.ok) {
-      return json(event, 409, {
+      return jsonResponse(event, 409, {
         error: "Precheck token is invalid or expired. Please re-upload your contract.",
         code: precheck.error,
-      });
+      }, METHODS);
     }
 
     const tokenPayload = precheck.payload;
@@ -91,47 +85,47 @@ export const handler = async (event) => {
       tokenPayload.size === size;
 
     if (!tokenMatchesUpload) {
-      return json(event, 409, {
+      return jsonResponse(event, 409, {
         error: "Precheck does not match this file. Please upload and validate again.",
         code: "precheck_payload_mismatch",
-      });
+      }, METHODS);
     }
 
     if (
       tokenPayload.scanPassed !== true ||
       tokenPayload.textExtractionPrecheckPassed !== true
     ) {
-      return json(event, 409, {
+      return jsonResponse(event, 409, {
         error:
           "Precheck did not complete required safety/readability checks. Please upload and validate again.",
         code: "precheck_required_checks_not_passed",
-      });
+      }, METHODS);
     }
 
     const { stripeSecretKey, stripePriceIds, stripeAddonPriceIds } = await getStripeConfig();
     const selectedTier = selectionCheck.selection.reportTier;
     const selectedPriceId = stripePriceIds?.[selectedTier];
     if (!selectedPriceId) {
-      return json(event, 500, {
+      return jsonResponse(event, 500, {
         error: `Missing Stripe price configuration for tier: ${selectedTier}`,
-      });
+      }, METHODS);
     }
     const selectedAddons = addonCheck.selection.selectedAddons;
     const addonLineItems = [];
     for (const addon of selectedAddons) {
       const addonPriceId = stripeAddonPriceIds?.[addon];
       if (!addonPriceId) {
-        return json(event, 400, {
+        return jsonResponse(event, 400, {
           error: `Add-on "${addon}" is not available right now.`,
           code: "addon_not_configured",
-        });
+        }, METHODS);
       }
       addonLineItems.push({ price: addonPriceId, quantity: 1 });
     }
 
     const appBaseUrl = (process.env.APP_BASE_URL ?? "").replace(/\/+$/, "");
     if (!appBaseUrl) {
-      return json(event, 500, { error: "Missing required env var: APP_BASE_URL" });
+      return jsonResponse(event, 500, { error: "Missing required env var: APP_BASE_URL" }, METHODS);
     }
 
     const stripe = new Stripe(stripeSecretKey);
@@ -158,15 +152,19 @@ export const handler = async (event) => {
     });
 
     if (!session.url) {
-      return json(event, 500, { error: "Stripe session created without redirect URL" });
+      return jsonResponse(event, 500, { error: "Stripe session created without redirect URL" }, METHODS);
     }
 
-    return json(event, 200, {
+    return jsonResponse(event, 200, {
       checkoutSessionId: session.id,
       checkoutUrl: session.url,
-    });
+    }, METHODS);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    return json(event, 500, { error: `Checkout creation failed: ${message}` });
+    logServerError("checkout.create_error", message);
+    return jsonResponse(event, 500, {
+      error: "Checkout creation failed. Please try again.",
+      code: "checkout_creation_failed",
+    }, METHODS);
   }
 };

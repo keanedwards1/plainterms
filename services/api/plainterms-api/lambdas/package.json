@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "node --test tests/**/*.test.mjs"
+  },
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.1016.0",
     "@aws-sdk/client-ssm": "^3.1016.0",
     "@aws-sdk/client-dynamodb": "^3.1016.0",
     "@aws-sdk/client-s3": "^3.1016.0",

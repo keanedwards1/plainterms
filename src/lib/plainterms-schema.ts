@@ -110,6 +110,40 @@ export const PtProtectExtras = z.object({
   ),
 });
 
+export const PtDocumentRevisionStatus = z.enum([
+  "processing",
+  "ready",
+  "failed",
+  "not_needed",
+  "not_available",
+]);
+
+export const PtDocumentRevisionChange = z.object({
+  before: z.string(),
+  after: z.string(),
+  reason: z.string(),
+  severity: PtFlagSeverity.optional(),
+});
+
+export const PtDocumentRevision = z.object({
+  status: PtDocumentRevisionStatus,
+  revised_text: z.string().optional(),
+  summary: z.string().optional(),
+  changes: z.array(PtDocumentRevisionChange).optional(),
+  generated_at: z.string().optional(),
+  model: z.string().optional(),
+  message: z.string().optional(),
+});
+
+export const PtResultDocument = z.object({
+  file_name: z.string(),
+  content_type: z.string().optional(),
+  word_count: z.number().int().nonnegative().optional(),
+  extracted_text: z.string().optional(),
+  extracted_text_truncated: z.boolean().optional(),
+  revision: PtDocumentRevision.optional(),
+});
+
 export const PtReport = z.object({
   tier: PtReportTier.optional(),
   risk: z.object({
@@ -163,6 +197,7 @@ export const PtResult = z.object({
   overview: z.string(), // short calm overview
   gentle_notice: z.string().optional(), // Option B: gentle early notice
   sections: z.array(PtSection),
+  document: PtResultDocument.optional(),
   report: PtReport.optional(),
   addons: PtAddons.optional(),
   notices: z.object({

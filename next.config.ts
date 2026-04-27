@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
+const devScriptSrc = isDev ? "'unsafe-eval' " : "";
+const vercelLiveSrc = "https://vercel.live ";
 
 const securityHeaders = [
   {
@@ -34,11 +36,11 @@ const securityHeaders = [
       "base-uri 'self'",
       "frame-ancestors 'none'",
       "object-src 'none'",
-      `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval' " : ""}https://js.stripe.com https://checkout.stripe.com https://www.googletagmanager.com`,
+      `script-src 'self' 'unsafe-inline' ${devScriptSrc}${vercelLiveSrc}https://js.stripe.com https://checkout.stripe.com https://www.googletagmanager.com`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https: https://www.google-analytics.com",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.amazonaws.com https://*.execute-api.us-west-2.amazonaws.com https://www.google-analytics.com https://*.google-analytics.com",
+      `connect-src 'self' ${vercelLiveSrc}https://api.stripe.com https://checkout.stripe.com https://*.amazonaws.com https://*.execute-api.us-west-2.amazonaws.com https://www.google-analytics.com https://*.google-analytics.com`,
       "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
       "form-action 'self' https://checkout.stripe.com",
       "upgrade-insecure-requests",

@@ -1,6 +1,4 @@
-import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
-
-const ssm = new SSMClient({});
+import { maybeReadParameter, readParameter } from "./ssm.mjs";
 let cachedConfig = null;
 let cachedSecretKey = null;
 
@@ -8,22 +6,6 @@ function getRequiredEnv(name) {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required env var: ${name}`);
   return value;
-}
-
-async function readParameter(name, withDecryption = false) {
-  const cmd = new GetParameterCommand({
-    Name: name,
-    WithDecryption: withDecryption,
-  });
-  const res = await ssm.send(cmd);
-  const value = res?.Parameter?.Value;
-  if (!value) throw new Error(`SSM parameter has no value: ${name}`);
-  return value;
-}
-
-async function maybeReadParameter(name, withDecryption = false) {
-  if (!name) return undefined;
-  return readParameter(name, withDecryption);
 }
 
 export async function getStripeConfig() {

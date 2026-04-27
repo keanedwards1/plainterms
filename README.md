@@ -49,6 +49,9 @@ Frontend expects:
 API_BASE_URL=https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod
 NEXT_PUBLIC_RESULT_RETENTION_DAYS=30
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+# Recommended for metrics origin allowlist:
+# NEXT_PUBLIC_SITE_URL=https://www.plainterms.us
+# METRICS_ALLOWED_ORIGINS=https://www.plainterms.us,https://plainterms.us,http://localhost:3000
 # Use either of these for Search Console meta verification:
 # GOOGLE_SITE_VERIFICATION=your_verification_token
 # NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=your_verification_token
@@ -65,6 +68,7 @@ Set this in:
 `API_BASE_URL` is preferred because requests are proxied through Next.js API routes (avoids browser CORS issues).
 `NEXT_PUBLIC_RESULT_RETENTION_DAYS` controls user-facing retention messaging in the frontend.
 `NEXT_PUBLIC_GA_MEASUREMENT_ID` enables Google Analytics 4 tracking.
+`METRICS_ALLOWED_ORIGINS` and `NEXT_PUBLIC_SITE_URL` help `/api/metrics` enforce trusted origins.
 `GOOGLE_SITE_VERIFICATION` (or `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) adds the Search Console verification meta tag.
 
 Quick Vercel CLI setup:
@@ -171,7 +175,11 @@ Stripe checkout configuration (SAM parameters -> Lambda env):
 - `PrecheckTokenSecretParamName` (SSM secure string for precheck token signing)
 - Security controls (from SAM parameters):
   - `ApiDefaultRateLimit` / `ApiDefaultBurstLimit` for stage-level throttling
-  - `WafGlobalIpLimitPer5Min` for WAF IP-based blocks
+  - `EnableApiWaf` (`false` by default to reduce cost, set `true` to re-enable WAF)
+  - `WafGlobalIpLimitPer5Min` for WAF IP-based blocks (used when WAF is enabled)
+  - `ApiRequestCountAlarmThreshold`, `Api4xxAlarmThreshold`, `Api5xxAlarmThreshold`
+  - `ApiAlarmPeriodSeconds`, `ApiAlarmEvaluationPeriods`
+  - `ApiAlarmSnsTopicArn` (optional SNS alerts target; leave empty to disable notifications)
 - LLM analysis (optional, via AWS SSM + Lambda env):
   - `ANALYSIS_MODE` (from SAM parameter `AnalysisMode`) = `rules` (default) or `llm`
   - `LLM_BASE_URL` (default `https://api.openai.com/v1`)
@@ -199,6 +207,9 @@ sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSeconda
 
 # LLM mode with GPT-5.2
 sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=llm LlmModel=gpt-5.2
+
+# Re-enable WAF later (optional) and wire alarm notifications
+sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=true WafGlobalIpLimitPer5Min=1500 ApiAlarmSnsTopicArn=arn:aws:sns:us-west-2:123456789012:plainterms-alarms
 ```
 
 Quick UI switch for testing:
@@ -211,7 +222,7 @@ If your stack was originally created with guided prompts, update `samconfig.toml
 `parameter_overrides` includes:
 
 ```toml
-parameter_overrides = "AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini"
+parameter_overrides = "AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=false ApiDefaultRateLimit=5 ApiDefaultBurstLimit=10"
 ```
 
 Backend retention behavior:

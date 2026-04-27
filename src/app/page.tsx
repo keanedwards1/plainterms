@@ -2,24 +2,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
-const SERVICE_ITEMS = [
-  {
-    title: "Red Flag Spotting",
-    body: "Catch risky clauses early so you can negotiate from a safer position.",
-    icon: "/graphics/icon-shield.svg",
-  },
-  {
-    title: "Earnings Protection",
-    body: "Surface payment, cancellation, and rights terms that impact your income.",
-    icon: "/graphics/icon-search.svg",
-  },
-  {
-    title: "IP Protection",
-    body: "Understand ownership terms before your contract is locked in.",
-    icon: "/graphics/icon-doc.svg",
-  },
-] as const;
-
 const PRICING = [
   {
     name: "Core",

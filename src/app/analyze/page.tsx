@@ -13,6 +13,7 @@ import {
 } from "@/lib/analysisOptions";
 import {
   DEFAULT_REPORT_TIER,
+  REPORT_TIER_DESCRIPTIONS,
   REPORT_TIER_LABELS,
   REPORT_TIER_OPTIONS,
   type ReportTierOption,
@@ -65,12 +66,6 @@ const SUBMIT_STEP_DESCRIPTIONS: Record<SubmitStep, string> = {
 const LOCAL_STORAGE_ANALYSIS_MODE_KEY = "pt.analysisMode";
 const LOCAL_STORAGE_LLM_MODEL_KEY = "pt.llmModel";
 const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
-
-const REPORT_TIER_DESCRIPTIONS: Record<ReportTierOption, string> = {
-  scan_39: "Quick risk scan with top findings.",
-  report_69: "Full report with complete clause breakdown and questions.",
-  protect_99: "Adds deeper rewrites, fallback positions, and negotiation plan.",
-};
 
 function isAnalysisModeOption(value: string): value is AnalysisModeOption {
   return value === "rules" || value === "llm";

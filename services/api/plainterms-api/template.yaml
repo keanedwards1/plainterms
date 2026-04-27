@@ -63,7 +63,53 @@ Parameters:
     Type: String
     Default: /plainterms/precheck/token-secret
     Description: SSM parameter name used to sign/verify precheck tokens (SecureString).
+  EnableApiWaf:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Toggle API WAF on/off. Keep false to reduce monthly cost, set true to enable WAF protection.
+  WafGlobalIpLimitPer5Min:
+    Type: Number
+    Default: 1500
+    Description: WAF IP-based rate limit over a 5-minute window when WAF is enabled.
+  ApiDefaultRateLimit:
+    Type: Number
+    Default: 5
+    Description: Stage-level steady-state API Gateway throttle rate limit (requests/sec).
+  ApiDefaultBurstLimit:
+    Type: Number
+    Default: 10
+    Description: Stage-level API Gateway throttle burst limit.
+  ApiRequestCountAlarmThreshold:
+    Type: Number
+    Default: 900
+    Description: Alarm threshold for API request count per period.
+  Api4xxAlarmThreshold:
+    Type: Number
+    Default: 60
+    Description: Alarm threshold for total 4XX responses per period.
+  Api5xxAlarmThreshold:
+    Type: Number
+    Default: 10
+    Description: Alarm threshold for total 5XX responses per period.
+  ApiAlarmPeriodSeconds:
+    Type: Number
+    Default: 300
+    Description: CloudWatch alarm period for API alarms in seconds.
+  ApiAlarmEvaluationPeriods:
+    Type: Number
+    Default: 1
+    Description: Number of periods to evaluate for API alarms.
+  ApiAlarmSnsTopicArn:
+    Type: String
+    Default: ""
+    Description: Optional SNS topic ARN for alarm notifications. Leave empty to disable alarm actions.
 
+Conditions:
+  EnableApiWafCondition: !Equals [!Ref EnableApiWaf, "true"]
+  HasApiAlarmSnsTopic: !Not [!Equals [!Ref ApiAlarmSnsTopicArn, ""]]
 
 Globals:
   Function:
@@ -79,6 +125,7 @@ Resources:
   PlainTermsApi:
     Type: AWS::Serverless::Api
     Properties:
+      Name: !Sub "${AWS::StackName}-plainterms-api"
       StageName: Prod
       BinaryMediaTypes:
         - multipart/form-data
@@ -89,8 +136,8 @@ Resources:
       MethodSettings:
         - ResourcePath: "/*"
           HttpMethod: "*"
-          ThrottlingRateLimit: 10
-          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: !Ref ApiDefaultRateLimit
+          ThrottlingBurstLimit: !Ref ApiDefaultBurstLimit
 
   UploadBucket:
     Type: AWS::S3::Bucket
@@ -161,6 +208,7 @@ Resources:
 
   PlainTermsApiWebAcl:
     Type: AWS::WAFv2::WebACL
+    Condition: EnableApiWafCondition
     Properties:
       Name: !Sub "${AWS::StackName}-plainterms-api-webacl"
       Scope: REGIONAL
@@ -178,7 +226,7 @@ Resources:
           Statement:
             RateBasedStatement:
               AggregateKeyType: IP
-              Limit: 1500
+              Limit: !Ref WafGlobalIpLimitPer5Min
           VisibilityConfig:
             CloudWatchMetricsEnabled: true
             MetricName: !Sub "${AWS::StackName}-ip-rate-limit-global"
@@ -186,9 +234,88 @@ Resources:
 
   PlainTermsApiWebAclAssociation:
     Type: AWS::WAFv2::WebACLAssociation
+    Condition: EnableApiWafCondition
     Properties:
       ResourceArn: !Sub arn:aws:apigateway:${AWS::Region}::/restapis/${PlainTermsApi}/stages/Prod
       WebACLArn: !GetAtt PlainTermsApiWebAcl.Arn
+
+  PlainTermsApiRequestCountAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "High API request volume for ${AWS::StackName} (${PlainTermsApi})."
+      Namespace: AWS/ApiGateway
+      MetricName: Count
+      Statistic: Sum
+      Period: !Ref ApiAlarmPeriodSeconds
+      EvaluationPeriods: !Ref ApiAlarmEvaluationPeriods
+      Threshold: !Ref ApiRequestCountAlarmThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-plainterms-api"
+        - Name: Stage
+          Value: Prod
+      AlarmActions: !If
+        - HasApiAlarmSnsTopic
+        - - !Ref ApiAlarmSnsTopicArn
+        - !Ref AWS::NoValue
+      OKActions: !If
+        - HasApiAlarmSnsTopic
+        - - !Ref ApiAlarmSnsTopicArn
+        - !Ref AWS::NoValue
+
+  PlainTermsApi4xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "Elevated 4XX responses for ${AWS::StackName} (${PlainTermsApi})."
+      Namespace: AWS/ApiGateway
+      MetricName: 4XXError
+      Statistic: Sum
+      Period: !Ref ApiAlarmPeriodSeconds
+      EvaluationPeriods: !Ref ApiAlarmEvaluationPeriods
+      Threshold: !Ref Api4xxAlarmThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-plainterms-api"
+        - Name: Stage
+          Value: Prod
+      AlarmActions: !If
+        - HasApiAlarmSnsTopic
+        - - !Ref ApiAlarmSnsTopicArn
+        - !Ref AWS::NoValue
+      OKActions: !If
+        - HasApiAlarmSnsTopic
+        - - !Ref ApiAlarmSnsTopicArn
+        - !Ref AWS::NoValue
+
+  PlainTermsApi5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "Elevated 5XX responses for ${AWS::StackName} (${PlainTermsApi})."
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Statistic: Sum
+      Period: !Ref ApiAlarmPeriodSeconds
+      EvaluationPeriods: !Ref ApiAlarmEvaluationPeriods
+      Threshold: !Ref Api5xxAlarmThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${AWS::StackName}-plainterms-api"
+        - Name: Stage
+          Value: Prod
+      AlarmActions: !If
+        - HasApiAlarmSnsTopic
+        - - !Ref ApiAlarmSnsTopicArn
+        - !Ref AWS::NoValue
+      OKActions: !If
+        - HasApiAlarmSnsTopic
+        - - !Ref ApiAlarmSnsTopicArn
+        - !Ref AWS::NoValue
 
   UploadUrlFunction:
     Type: AWS::Serverless::Function
@@ -315,6 +442,7 @@ Resources:
           LLM_BASE_URL: "https://api.openai.com/v1"
           LLM_MODEL: !Ref LlmModel
           LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
+          DOCUMENT_REVISION_FUNCTION_NAME: !Ref GenerateRevisionFunction
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable
@@ -327,6 +455,12 @@ Resources:
             Resource:
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt GenerateRevisionFunction.Arn
       Events:
         CheckoutVerifyPost:
           Type: Api
@@ -341,6 +475,29 @@ Resources:
             Path: /checkout/verify
             Method: OPTIONS
 
+  GenerateRevisionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: generateRevision.handler
+      Timeout: 180
+      MemorySize: 512
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+          LLM_BASE_URL: "https://api.openai.com/v1"
+          LLM_MODEL: !Ref LlmModel
+          LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
+
   GetResultFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -350,9 +507,16 @@ Resources:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
           RESULT_TTL_DAYS: "30"
+          DOCUMENT_REVISION_FUNCTION_NAME: !Ref GenerateRevisionFunction
       Policies:
-        - DynamoDBReadPolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable
+        - Statement:
+            Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt GenerateRevisionFunction.Arn
       Events:
         GetResultGet:
           Type: Api

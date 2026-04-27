@@ -1,29 +1,86 @@
 import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import crypto from "node:crypto";
 import Stripe from "stripe";
 import { runAnalysis } from "./lib/runAnalysis.mjs";
 import { getStripeSecretKey } from "./lib/stripeConfig.mjs";
 import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
 import { parseSelectedAddonsCsv } from "./lib/addonSelection.mjs";
-import { corsHeaders } from "./lib/cors.mjs";
+import { jsonResponse, methodGuard, parseJsonBody } from "./lib/http.mjs";
 import { createResultAccessKey, hashResultAccessKey } from "./lib/resultAccessKey.mjs";
 
 const db = new DynamoDBClient({});
+const METHODS = "POST,OPTIONS";
 
-function json(event, statusCode, bodyObj) {
-  return {
-    statusCode,
-    headers: {
-      ...corsHeaders(event, "POST,OPTIONS"),
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(bodyObj),
-  };
+function logServerError(eventName, message, fields = {}) {
+  console.error(
+    JSON.stringify({
+      ts: new Date().toISOString(),
+      level: "error",
+      event: eventName,
+      message,
+      ...fields,
+    })
+  );
 }
 
 function getAnalysisTimeoutMs() {
   const raw = Number(process.env.ANALYSIS_TIMEOUT_MS ?? 5 * 60 * 1000);
   if (!Number.isFinite(raw) || raw <= 0) return 5 * 60 * 1000;
   return Math.floor(raw);
+}
+
+function getVerifyWaitTimeoutMs() {
+  const raw = Number(process.env.CHECKOUT_VERIFY_WAIT_TIMEOUT_MS ?? 45 * 1000);
+  if (!Number.isFinite(raw) || raw <= 0) return 45 * 1000;
+  return Math.floor(raw);
+}
+
+function getVerifyPollIntervalMs() {
+  const raw = Number(process.env.CHECKOUT_VERIFY_POLL_MS ?? 1500);
+  if (!Number.isFinite(raw) || raw < 250) return 1500;
+  return Math.floor(raw);
+}
+
+function getAnalysisLockStaleMs() {
+  const raw = Number(process.env.CHECKOUT_VERIFY_LOCK_STALE_MS ?? getAnalysisTimeoutMs() + 60 * 1000);
+  if (!Number.isFinite(raw) || raw <= 0) return getAnalysisTimeoutMs() + 60 * 1000;
+  return Math.floor(raw);
+}
+
+function parseIsoMs(value) {
+  if (typeof value !== "string" || !value.trim()) return NaN;
+  return Date.parse(value);
+}
+
+function isAnalysisLockStale(metadata = {}) {
+  const startedAtMs = parseIsoMs(metadata.analysisStartedAt);
+  if (!Number.isFinite(startedAtMs)) return true;
+  return Date.now() - startedAtMs > getAnalysisLockStaleMs();
+}
+
+function isAnalysisInProgress(metadata = {}) {
+  return metadata.analysisStatus === "processing" && !isAnalysisLockStale(metadata);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForSessionStateChange(stripe, sessionId) {
+  const deadline = Date.now() + getVerifyWaitTimeoutMs();
+  let latest = null;
+
+  while (Date.now() < deadline) {
+    await sleep(getVerifyPollIntervalMs());
+    latest = await stripe.checkout.sessions.retrieve(sessionId);
+    const metadata = latest?.metadata ?? {};
+
+    if (metadata.resultId || metadata.refundId) return latest;
+    if (metadata.analysisStatus !== "processing") return latest;
+    if (isAnalysisLockStale(metadata)) return latest;
+  }
+
+  return latest;
 }
 
 async function runAnalysisWithTimeout(args, analysisSelection, addonSelection) {
@@ -68,9 +125,12 @@ async function issueResultAccessKeyForResult(resultId) {
         result_id: { S: String(resultId) },
       },
       ConditionExpression: "attribute_exists(result_id)",
-      UpdateExpression: "SET access_key_hash = :hash",
+      UpdateExpression:
+        "SET access_key_hash_previous = if_not_exists(access_key_hash, :empty), access_key_hash = :hash, access_key_rotated_at = :rotatedAt",
       ExpressionAttributeValues: {
+        ":empty": { S: "" },
         ":hash": { S: accessKeyHash },
+        ":rotatedAt": { S: new Date().toISOString() },
       },
     })
   );
@@ -86,6 +146,33 @@ async function safeUpdateSessionMetadata(stripe, sessionId, metadataPatch) {
   } catch {
     // Best effort only.
   }
+}
+
+async function issueAccessForResultAndScrubSession({
+  stripe,
+  sessionId,
+  session,
+  reused,
+}) {
+  const resultId = session?.metadata?.resultId;
+  if (!resultId) {
+    throw new Error("Missing resultId in session metadata.");
+  }
+
+  const rotatedAccessKey = await issueResultAccessKeyForResult(resultId);
+  await safeUpdateSessionMetadata(stripe, sessionId, {
+    ...(session.metadata ?? {}),
+    resultId: String(resultId),
+    resultAccessKey: "",
+    analysisStatus: "complete",
+    analysisOwner: "",
+  });
+
+  return {
+    resultId,
+    accessKey: rotatedAccessKey,
+    reused,
+  };
 }
 
 async function attemptAutoRefund({ stripe, sessionId, session, analysisMessage }) {
@@ -124,6 +211,10 @@ async function attemptAutoRefund({ stripe, sessionId, session, analysisMessage }
       analysisError: analysisMessage.slice(0, 200),
       refundId: refund.id,
       refundStatus: refund.status ?? "pending",
+      resultAccessKey: "",
+      analysisStatus: "failed",
+      analysisOwner: "",
+      analysisCompletedAt: new Date().toISOString(),
     });
 
     return {
@@ -143,71 +234,146 @@ async function attemptAutoRefund({ stripe, sessionId, session, analysisMessage }
 }
 
 export const handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders(event, "POST,OPTIONS"), body: "" };
-  }
-
-  if (event.httpMethod !== "POST") {
-    return json(event, 405, { error: "Method not allowed" });
-  }
-
-  let payload = {};
-  try {
-    payload = event.body ? JSON.parse(event.body) : {};
-  } catch {
-    return json(event, 400, { error: "Invalid JSON body" });
-  }
+  const methodResponse = methodGuard(event, "POST", METHODS);
+  if (methodResponse) return methodResponse;
+  const parsedPayload = parseJsonBody(event, METHODS);
+  if (!parsedPayload.ok) return parsedPayload.response;
+  const payload = parsedPayload.payload;
 
   const sessionId = payload.sessionId;
   if (!sessionId || typeof sessionId !== "string") {
-    return json(event, 400, { error: "sessionId is required" });
+    return jsonResponse(event, 400, { error: "sessionId is required" });
   }
 
   try {
     const stripeSecretKey = await getStripeSecretKey();
     const stripe = new Stripe(stripeSecretKey);
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    let session = await stripe.checkout.sessions.retrieve(sessionId);
     if (!session) {
-      return json(event, 404, { error: "Checkout session not found" });
+      return jsonResponse(event, 404, { error: "Checkout session not found" });
     }
 
     if (session.payment_status !== "paid") {
-      return json(event, 409, {
+      return jsonResponse(event, 409, {
         error: "Checkout session is not paid",
         payment_status: session.payment_status,
       });
     }
 
-    const existingResultId = session.metadata?.resultId;
-    const existingResultAccessKey = session.metadata?.resultAccessKey;
-    if (existingResultId && existingResultAccessKey) {
-      return json(event, 200, {
-        resultId: existingResultId,
-        accessKey: existingResultAccessKey,
+    if (session.metadata?.resultId) {
+      const response = await issueAccessForResultAndScrubSession({
+        stripe,
+        sessionId,
+        session,
         reused: true,
       });
-    }
-    if (existingResultId) {
-      const rotatedAccessKey = await issueResultAccessKeyForResult(existingResultId);
-      await safeUpdateSessionMetadata(stripe, sessionId, {
-        ...(session.metadata ?? {}),
-        resultId: String(existingResultId),
-        resultAccessKey: rotatedAccessKey,
-      });
-      return json(event, 200, {
-        resultId: existingResultId,
-        accessKey: rotatedAccessKey,
-        reused: true,
-      });
+      return jsonResponse(event, 200, response);
     }
 
     if (session.metadata?.refundId) {
-      return json(event, 409, {
+      return jsonResponse(event, 409, {
         error:
           "Analysis previously failed and this payment was already refunded. Please retry from upload.",
         refunded: true,
         refundId: session.metadata.refundId,
+      });
+    }
+
+    if (isAnalysisInProgress(session.metadata ?? {})) {
+      const waited = await waitForSessionStateChange(stripe, sessionId);
+      if (waited) {
+        session = waited;
+      }
+
+      if (session.metadata?.resultId) {
+        const response = await issueAccessForResultAndScrubSession({
+          stripe,
+          sessionId,
+          session,
+          reused: true,
+        });
+        return jsonResponse(event, 200, response);
+      }
+
+      if (session.metadata?.refundId) {
+        return jsonResponse(event, 409, {
+          error:
+            "Analysis previously failed and this payment was already refunded. Please retry from upload.",
+          refunded: true,
+          refundId: session.metadata.refundId,
+        });
+      }
+
+      if (isAnalysisInProgress(session.metadata ?? {})) {
+        return jsonResponse(event, 409, {
+          error:
+            "Analysis is already in progress for this checkout session. Please retry in a moment.",
+          code: "analysis_in_progress",
+        });
+      }
+    }
+
+    const analysisOwner = crypto.randomUUID();
+    await stripe.checkout.sessions.update(sessionId, {
+      metadata: {
+        ...(session.metadata ?? {}),
+        analysisStatus: "processing",
+        analysisOwner,
+        analysisStartedAt: new Date().toISOString(),
+        resultAccessKey: "",
+      },
+    });
+
+    session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.metadata?.resultId) {
+      const response = await issueAccessForResultAndScrubSession({
+        stripe,
+        sessionId,
+        session,
+        reused: true,
+      });
+      return jsonResponse(event, 200, response);
+    }
+
+    if (session.metadata?.refundId) {
+      return jsonResponse(event, 409, {
+        error:
+          "Analysis previously failed and this payment was already refunded. Please retry from upload.",
+        refunded: true,
+        refundId: session.metadata.refundId,
+      });
+    }
+
+    const ownsAnalysis =
+      session.metadata?.analysisStatus === "processing" &&
+      session.metadata?.analysisOwner === analysisOwner;
+
+    if (!ownsAnalysis) {
+      const waited = await waitForSessionStateChange(stripe, sessionId);
+      if (waited?.metadata?.resultId) {
+        const response = await issueAccessForResultAndScrubSession({
+          stripe,
+          sessionId,
+          session: waited,
+          reused: true,
+        });
+        return jsonResponse(event, 200, response);
+      }
+
+      if (waited?.metadata?.refundId) {
+        return jsonResponse(event, 409, {
+          error:
+            "Analysis previously failed and this payment was already refunded. Please retry from upload.",
+          refunded: true,
+          refundId: waited.metadata.refundId,
+        });
+      }
+
+      return jsonResponse(event, 409, {
+        error: "Analysis is already in progress for this checkout session. Please retry shortly.",
+        code: "analysis_in_progress",
       });
     }
 
@@ -227,7 +393,7 @@ export const handler = async (event) => {
     const selectedAddons = parseSelectedAddonsCsv(session.metadata?.selectedAddons);
 
     if (!objectKey || !filename || !contentType || !Number.isFinite(size)) {
-      return json(event, 500, {
+      return jsonResponse(event, 500, {
         error: "Checkout session metadata missing contract upload fields",
       });
     }
@@ -259,13 +425,29 @@ export const handler = async (event) => {
         session,
         analysisMessage,
       });
-
-      return json(event, 500, {
-        error: `Analysis failed after payment: ${analysisMessage}`,
+      await safeUpdateSessionMetadata(stripe, sessionId, {
+        ...(session.metadata ?? {}),
+        analysisError: analysisMessage.slice(0, 200),
+        resultAccessKey: "",
+        analysisStatus: "failed",
+        analysisOwner: "",
+        analysisCompletedAt: new Date().toISOString(),
+      });
+      logServerError("checkout.verify.analysis_failed_after_payment", analysisMessage, {
+        sessionId,
         refunded: refund.refunded,
         refundId: refund.refundId,
         refundStatus: refund.refundStatus,
-        detail: refund.detail,
+        refundReason: refund.reason,
+      });
+
+      return jsonResponse(event, 500, {
+        error:
+          "Analysis failed after payment. Support has been notified and your refund status is included below.",
+        code: "analysis_failed_after_payment",
+        refunded: refund.refunded,
+        refundId: refund.refundId,
+        refundStatus: refund.refundStatus,
       });
     }
 
@@ -273,17 +455,24 @@ export const handler = async (event) => {
       metadata: {
         ...(session.metadata ?? {}),
         resultId: String(resultId),
-        resultAccessKey: String(resultAccessKey),
+        resultAccessKey: "",
+        analysisStatus: "complete",
+        analysisOwner: "",
+        analysisCompletedAt: new Date().toISOString(),
       },
     });
 
-    return json(event, 200, {
+    return jsonResponse(event, 200, {
       resultId,
       accessKey: resultAccessKey,
       reused: false,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    return json(event, 500, { error: `Checkout verification failed: ${message}` });
+    logServerError("checkout.verify_unhandled_error", message, { sessionId });
+    return jsonResponse(event, 500, {
+      error: "Checkout verification failed. Please retry shortly.",
+      code: "checkout_verification_failed",
+    });
   }
 };

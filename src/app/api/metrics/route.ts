@@ -18,21 +18,58 @@ function clientIp(req: Request): string | undefined {
   return raw.split(",")[0]?.trim() || undefined;
 }
 
+function normalizeOrigin(value: string): string | null {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function firstForwardedHeaderValue(value: string | null): string | null {
+  if (!value) return null;
+  const first = value.split(",")[0]?.trim();
+  return first || null;
+}
+
+function addNormalizedOrigin(allowed: Set<string>, candidate: string | null | undefined) {
+  if (!candidate) return;
+  const normalized = normalizeOrigin(candidate.trim());
+  if (normalized) {
+    allowed.add(normalized);
+  }
+}
+
 function candidateTrustedOrigins(req: Request): string[] {
   const allowed = new Set<string>();
-  const host = req.headers.get("host");
-  if (host) {
-    allowed.add(`https://${host}`);
-    allowed.add(`http://${host}`);
+
+  const configuredOrigins = process.env.METRICS_ALLOWED_ORIGINS;
+  if (configuredOrigins) {
+    for (const candidate of configuredOrigins.split(",")) {
+      addNormalizedOrigin(allowed, candidate);
+    }
   }
 
   const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (configuredSiteUrl) {
-    try {
-      allowed.add(new URL(configuredSiteUrl).origin);
-    } catch {
-      // ignore invalid config
-    }
+  addNormalizedOrigin(allowed, configuredSiteUrl);
+
+  // Runtime-derived self origins prevent false 403s when env vars are absent or stale.
+  addNormalizedOrigin(allowed, req.url);
+
+  const forwardedHost = firstForwardedHeaderValue(req.headers.get("x-forwarded-host"));
+  const forwardedProto = firstForwardedHeaderValue(req.headers.get("x-forwarded-proto")) ?? "https";
+  if (forwardedHost) {
+    addNormalizedOrigin(allowed, `${forwardedProto}://${forwardedHost}`);
+  }
+
+  const host = firstForwardedHeaderValue(req.headers.get("host"));
+  if (host) {
+    addNormalizedOrigin(allowed, `${process.env.NODE_ENV === "production" ? "https" : "http"}://${host}`);
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    allowed.add("http://localhost:3000");
+    allowed.add("http://127.0.0.1:3000");
   }
 
   return [...allowed];
@@ -42,7 +79,7 @@ function hasTrustedRequestOrigin(req: Request): boolean {
   const trustedOrigins = candidateTrustedOrigins(req);
   if (trustedOrigins.length === 0) return false;
 
-  const origin = req.headers.get("origin");
+  const origin = normalizeOrigin(req.headers.get("origin") ?? "");
   if (origin && trustedOrigins.includes(origin)) {
     return true;
   }

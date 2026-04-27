@@ -1,20 +1,5 @@
-import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
-
-const ssm = new SSMClient({});
+import { readParameter } from "./ssm.mjs";
 let cachedSecret = null;
-
-async function readParameter(name, withDecryption = false) {
-  const cmd = new GetParameterCommand({
-    Name: name,
-    WithDecryption: withDecryption,
-  });
-  const res = await ssm.send(cmd);
-  const value = res?.Parameter?.Value;
-  if (!value) {
-    throw new Error(`SSM parameter has no value: ${name}`);
-  }
-  return value;
-}
 
 export async function getPrecheckTokenSecret() {
   if (cachedSecret) return cachedSecret;
