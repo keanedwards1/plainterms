@@ -163,12 +163,19 @@ sam deploy --guided
 ```
 
 Stripe checkout configuration (SAM parameters -> Lambda env):
+- `StripeMode` (`live` or `sandbox`)
 - `StripeSecretKeyParamName` (SSM secure string for Stripe secret key)
+- `StripeTestSecretKeyParamName` (SSM secure string for Stripe sandbox/test secret key)
 - `StripeReportPriceIdParamName` (SSM string for `Report ($69)` price ID)
 - `StripeScanPriceIdParamName` (SSM string for `Scan ($39)` price ID)
 - `StripeProtectPriceIdParamName` (SSM string for `Protect ($99)` price ID)
 - `StripeAddonRewritePriceIdParamName` (SSM string for `Rewrite Contract` add-on price ID)
 - `StripeAddonUpdateEmailPriceIdParamName` (SSM string for `Create Update Email` add-on price ID)
+- `StripeTestReportPriceIdParamName` (SSM string for Stripe sandbox/test report price ID)
+- `StripeTestScanPriceIdParamName` (SSM string for Stripe sandbox/test scan price ID)
+- `StripeTestProtectPriceIdParamName` (SSM string for Stripe sandbox/test protect price ID)
+- `StripeTestAddonRewritePriceIdParamName` (SSM string for Stripe sandbox/test rewrite add-on price ID)
+- `StripeTestAddonUpdateEmailPriceIdParamName` (SSM string for Stripe sandbox/test update-email add-on price ID)
 - `StripePriceIdParamName` (legacy fallback; also defaults to report price path)
 - `AppBaseUrl` (for example `https://www.plainterms.us`)
 - `AppSecondaryBaseUrl` (for example `https://plainterms.us`)
@@ -202,15 +209,31 @@ Clean switch examples:
 cd services/api/plainterms-api
 sam build
 
-# Rules mode (current default behavior)
-sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini
+# Live Stripe mode (all tiers enabled)
+sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=live AnalysisMode=rules LlmModel=gpt-4o-mini
 
 # LLM mode with GPT-5.2
-sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=llm LlmModel=gpt-5.2
+sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=live AnalysisMode=llm LlmModel=gpt-5.2
+
+# Sandbox Stripe mode (uses StripeTest* parameter names)
+sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=sandbox AnalysisMode=rules LlmModel=gpt-4o-mini
 
 # Re-enable WAF later (optional) and wire alarm notifications
-sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=true WafGlobalIpLimitPer5Min=1500 ApiAlarmSnsTopicArn=arn:aws:sns:us-west-2:123456789012:plainterms-alarms
+sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=live AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=true WafGlobalIpLimitPer5Min=1500 ApiAlarmSnsTopicArn=arn:aws:sns:us-west-2:123456789012:plainterms-alarms
 ```
+
+Stripe sandbox quick switch checklist:
+1. Store sandbox/test Stripe values in SSM:
+```bash
+aws ssm put-parameter --name /plainterms/stripe/test/secret-key --type SecureString --overwrite --value "<STRIPE_SK_TEST...>"
+aws ssm put-parameter --name /plainterms/stripe/test/price-id-report --type String --overwrite --value "price_test_report"
+aws ssm put-parameter --name /plainterms/stripe/test/price-id-scan --type String --overwrite --value "price_test_scan"
+aws ssm put-parameter --name /plainterms/stripe/test/price-id-protect --type String --overwrite --value "price_test_protect"
+aws ssm put-parameter --name /plainterms/stripe/test/price-id-addon-rewrite --type String --overwrite --value "price_test_rewrite"
+aws ssm put-parameter --name /plainterms/stripe/test/price-id-addon-update-email --type String --overwrite --value "price_test_update_email"
+```
+2. Deploy with `StripeMode=sandbox`.
+3. Switch back to `StripeMode=live` when ready for real charges.
 
 Quick UI switch for testing:
 - On `/analyze`, use the `Testing controls` card to choose:
@@ -222,7 +245,7 @@ If your stack was originally created with guided prompts, update `samconfig.toml
 `parameter_overrides` includes:
 
 ```toml
-parameter_overrides = "AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=false ApiDefaultRateLimit=5 ApiDefaultBurstLimit=10"
+parameter_overrides = "AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=live AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=false ApiDefaultRateLimit=5 ApiDefaultBurstLimit=10"
 ```
 
 Backend retention behavior:

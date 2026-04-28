@@ -1,5 +1,25 @@
 # Security Audit TODO
 
+## Tomorrow Morning — Stripe Verification (Priority)
+
+- [ ] Confirm backend mode is sandbox first:
+  - `cd services/api/plainterms-api`
+  - `sam deploy --parameter-overrides StripeMode=sandbox`
+- [ ] Run 3 end-to-end sandbox checkouts from `/analyze`:
+  - Core (`scan_39`)
+  - Report (`report_69`)
+  - Protect (`protect_99`)
+- [ ] Use Stripe test card `4242 4242 4242 4242` for each checkout.
+- [ ] In Stripe Dashboard (test mode), verify each Checkout Session has the expected price/amount per tier.
+- [ ] Confirm app flow after payment:
+  - `/analyze/complete` loads
+  - Redirect reaches `/result/{id}`
+- [ ] Switch to live mode when sandbox checks pass:
+  - `sam deploy --parameter-overrides StripeMode=live`
+- [ ] Do one real live payment test (smallest tier preferred) and verify successful result generation.
+- [ ] Optional hardening: update `services/api/plainterms-api/samconfig.toml` add-on SSM paths when add-ons are ready.
+
+
 ## Medium Severity
 
 - [ ] **LLM Prompt Injection** — `services/api/plainterms-api/lambdas/lib/llmAnalyze.mjs:119-134`

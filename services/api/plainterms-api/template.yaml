@@ -15,6 +15,10 @@ Parameters:
     Type: String
     Default: /plainterms/stripe/secret-key
     Description: SSM parameter name containing Stripe secret key (SecureString).
+  StripeTestSecretKeyParamName:
+    Type: String
+    Default: /plainterms/stripe/test/secret-key
+    Description: SSM parameter name containing Stripe sandbox/test secret key (SecureString).
   StripePriceIdParamName:
     Type: String
     Default: /plainterms/stripe/price-id
@@ -39,6 +43,33 @@ Parameters:
     Type: String
     Default: /plainterms/stripe/price-id
     Description: SSM parameter name containing Stripe add-on price ID for update email draft (String).
+  StripeTestReportPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/test/price-id-report
+    Description: SSM parameter name containing Stripe sandbox/test report tier price ID (String).
+  StripeTestScanPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/test/price-id-scan
+    Description: SSM parameter name containing Stripe sandbox/test scan tier price ID (String).
+  StripeTestProtectPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/test/price-id-protect
+    Description: SSM parameter name containing Stripe sandbox/test protect tier price ID (String).
+  StripeTestAddonRewritePriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/test/price-id-addon-rewrite
+    Description: SSM parameter name containing Stripe sandbox/test add-on price ID for rewrite contract (String).
+  StripeTestAddonUpdateEmailPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/test/price-id-addon-update-email
+    Description: SSM parameter name containing Stripe sandbox/test add-on price ID for update email draft (String).
+  StripeMode:
+    Type: String
+    Default: live
+    AllowedValues:
+      - live
+      - sandbox
+    Description: Stripe environment mode. Use sandbox for test keys and test price IDs.
   AnalysisMode:
     Type: String
     Default: rules
@@ -386,13 +417,20 @@ Resources:
       Handler: createCheckout.handler
       Environment:
         Variables:
+          STRIPE_MODE: !Ref StripeMode
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
+          STRIPE_TEST_SECRET_KEY_PARAM: !Ref StripeTestSecretKeyParamName
           STRIPE_PRICE_ID_PARAM: !Ref StripePriceIdParamName
           STRIPE_PRICE_ID_REPORT_PARAM: !Ref StripeReportPriceIdParamName
           STRIPE_PRICE_ID_SCAN_PARAM: !Ref StripeScanPriceIdParamName
           STRIPE_PRICE_ID_PROTECT_PARAM: !Ref StripeProtectPriceIdParamName
           STRIPE_ADDON_REWRITE_PRICE_PARAM: !Ref StripeAddonRewritePriceIdParamName
           STRIPE_ADDON_UPDATE_EMAIL_PRICE_PARAM: !Ref StripeAddonUpdateEmailPriceIdParamName
+          STRIPE_TEST_PRICE_ID_REPORT_PARAM: !Ref StripeTestReportPriceIdParamName
+          STRIPE_TEST_PRICE_ID_SCAN_PARAM: !Ref StripeTestScanPriceIdParamName
+          STRIPE_TEST_PRICE_ID_PROTECT_PARAM: !Ref StripeTestProtectPriceIdParamName
+          STRIPE_TEST_ADDON_REWRITE_PRICE_PARAM: !Ref StripeTestAddonRewritePriceIdParamName
+          STRIPE_TEST_ADDON_UPDATE_EMAIL_PRICE_PARAM: !Ref StripeTestAddonUpdateEmailPriceIdParamName
           APP_BASE_URL: !Ref AppBaseUrl
           PRECHECK_TOKEN_SECRET_PARAM: !Ref PrecheckTokenSecretParamName
       Policies:
@@ -402,12 +440,18 @@ Resources:
               - ssm:GetParameter
             Resource:
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestSecretKeyParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripePriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeReportPriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeScanPriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeProtectPriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeAddonRewritePriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeAddonUpdateEmailPriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestReportPriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestScanPriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestProtectPriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestAddonRewritePriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestAddonUpdateEmailPriceIdParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${PrecheckTokenSecretParamName}
       Events:
         CheckoutPost:
@@ -432,7 +476,9 @@ Resources:
       MemorySize: 512
       Environment:
         Variables:
+          STRIPE_MODE: !Ref StripeMode
           STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
+          STRIPE_TEST_SECRET_KEY_PARAM: !Ref StripeTestSecretKeyParamName
           RESULTS_TABLE: !Ref ResultsTable
           RESULT_TTL_DAYS: "30"
           ANALYSIS_TIMEOUT_MS: "300000"
@@ -454,6 +500,7 @@ Resources:
               - ssm:GetParameter
             Resource:
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestSecretKeyParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
         - Statement:
             Effect: Allow
