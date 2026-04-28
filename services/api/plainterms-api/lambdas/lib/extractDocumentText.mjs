@@ -234,8 +234,8 @@ function collectTextFromPdfContent(content, toUnicodeMap) {
     }
 
     const cleaned = line.replace(/\u0000/g, "").trim();
-    if (cleaned && !seen.has(cleaned)) {
-      seen.add(cleaned);
+    if (cleaned && (cleaned.length < 20 || !seen.has(cleaned))) {
+      if (cleaned.length >= 20) seen.add(cleaned);
       lines.push(cleaned);
     }
   }

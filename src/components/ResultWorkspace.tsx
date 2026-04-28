@@ -351,21 +351,27 @@ function renderTrackedChanges(text: string, diffs: TrackedDiff[], keyPrefix: str
     }
 
     fragments.push(
-      <span key={`${keyPrefix}-tc-diff-${idx}`} className="inline">
+      <span key={`${keyPrefix}-tc-diff-${idx}`} className="group relative inline">
         <span
-          title={diff.reason}
-          className="cursor-help rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]"
+          className="cursor-pointer rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]"
           style={{ textDecoration: "line-through" }}
         >
           {diff.before}
         </span>
         <span
-          title={diff.reason}
-          className="ml-[2px] cursor-help rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#1d655f]"
+          className="ml-[2px] cursor-pointer rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#1d655f]"
           style={{ textDecoration: "underline", textDecorationColor: "rgba(29,101,95,0.5)" }}
         >
           {diff.after}
         </span>
+        {diff.reason && (
+          <span
+            role="tooltip"
+            className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface)] p-2 text-left text-xs leading-5 text-[var(--pt-ink)] opacity-0 shadow-md transition-opacity duration-150 group-hover:visible group-hover:opacity-100"
+          >
+            {diff.reason}
+          </span>
+        )}
       </span>
     );
     cursor = diff.end;
@@ -628,7 +634,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
             <p className="text-xs text-[var(--pt-muted)]">
               {documentWordCount} words · {documentContentType}
               {isRevisionProcessing ? (
-                <span className="ml-2 italic text-[#8c6526]">generating suggested edits…</span>
+                <span className="ml-2 italic text-[#8c6526]">preparing your revised draft…</span>
               ) : null}
             </p>
             {effectiveDocumentRevision?.status === "ready" && effectiveDocumentRevision.summary ? (
@@ -714,7 +720,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                   ))}
                 </div>
                 <p className="mt-6 text-xs text-[#8c6526]">
-                  Generating suggested edits — this usually takes under a minute.
+                  Preparing your revised draft — this usually takes under a minute.
                 </p>
               </div>
             ) : (
@@ -1183,8 +1189,8 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Terms + Full Report</p>
                         <p className="mt-1 text-sm leading-6 text-[var(--pt-ink)]/85">
                           {unclearSupportingCount > 0
-                            ? `${unclearSupportingCount} extraction notes need verification. Review technical notes before final decisions.`
-                            : "Supporting extraction notes are clean; clause evidence is consistent overall."}
+                            ? `${unclearSupportingCount} supporting clauses need verification. Review clause evidence before final decisions.`
+                            : "Supporting clause evidence is consistent overall."}
                         </p>
                         <div className="mt-2 h-2 rounded-full bg-[#e6ecfc]">
                           <div
@@ -1620,6 +1626,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                     </article>
                   ))}
 
+                  {/* Technical Extraction Notes — hidden from users, uncomment for debugging parser output
                   {reportSupportingSections.length > 0 && (
                     <article className="pt-card-soft p-3">
                       <h3 className="text-base font-semibold text-[var(--pt-ink)]">Technical Extraction Notes (Optional)</h3>
@@ -1652,6 +1659,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                       </div>
                     </article>
                   )}
+                  */}
 
                   <p className="text-xs text-[var(--pt-muted)]">
                     Results are typically available for about {retentionDays} days and may expire

@@ -43,7 +43,7 @@ function sanitizeChanges(rawChanges) {
       };
     })
     .filter(Boolean)
-    .slice(0, 12);
+    .slice(0, 20);
 }
 
 function buildPrompt({ filename, extractedText, flags, clauses, creatorContract }) {
@@ -64,7 +64,7 @@ function buildPrompt({ filename, extractedText, flags, clauses, creatorContract 
 
   return `
 You are a contracts attorney specializing in creator, influencer, and independent contractor agreements.
-Your job is to rewrite the document to protect the talent/creator's interests while remaining professionally fair and negotiation-ready for both parties.
+Your job is to fix clauses that are risky, vague, or missing — and leave everything else exactly as written.
 
 Return ONLY valid JSON in this exact shape:
 {
@@ -80,19 +80,35 @@ Return ONLY valid JSON in this exact shape:
   ]
 }
 
-Editing rules — apply ALL that are relevant, do not skip:
+MANDATORY WORK LIST (highest priority): At the bottom of this prompt you will find a list of detected risk flags and missing/unclear clauses. You MUST address every single item on that list in revised_text — do not skip any. Each item is a confirmed problem. If a general editing rule below does not apply to this document but an item on the work list requires it, the work list wins.
 
-INDEMNIFICATION: One-sided indemnification must always be made mutual. Both parties should indemnify each other for their own acts, omissions, and breaches. Never leave indemnification running in one direction only.
+MISSING INFORMATION RULE: When you need to fix something but the specific information required is not in the document (e.g. the governing state, a specific dollar amount, a party address, a notice period), do NOT leave the problem unfixed or use a vague placeholder. Instead, insert an inline instruction at the exact location in revised_text using this format:
+[ACTION REQUIRED: plain-language description of exactly what the user needs to fill in and where — e.g. "Insert your governing state here, for example: 'the laws of the State of California'"]
+These ACTION REQUIRED instructions must also appear as entries in the "changes" array with severity "high" so the user knows to act on them.
+
+PRESERVATION RULE: Do NOT rewrite, rephrase, or tighten language that is already clear and balanced. If a clause already says what it needs to say, copy it into revised_text unchanged. Only include an entry in "changes" when you made a substantive fix. Cosmetic rewrites (e.g. changing "will" to "shall", removing adjectives, condensing sentences) are forbidden unless the original is genuinely ambiguous or risky.
+
+Editing rules — apply ONLY when the issue is actually present in the document, do not invent problems:
+
+INDEMNIFICATION: One-sided indemnification must be made mutual. Both parties should indemnify each other for their own acts, omissions, and breaches. Never leave indemnification running in one direction only.
 
 MORALITY / TERMINATION FOR CAUSE: "Sole discretion" termination clauses are always high-risk. Replace with: (a) a reasonable person standard, (b) written notice specifying the conduct, (c) a minimum 5-business-day cure period before termination is permitted.
 
 UNILATERAL CHANGES: Any clause allowing one party to change requirements, specifications, or terms unilaterally must be replaced with mutual written consent.
 
-PAYMENT TERMS: Net 60 or longer must be shortened to Net 30. Add a late payment provision (interest at 1.5% per month or the maximum permitted by law).
+PAYMENT TERMS: Net 60 or longer must be shortened to Net 30. If no payment due date exists, add Net 30 from invoice receipt. Add a late payment provision (interest at 1.5% per month or the maximum permitted by law) if absent. Do not change payment terms that are already Net 30 or shorter and already include a late payment provision.
 
-SCOPE / SOW: If deliverables reference a future Schedule or SOW, add a 30-day deadline for the other party to provide it and state that no additional work is owed until it is delivered.
+SCOPE / SOW: If deliverables reference a future Schedule or SOW with no deadline, add a 30-day deadline for the other party to provide it and state that no additional work is owed until it is delivered.
 
-MISSING CLAUSES: If governing law, assignment restrictions, or dispute resolution are absent, add balanced versions: neutral governing law with mutual consent to jurisdiction, no assignment without written consent from both parties.
+CONFIDENTIALITY: If a confidentiality clause is present but vague (no definition of confidential information, no duration, no carve-outs), strengthen it to include: (a) a definition of "Confidential Information" covering non-public business information, (b) a duration equal to the contract term plus two years, (c) standard carve-outs for publicly known information, independently developed information, and disclosures required by law.
+
+LIMITATION OF LIABILITY: If no limitation of liability clause exists, add a mutual cap limiting each party's liability to the total fees paid or payable in the three months preceding the claim, excluding liability for fraud or willful misconduct.
+
+INCOMPLETE PLACEHOLDERS: Any unfilled placeholder such as [insert state], [insert jurisdiction], or [insert date] must be replaced inline in revised_text with an [ACTION REQUIRED: ...] instruction explaining exactly what the user needs to fill in. Include in "changes" as high severity. Do not invent values.
+
+VAGUE RATES / PAYMENT AMOUNTS: If payment rates are described only as "to be agreed" or "to be determined" with no fallback mechanism, add language requiring the parties to agree on rates in writing within 30 days of the contract start date, with no services owed until rates are confirmed.
+
+MISSING CLAUSES: If governing law, assignment restrictions, or dispute resolution are entirely absent, add balanced versions: neutral governing law with mutual consent to jurisdiction, no assignment without written consent from both parties, and good-faith negotiation followed by binding arbitration for dispute resolution.
 ${creatorContract ? `
 CREATOR-SPECIFIC RULES (apply because this is a creator/influencer/talent agreement):
 
@@ -110,13 +126,17 @@ WARRANTY: Industry-standard "as is" disclaimers in technology, SaaS, or professi
 `}
 GENERAL: Keep parties, dates, amounts, and core business intent intact. Preserve document structure and numbering. Do not mention AI, models, or internal process. Keep revised_text professional and negotiation-ready.
 
+FORMATTING (critical): The revised_text field must preserve all paragraph breaks and spacing from the original. Use a blank line (double newline) between each section and between paragraphs. Section headings should appear on their own line. Do not collapse multiple paragraphs into a single block of text. The output should read as a properly spaced, human-readable document — not a wall of text.
+
 Document metadata:
 - file_name: ${filename || "Contract document"}
 
-Detected risk flags:
+MANDATORY WORK LIST — you must address every item below in revised_text:
+
+Risk flags to fix:
 ${flagLines}
 
-Detected unclear/missing clauses:
+Missing or unclear clauses to fix:
 ${clauseLines}
 
 Original document text:
@@ -148,7 +168,7 @@ export async function generateRevisedDocumentWithLlm({
       severity: trim(item?.severity, 24).toLowerCase() || "medium",
     }))
     .filter((item) => item.title && item.plain_note)
-    .slice(0, 10);
+    .slice(0, 15);
 
   const clauses = asArray(clauseBreakdown)
     .map((item) => ({
