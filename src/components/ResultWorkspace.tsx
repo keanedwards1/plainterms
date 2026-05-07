@@ -596,13 +596,13 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
 
   const reportTabs: Array<{ key: ReportTab; label: string; count?: number | "all" }> = [
     { key: "summary", label: "Summary", count: undefined },
-    { key: "document", label: "Document" },
     { key: "insights", label: "Insights" },
     { key: "flags", label: "Red Flags", count: redFlags.length },
     { key: "terms", label: "Key Terms", count: clauseBreakdown.length },
     ...(questionsToAsk.length
       ? ([{ key: "questions", label: "Questions", count: questionsToAsk.length }] as const)
       : []),
+    { key: "document", label: "Document" },
     { key: "full", label: "Full Report", count: "all" },
   ];
 
@@ -871,7 +871,14 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                     <Image src={tabIcons[tab.key]} alt="" width={16} height={16} className="h-4 w-4" />
                     <span>{tab.label}</span>
                   </span>
-                  {tab.count !== undefined ? (
+                  {tab.key === "document" && isRevisionProcessing ? (
+                    <span
+                      className="inline-flex h-5 w-8 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface)]"
+                      aria-label="Document revisions are loading"
+                    >
+                      <span className="pt-tab-loader" />
+                    </span>
+                  ) : tab.count !== undefined ? (
                     <span className="pt-pill !px-2 !py-0.5 !text-[10px]">
                       {tab.count === "all" ? "All" : tab.count}
                     </span>

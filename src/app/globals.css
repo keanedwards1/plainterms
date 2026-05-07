@@ -133,6 +133,16 @@ a {
   color: var(--pt-muted);
 }
 
+.pt-tab-loader {
+  display: inline-block;
+  width: 0.72rem;
+  height: 0.72rem;
+  border: 1.5px solid color-mix(in oklab, var(--pt-muted) 20%, var(--pt-surface));
+  border-top-color: color-mix(in oklab, var(--pt-muted) 54%, var(--pt-surface));
+  border-radius: 999px;
+  animation: pt-loader-orbit 1.1s linear infinite;
+}
+
 .pt-alert-danger {
   border: 1px solid #efbaab;
   border-radius: 12px;
@@ -190,14 +200,27 @@ a {
   }
 }
 
+@keyframes pt-loader-orbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pt-btn-primary,
   .pt-btn-secondary {
     transition: none;
   }
 
-  .pt-scan-line::after {
+  .pt-scan-line::after,
+  .pt-tab-loader {
     animation: none;
+  }
+
+  .pt-scan-line::after {
     display: none;
   }
 }
