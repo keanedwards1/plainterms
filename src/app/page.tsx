@@ -104,7 +104,7 @@ export default function HomePage() {
                   </Link>
                   <Link
                     href="/sample-report"
-                    className="inline-flex w-full items-center justify-center rounded-lg border border-[#e7bfb3] bg-[#f48b72] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#ee7a5e] sm:w-[250px]"
+                    className="inline-flex w-full items-center justify-center rounded-lg border border-[var(--pt-accent-soft)] bg-[#e85f49] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--pt-accent)] sm:w-[250px]"
                   >
                     See Sample Report
                   </Link>
@@ -171,12 +171,12 @@ export default function HomePage() {
               </ul>
 
               <div className="mt-4 grid gap-3">
-                <div className="rounded-xl border border-[#f2d3a2] bg-[#fff8eb] p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6222]">Example red flag</p>
-                  <p className="mt-1 text-sm font-semibold text-[#6f4c1b]">
+                <div className="rounded-xl border border-[var(--pt-border)] border-l-4 border-l-[var(--pt-accent)] bg-[var(--pt-surface)] p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Example red flag</p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--pt-ink)]">
                     Perpetual usage rights extend beyond campaign timeline.
                   </p>
-                  <p className="mt-1 text-xs text-[#8d6222]/85">
+                  <p className="mt-1 text-xs text-[var(--pt-muted)]">
                     Suggested fix: cap usage at 90 days with renewal by written consent.
                   </p>
                 </div>

@@ -304,7 +304,7 @@ export default function AnalyzePage() {
           </p>
         </div>
 
-        <aside className="pt-card p-5 text-sm text-[var(--pt-muted)]">
+        <aside className="rounded-[var(--pt-radius)] border border-[#c8d8e6] bg-[#eaf3fa] p-5 text-sm text-[var(--pt-muted)] shadow-[0_14px_26px_-24px_var(--pt-shadow)]">
           <h2 className="text-lg text-[var(--pt-ink)]">Secure review flow</h2>
           <ul className="mt-3 space-y-2">
             <li>• Private upload and validation</li>
@@ -317,7 +317,7 @@ export default function AnalyzePage() {
             alt=""
             width={88}
             height={88}
-            className="mt-4 h-20 w-20 rounded-xl border border-[var(--pt-border)] bg-white p-2"
+            className="mt-4 h-20 w-20 rounded-xl border border-[#c8d8e6] bg-white p-2"
           />
         </aside>
       </section>
