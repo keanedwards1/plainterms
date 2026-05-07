@@ -60,7 +60,9 @@ const CLAUSE_DEFINITIONS = Object.freeze([
     key: "ip",
     title: "Intellectual Property and Usage Rights",
     patterns: [
-      /\b(intellectual property|ip|work product|ownership|license|licensed?|usage rights|in perpetuity|royalt(?:y|ies))\b/i,
+      /\b(intellectual property|ip|work products?|ownership|copyright|usage rights|in perpetuity|royalt(?:y|ies))\b/i,
+      /\b(?:license|licensed|licensing)\b.{0,80}\b(?:work product|intellectual property|copyright|content|materials?|use|sublicens)\b/i,
+      /\b(?:work product|intellectual property|copyright|content|materials?)\b.{0,80}\b(?:license|licensed|licensing|use|sublicens)\b/i,
     ],
     missingSeverity: "high",
     unclearSeverity: "medium",
@@ -115,7 +117,8 @@ const CLAUSE_DEFINITIONS = Object.freeze([
     key: "restrictions",
     title: "Restrictions (Non-compete/Non-solicit/Exclusivity)",
     patterns: [
-      /\b(non[- ]compete|non[- ]solicit|exclusive|exclusivity|morality clause|non[- ]disparagement)\b/i,
+      /\b(non[- ]compete|non[- ]solicit|exclusivity|morality clause|non[- ]disparagement)\b/i,
+      /\bexclusive\s+(?:services|relationship|arrangement|rights?|territory|category|provider|vendor|contractor|consultant)\b/i,
     ],
     missingSeverity: "low",
     unclearSeverity: "medium",
@@ -168,13 +171,6 @@ const CLAUSE_DEFINITIONS = Object.freeze([
   },
 ]);
 
-const CREATOR_SIGNALS = Object.freeze([
-  /\b(influencer|creator|content creator|model)\b/i,
-  /\b(brand deal|campaign|sponsored|sponsorship|ugc|user generated content)\b/i,
-  /\b(instagram|tiktok|youtube|reels|stories|shorts)\b/i,
-  /\b(likeness|image rights|name and likeness|whitelisting|paid media)\b/i,
-]);
-
 const RISKY_PATTERN_RULES = Object.freeze([
   {
     id: "sow_missing",
@@ -223,11 +219,11 @@ const RISKY_PATTERN_RULES = Object.freeze([
     when: ({ text }) =>
       /\b(perpetual|in perpetuity)\b/i.test(text) &&
       /\b(irrevocable|worldwide|all media)\b/i.test(text),
-    severity: "high",
+    severity: "medium",
     type: "unusual",
     title: "License terms may be broad and perpetual",
     note:
-      "The usage license appears broad (for example perpetual and/or all-media wording), which may reduce future control of content.",
+      "The license appears broad (for example perpetual and/or all-media wording), which may reduce future control of the licensed work or rights.",
     relatedFields: ["sections.intellectual_property.license_grants"],
     quotePatterns: [/\b(perpetual|in perpetuity|all media|irrevocable)\b/i],
   },
@@ -249,7 +245,7 @@ const RISKY_PATTERN_RULES = Object.freeze([
     when: ({ paymentDays }) => Number.isFinite(paymentDays) && paymentDays > 45,
     severity: "medium",
     type: "unusual",
-    title: "Payment cycle appears longer than common creator/vendor terms",
+    title: "Payment cycle appears longer than common contractor/vendor terms",
     note:
       "A longer net payment cycle can increase cash-flow pressure and collection risk.",
     relatedFields: ["sections.payment.payment_timing"],
@@ -257,9 +253,7 @@ const RISKY_PATTERN_RULES = Object.freeze([
   },
   {
     id: "unilateral_changes",
-    when: ({ text }) =>
-      /\b(sole discretion|at any time|without notice)\b/i.test(text) &&
-      /\b(modify|amend|change)\b/i.test(text),
+    when: ({ text }) => hasUnilateralModificationLanguage(text),
     severity: "high",
     type: "one_sided",
     title: "Unilateral modification rights detected",
@@ -314,6 +308,36 @@ function clamp(value, min, max) {
 function normalizeText(value) {
   if (typeof value !== "string") return "";
   return value.replace(/\s+/g, " ").trim();
+}
+
+function splitSentences(text) {
+  return normalizeText(text)
+    .split(/(?<=[.!?;])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+}
+
+function hasMutualModificationProtection(text) {
+  return /\b(?:amend|amended|amendment|modify|modified|modification|change|changed)\b.{0,120}\b(?:mutual|both parties|written agreement of the parties|signed by (?:both|each) parties)\b/i.test(text) ||
+    /\b(?:mutual|both parties|written agreement of the parties|signed by (?:both|each) parties)\b.{0,120}\b(?:amend|amended|amendment|modify|modified|modification|change|changed)\b/i.test(text);
+}
+
+function hasUnilateralModificationLanguage(text) {
+  const sentences = splitSentences(text);
+
+  return sentences.some((sentence, idx) => {
+    const windowText = [sentences[idx - 1], sentence, sentences[idx + 1]]
+      .filter(Boolean)
+      .join(" ");
+
+    if (!/\b(?:amend|amended|amendment|modify|modified|modification|change|changed)\b/i.test(windowText)) {
+      return false;
+    }
+    if (!/\b(?:sole discretion|unilateral(?:ly)?|without (?:prior )?(?:notice|consent)|at any time)\b/i.test(windowText)) {
+      return false;
+    }
+    return !hasMutualModificationProtection(windowText);
+  });
 }
 
 function execPattern(text, pattern) {
@@ -510,11 +534,12 @@ function sourcePointerFromPatterns(text, patterns) {
 }
 
 function detectCreatorContract(text) {
-  const hits = CREATOR_SIGNALS.reduce(
-    (count, pattern) => count + (pattern.test(text) ? 1 : 0),
-    0
-  );
-  return hits >= 2;
+  const roleSignal = /\b(influencer|creator|content creator|talent|model)\b/i.test(text);
+  const dealSignal = /\b(brand deal|sponsored|sponsorship|ugc|user generated content|campaign)\b/i.test(text);
+  const platformSignal = /\b(instagram|tiktok|youtube|reels|stories|shorts|social media)\b/i.test(text);
+  const likenessSignal = /\b(likeness|image rights|name and likeness|whitelisting|paid media)\b/i.test(text);
+
+  return roleSignal && (dealSignal || platformSignal || likenessSignal);
 }
 
 function llmStatus(llmFields, key) {
@@ -619,7 +644,7 @@ function negotiationFromFlag(flag) {
     return "Request reciprocal indemnity or a narrower indemnity scope tied to each party’s own misconduct.";
   }
   if (title.includes("license") || title.includes("usage")) {
-    return "Request limits on usage duration, channels, paid media rights, and territory.";
+    return "Request limits on license duration, scope, territory, media channels, and transfer or sublicensing rights.";
   }
   if (title.includes("liability")) {
     return "Request a liability cap aligned with contract value and clear exclusions.";
