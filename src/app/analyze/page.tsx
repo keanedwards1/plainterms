@@ -496,8 +496,8 @@ export default function AnalyzePage() {
           )}
 
           <p className="mt-5 text-xs text-[var(--pt-muted)]">
-            Results are typically available for about {RESULT_RETENTION_DAYS} days and may expire
-            automatically after that window.
+            Your secure result link is typically available for up to {RESULT_RETENTION_DAYS} days.
+            Save or bookmark the result page after checkout to access it again.
           </p>
         </form>
       </section>

@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "smoke:funnel": "node scripts/smoke-funnel.mjs"
+    "smoke:funnel": "node scripts/smoke-funnel.mjs",
+    "stripe:sandbox": "powershell -ExecutionPolicy Bypass -File scripts/deploy-stripe-mode.ps1 sandbox",
+    "stripe:live": "powershell -ExecutionPolicy Bypass -File scripts/deploy-stripe-mode.ps1 live",
+    "stripe:sandbox:build": "powershell -ExecutionPolicy Bypass -File scripts/deploy-stripe-mode.ps1 sandbox -Build",
+    "stripe:live:build": "powershell -ExecutionPolicy Bypass -File scripts/deploy-stripe-mode.ps1 live -Build"
   },
   "dependencies": {
     "next": "16.2.1",

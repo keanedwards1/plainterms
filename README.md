@@ -166,9 +166,9 @@ Stripe checkout configuration (SAM parameters -> Lambda env):
 - `StripeMode` (`live` or `sandbox`)
 - `StripeSecretKeyParamName` (SSM secure string for Stripe secret key)
 - `StripeTestSecretKeyParamName` (SSM secure string for Stripe sandbox/test secret key)
-- `StripeReportPriceIdParamName` (SSM string for `Report ($69)` price ID)
-- `StripeScanPriceIdParamName` (SSM string for `Scan ($39)` price ID)
-- `StripeProtectPriceIdParamName` (SSM string for `Protect ($99)` price ID)
+- `StripeReportPriceIdParamName` (SSM string for `Report ($79)` price ID)
+- `StripeScanPriceIdParamName` (SSM string for `Core ($29)` price ID)
+- `StripeProtectPriceIdParamName` (SSM string for `Protect ($149)` price ID)
 - `StripeAddonRewritePriceIdParamName` (SSM string for `Rewrite Contract` add-on price ID)
 - `StripeAddonUpdateEmailPriceIdParamName` (SSM string for `Create Update Email` add-on price ID)
 - `StripeTestReportPriceIdParamName` (SSM string for Stripe sandbox/test report price ID)
@@ -204,6 +204,24 @@ aws ssm put-parameter \
 ```
 
 Clean switch examples:
+
+From the repository root, use the npm shortcuts for routine Stripe mode switches:
+
+```bash
+# Switch checkout to Stripe sandbox/test mode.
+npm run stripe:sandbox
+
+# Switch checkout back to Stripe live mode.
+npm run stripe:live
+
+# Build the SAM backend first, then switch modes.
+npm run stripe:sandbox:build
+npm run stripe:live:build
+```
+
+These commands reuse `services/api/plainterms-api/samconfig.toml`, swap only `StripeMode`, and run `sam deploy`. SAM will show a CloudFormation changeset and ask for confirmation before updating AWS.
+
+Manual SAM commands:
 
 ```bash
 cd services/api/plainterms-api

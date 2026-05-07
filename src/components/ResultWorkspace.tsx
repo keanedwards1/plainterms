@@ -1662,8 +1662,8 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                   */}
 
                   <p className="text-xs text-[var(--pt-muted)]">
-                    Results are typically available for about {retentionDays} days and may expire
-                    automatically.
+                    Save or bookmark this secure result link. It is typically available for up to{" "}
+                    {retentionDays} days and may expire automatically.
                   </p>
                 </>
               )}

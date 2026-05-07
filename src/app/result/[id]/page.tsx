@@ -135,7 +135,7 @@ export default async function ResultPage({ params, searchParams }: Props) {
         <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
           <h1 className="text-3xl text-[var(--pt-ink)]">Result expired</h1>
           <p className="mt-3 text-[var(--pt-muted)]">
-            This result is no longer available. Results typically expire after about {retentionDays} days.
+            This result is no longer available. Secure result links typically expire after about {retentionDays} days.
             Uploading the contract again will create a new result.
           </p>
           <p className="mt-5 text-sm text-[var(--pt-muted)]">
