@@ -161,23 +161,11 @@ export default function HomePage() {
                 ))}
               </div>
 
-              <ul className="mt-3 space-y-1">
-                {["Red flags", "Negotiation talking points", "Email draft included"].map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-xs text-[var(--pt-muted)]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--pt-accent)] flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-
               <div className="mt-4 grid gap-3">
-                <div className="rounded-xl border border-[var(--pt-border)] border-l-4 border-l-[var(--pt-accent)] bg-[var(--pt-surface)] p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Example red flag</p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--pt-ink)]">
-                    Perpetual usage rights extend beyond campaign timeline.
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--pt-muted)]">
-                    Suggested fix: cap usage at 90 days with renewal by written consent.
+                <div className="rounded-xl border border-[#f2d3a2] bg-[#fff8eb] px-3 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6222]">Red Flags</p>
+                  <p className="mt-1 text-xs text-[#8d6222]/90">
+                    Contract risks highlighted with plain-English context and suggested fixes.
                   </p>
                 </div>
 
