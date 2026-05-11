@@ -142,16 +142,13 @@ export default function HomePage() {
                   Report preview
                 </p>
                 <span className="rounded-full bg-[var(--pt-surface-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--pt-muted)]">
-                  Report $79
+                  Report {PRICING[1].price}
                 </span>
               </div>
 
               <h2 className="text-3xl leading-tight text-[var(--pt-ink)]">
                 Know exactly what to negotiate before you sign.
               </h2>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--pt-muted)]">
-                A real look at what you get before you buy.
-              </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {["Summary", "Insights", "Red Flags", "Key Terms", "Questions", "Full Report"].map((tab) => (
@@ -159,6 +156,15 @@ export default function HomePage() {
                     {tab}
                   </span>
                 ))}
+              </div>
+              <div className="mt-4 rounded-lg border border-dashed border-[var(--pt-border)] px-3 py-2">
+                <p className="text-xs uppercase tracking-[0.12em] text-[var(--pt-muted)]">
+                  Typical lawyer cost:{" "}
+                  <span className="font-semibold normal-case tracking-normal text-[var(--pt-ink)]">
+                    {PRICING[1].attorneyCost}
+                  </span>
+                </p>
+                <p className="mt-1 text-xs text-[var(--pt-muted)]">{PRICING[1].attorneyScope}</p>
               </div>
 
               <div className="mt-4 grid gap-3">
@@ -168,7 +174,6 @@ export default function HomePage() {
                     Contract risks highlighted with plain-English context and suggested fixes.
                   </p>
                 </div>
-
                 <div className="space-y-3">
                   <div className="pt-card-soft p-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Risk</p>
