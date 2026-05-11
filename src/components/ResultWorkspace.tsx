@@ -1041,7 +1041,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                         <div className="mt-2 h-2 rounded-full bg-[#f1ddd5]">
                           <div
                             className="h-2 rounded-full bg-[#2ba59f]"
-                            style={{ width: `${Math.max(100 - data.report.risk.score, 6)}%` }}
+                            style={{ width: `${Math.max(100 - data.report.risk.score, 0)}%` }}
                           />
                         </div>
                         <p className="mt-2 text-sm leading-6 text-[var(--pt-ink)]/85">

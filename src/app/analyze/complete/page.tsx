@@ -13,7 +13,7 @@ type VerifyResponse = {
 };
 
 const STAGES = [
-  { label: "Confirming secure payment.", threshold: 0 },
+  { label: "Getting your report ready.", threshold: 0 },
   { label: "Reading and structuring contract clauses.", threshold: 25 },
   { label: "Scoring risk and generating plain-English guidance.", threshold: 55 },
   { label: "Preparing your result page.", threshold: 80 },
@@ -138,7 +138,7 @@ export default function AnalyzeCompletePage() {
       <div className="w-full max-w-lg">
         <h1 className="text-3xl text-[var(--pt-ink)]">Final safety checks</h1>
         <p className="mt-3 text-[var(--pt-muted)]">
-          Confirming payment and preparing your secure report.
+          Finalizing your secure report and loading your results.
         </p>
 
         {error ? (

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Finalizing Payment",
-  description: "Verifying payment and finalizing contract analysis.",
+  title: "Preparing Your Report",
+  description: "Finalizing your contract analysis and loading your report.",
   robots: {
     index: false,
     follow: false,
