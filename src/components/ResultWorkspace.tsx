@@ -101,7 +101,7 @@ function annotateLegalTerms(text: string, keyPrefix: string) {
         </span>
         <span
           role="tooltip"
-          className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface)] p-2 text-left text-xs leading-5 text-[var(--pt-ink)] opacity-0 shadow-md transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+          className="pointer-events-none invisible absolute bottom-full left-1/2 z-[120] mb-2 w-64 -translate-x-1/2 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface)] p-2 text-left text-xs leading-5 text-[var(--pt-ink)] opacity-0 shadow-md transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
         >
           {definition}
         </span>
@@ -143,6 +143,61 @@ function riskMeterClass(label: "low" | "medium" | "high") {
   if (label === "high") return "bg-[#e7745c]";
   if (label === "medium") return "bg-[#d8a84b]";
   return "bg-[#2ba59f]";
+}
+
+type DrilldownPanelProps = {
+  title: string;
+  meta?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+};
+
+function DrilldownPanel({ title, meta, open, onToggle, children }: DrilldownPanelProps) {
+  return (
+    <div
+      className={`relative shrink-0 rounded-lg border border-[var(--pt-border)] bg-white ${
+        open ? "z-20" : "z-0"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm font-semibold text-[var(--pt-ink)] transition-colors hover:bg-[var(--pt-surface)]"
+      >
+        <span>{title}</span>
+        {meta ? <span className="ml-auto text-xs text-[var(--pt-muted)]">{meta}</span> : null}
+        <span
+          className={`inline-flex h-6 w-6 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] text-[var(--pt-muted)] transition-transform duration-200 ${
+            open ? "rotate-180" : "rotate-0"
+          }`}
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+            <path
+              d="M4 6l4 4 4-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+          open
+            ? "[grid-template-rows:1fr] overflow-visible opacity-100"
+            : "[grid-template-rows:0fr] overflow-hidden opacity-0"
+        }`}
+      >
+        <div className="border-t border-[var(--pt-border)] px-3 py-2">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 
@@ -593,6 +648,12 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
   const evidenceCoveragePct = Math.round(
     (evidenceClauseCount / Math.max(clauseBreakdown.length, 1)) * 100
   );
+  const [insightsDrilldownOpen, setInsightsDrilldownOpen] = useState(() => ({
+    summary: true,
+    terms: unclearClauses.length + missingClauses.length > 0,
+    questions: questionsToAsk.length > 0,
+    flags: highFlags.length > 0,
+  }));
 
   const reportTabs: Array<{ key: ReportTab; label: string; count?: number | "all" }> = [
     { key: "summary", label: "Summary", count: undefined },
@@ -1214,48 +1275,64 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                       <p className="text-base font-semibold text-[var(--pt-ink)]">Interactive Drilldown</p>
                       <span className="text-xs text-[var(--pt-muted)]">Per-tab view, condensed</span>
                     </div>
-                    <div className="mt-3 space-y-2">
-                      <details className="rounded-lg border border-[#d8dff5] bg-white p-3" open>
-                        <summary className="cursor-pointer text-sm font-semibold text-[#374175]">Summary Insights</summary>
-                        <p className="mt-2 text-[15px] leading-6 text-[var(--pt-ink)]/85">
+                    <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                      <DrilldownPanel
+                        title="Summary Insights"
+                        meta="Top action"
+                        open={insightsDrilldownOpen.summary}
+                        onToggle={() =>
+                          setInsightsDrilldownOpen((prev) => ({ ...prev, summary: !prev.summary }))
+                        }
+                      >
+                        <p className="text-[15px] leading-6 text-[var(--pt-ink)]/85">
                           {actionItems.length > 0
                             ? `Primary next step: ${actionItems[0]}`
                             : "No urgent action items were identified from summary analysis."}
                         </p>
-                      </details>
-                      <details className="rounded-lg border border-[#b2ddd4] bg-white p-3" open={unclearClauses.length + missingClauses.length > 0}>
-                        <summary className="cursor-pointer text-sm font-semibold text-[#1d655f]">
-                          Key Terms Insights ({unclearClauses.length + missingClauses.length})
-                        </summary>
-                        <ul className="mt-2 space-y-1 text-sm text-[#165651]">
+                      </DrilldownPanel>
+                      <DrilldownPanel
+                        title="Key Terms Insights"
+                        meta={`${unclearClauses.length + missingClauses.length}`}
+                        open={insightsDrilldownOpen.terms}
+                        onToggle={() => setInsightsDrilldownOpen((prev) => ({ ...prev, terms: !prev.terms }))}
+                      >
+                        <ul className="space-y-1 text-sm text-[var(--pt-ink)]/85">
                           {[...missingClauses, ...unclearClauses].slice(0, 3).map((clause) => (
-                            <li key={`insight-clarity-${clause.key}`}>{clause.title}</li>
+                            <li key={`insight-clarity-${clause.key}`}>
+                              {annotateLegalTerms(clause.title, `insight-clarity-${clause.key}`)}
+                            </li>
                           ))}
                           {missingClauses.length + unclearClauses.length === 0 && <li>No material clause clarity gaps.</li>}
                         </ul>
-                      </details>
-                      <details className="rounded-lg border border-[#ead3a1] bg-white p-3" open={questionsToAsk.length > 0}>
-                        <summary className="cursor-pointer text-sm font-semibold text-[#8c6526]">
-                          Questions Insights ({questionsToAsk.length})
-                        </summary>
-                        <ul className="mt-2 space-y-1 text-sm text-[#6e4f1e]">
+                      </DrilldownPanel>
+                      <DrilldownPanel
+                        title="Questions Insights"
+                        meta={`${questionsToAsk.length}`}
+                        open={insightsDrilldownOpen.questions}
+                        onToggle={() =>
+                          setInsightsDrilldownOpen((prev) => ({ ...prev, questions: !prev.questions }))
+                        }
+                      >
+                        <ul className="space-y-1 text-sm text-[var(--pt-ink)]/85">
                           {questionsToAsk.slice(0, 3).map((question, idx) => (
                             <li key={`insight-question-${idx}`}>{question}</li>
                           ))}
                           {questionsToAsk.length === 0 && <li>No suggested questions; use flags as discussion prompts.</li>}
                         </ul>
-                      </details>
-                      <details className="rounded-lg border border-[#efc1b6] bg-white p-3" open={highFlags.length > 0}>
-                        <summary className="cursor-pointer text-sm font-semibold text-[#9e3f2d]">
-                          Red Flag Insights ({highFlags.length})
-                        </summary>
-                        <ul className="mt-2 space-y-1 text-sm text-[#7f2e1f]">
+                      </DrilldownPanel>
+                      <DrilldownPanel
+                        title="Red Flag Insights"
+                        meta={`${highFlags.length}`}
+                        open={insightsDrilldownOpen.flags}
+                        onToggle={() => setInsightsDrilldownOpen((prev) => ({ ...prev, flags: !prev.flags }))}
+                      >
+                        <ul className="space-y-1 text-sm text-[var(--pt-ink)]/85">
                           {highFlags.slice(0, 3).map((flag) => (
                             <li key={`insight-high-${flag.id}`}>{flag.title}</li>
                           ))}
                           {highFlags.length === 0 && <li>No high-risk flags were detected.</li>}
                         </ul>
-                      </details>
+                      </DrilldownPanel>
                     </div>
                   </article>
                 </>
