@@ -186,14 +186,18 @@ function DrilldownPanel({ title, meta, open, onToggle, children }: DrilldownPane
         </span>
       </button>
       <div
-        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
-          open
-            ? "[grid-template-rows:1fr] overflow-visible opacity-100"
-            : "[grid-template-rows:0fr] overflow-hidden opacity-0"
+        className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          open ? "[grid-template-rows:1fr]" : "[grid-template-rows:0fr]"
         }`}
       >
-        <div className="border-t border-[var(--pt-border)] px-3 py-2">
-          {children}
+        <div className="min-h-0 overflow-hidden">
+          <div
+            className={`border-t border-[var(--pt-border)] px-3 py-2 transition-opacity duration-200 ease-out ${
+              open ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>
@@ -891,7 +895,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                     {annotation.severity}
                   </span>
                   <span className="text-sm font-semibold text-[var(--pt-ink)]">
-                    "{annotation.target}"
+                    &ldquo;{annotation.target}&rdquo;
                   </span>
                 </div>
                 <p className="mt-1 text-sm leading-6 text-[var(--pt-ink)]/85">{annotation.explanation}</p>
