@@ -1208,10 +1208,10 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                         height={22}
                         className="h-5.5 w-5.5 rounded-md border border-[#c9d7f7] bg-white p-1"
                       />
-                      <p className="text-sm font-semibold text-[#344167]">Cross-Tab Intelligence</p>
+                      <p className="text-sm font-semibold text-[#344167]">Key Takeaways</p>
                     </div>
                     <p className="mt-1 text-sm text-[#4c5a86]">
-                      This view combines signals from Summary, Key Terms, Questions, and Full Report evidence.
+                      A connected view of the risks, clause gaps, evidence, and questions that matter most from this analysis.
                     </p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-4">
                       <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
