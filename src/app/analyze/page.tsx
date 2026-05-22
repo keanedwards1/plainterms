@@ -284,8 +284,8 @@ export default function AnalyzePage() {
   }
 
   return (
-    <main className="px-5 pb-12 pt-8 sm:px-8 lg:px-12">
-      <div className="mx-auto max-w-6xl">
+    <main className="pt-page-pad pb-12 pt-8">
+      <div className="pt-container-wide">
         <Link href="/" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
           ← Back to home
         </Link>
@@ -496,8 +496,9 @@ export default function AnalyzePage() {
           )}
 
           <p className="mt-5 text-xs text-[var(--pt-muted)]">
-            Your secure result link is typically available for up to {RESULT_RETENTION_DAYS} days.
-            Save or bookmark the result page after checkout to access it again.
+            Your secure result link remains available for up to {RESULT_RETENTION_DAYS} days after checkout.
+            Save or bookmark the result page to revisit your results during that period.
+            Account-based result history is coming soon.
           </p>
         </form>
       </section>

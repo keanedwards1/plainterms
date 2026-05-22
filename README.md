@@ -263,7 +263,7 @@ If your stack was originally created with guided prompts, update `samconfig.toml
 `parameter_overrides` includes:
 
 ```toml
-parameter_overrides = "AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=live AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=false ApiDefaultRateLimit=5 ApiDefaultBurstLimit=10"
+parameter_overrides = "AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=false ApiDefaultRateLimit=5 ApiDefaultBurstLimit=10"
 ```
 
 Backend retention behavior:

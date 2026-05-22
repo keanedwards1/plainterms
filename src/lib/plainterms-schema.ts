@@ -157,6 +157,7 @@ export const PtReport = z.object({
   }),
   red_flags: z.array(PtReportFlag),
   clause_breakdown: z.array(PtReportClause),
+  negotiation_email_draft: z.string().optional(),
   negotiation_bullets: z
     .object({
       high: z.array(z.string()),

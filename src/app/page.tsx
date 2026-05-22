@@ -80,8 +80,8 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <main className="px-5 pb-12 pt-8 sm:px-8 lg:px-12">
-      <div className="mx-auto max-w-6xl space-y-10">
+    <main className="pt-page-pad pb-12 pt-8">
+      <div className="pt-container-wide space-y-10">
         <section className="grid gap-6 lg:grid-cols-[1.45fr_0.95fr] lg:items-stretch">
           <article className="pt-card h-full overflow-hidden">
             <div className="grid h-full lg:grid-cols-2">

@@ -27,9 +27,15 @@ if (!match) {
   process.exit(1);
 }
 
-const parameterOverrides = match[1]
-  .replace(/\\"/g, '"')
-  .replace(/StripeMode="(?:live|sandbox)"/, `StripeMode="${mode}"`);
+let parameterOverrides = match[1].replace(/\\"/g, '"').trim();
+if (/StripeMode="(?:live|sandbox)"/.test(parameterOverrides)) {
+  parameterOverrides = parameterOverrides.replace(
+    /StripeMode="(?:live|sandbox)"/,
+    `StripeMode="${mode}"`
+  );
+} else {
+  parameterOverrides = `StripeMode="${mode}" ${parameterOverrides}`.trim();
+}
 
 function run(cmd, cmdArgs) {
   const result = spawnSync(cmd, cmdArgs, {

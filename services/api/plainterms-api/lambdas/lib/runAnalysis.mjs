@@ -7,6 +7,7 @@ import {
 } from "./ptTransform.mjs";
 import { extractDocumentTextFromUpload } from "./extractDocumentText.mjs";
 import { analyzeExtractedTextWithLlm } from "./llmAnalyze.mjs";
+import { generateNegotiationEmailDraftWithLlm } from "./llmNegotiationEmail.mjs";
 import { validateObjectKey, validateUploadMeta } from "./uploadPolicy.mjs";
 import { buildReportInsights } from "./reportEngine.mjs";
 import { createResultAccessKey, hashResultAccessKey } from "./resultAccessKey.mjs";
@@ -237,7 +238,89 @@ function applyTierToReport(baseReport, selectedTier) {
     };
   }
 
+  report.negotiation_email_draft = buildNegotiationEmailDraft({
+    report,
+    tier,
+  });
+
   return report;
+}
+
+function buildNegotiationEmailDraft({ report, tier }) {
+  const recommendationLabel = typeof report?.recommendation?.label === "string"
+    ? report.recommendation.label.trim()
+    : "";
+  const recommendationReason = typeof report?.recommendation?.reason === "string"
+    ? report.recommendation.reason.trim()
+    : "";
+  const flags = Array.isArray(report?.red_flags) ? report.red_flags : [];
+  const questions = Array.isArray(report?.questions_to_ask) ? report.questions_to_ask : [];
+
+  const topFlags = flags
+    .filter((flag) => typeof flag?.title === "string" && typeof flag?.plain_note === "string")
+    .slice(0, 4);
+  const topQuestions = questions
+    .filter((item) => typeof item === "string" && item.trim())
+    .slice(0, 3);
+
+  const lines = [
+    "Subject: Requested updates to agreement terms",
+    "",
+    "Hi [Name],",
+    "",
+    "Thanks again for sharing the agreement. I reviewed the current draft and would like to request a few updates before signing.",
+    "",
+  ];
+
+  if (topFlags.length > 0) {
+    lines.push("Key updates requested:");
+    const revisionRequests = [
+      "Please tighten this clause so responsibilities and risk are explicit for both sides.",
+      "Please clarify the boundaries and obligations in this section before signature.",
+      "Please revise this language so the commercial and legal expectations are unambiguous.",
+    ];
+    topFlags.forEach((flag, idx) => {
+      const cleanedTitle = String(flag.title)
+        .replace(/\s+is not clearly stated$/i, "")
+        .replace(/\s+appears unclear$/i, "")
+        .trim();
+      const titleText = cleanedTitle || "Contract clause";
+      lines.push(`- ${titleText}: ${revisionRequests[idx % revisionRequests.length]}`);
+    });
+    lines.push("");
+  } else {
+    lines.push("I have a few clarification requests to confirm expectations for both sides.");
+    lines.push("");
+  }
+
+  if (topQuestions.length > 0) {
+    lines.push("Questions to confirm as you revise:");
+    topQuestions.forEach((question) => {
+      lines.push(`- ${question}`);
+    });
+    lines.push("");
+  }
+
+  if (recommendationLabel || recommendationReason) {
+    lines.push(
+      `Current review recommendation: ${recommendationLabel || "Negotiate"}${
+        recommendationReason ? `. ${recommendationReason}` : "."
+      }`
+    );
+    lines.push("");
+  }
+
+  if (tier === "scan_39") {
+    lines.push("This request is based on the quick scan summary, and I may add a few details after deeper review.");
+    lines.push("");
+  }
+
+  lines.push("If you can share a revised draft reflecting these points, I can review it quickly.");
+  lines.push("");
+  lines.push("Thank you,");
+  lines.push("[Your Name]");
+
+  return lines.join("\n");
 }
 
 function statusFromClauseStatus(status) {
@@ -567,6 +650,18 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   });
   const selectedTier = normalizeReportTier(analysisSelection?.reportTier);
   const tieredReportInsights = applyTierToReport(reportInsights, selectedTier);
+  try {
+    const llmEmailDraft = await generateNegotiationEmailDraftWithLlm({
+      report: tieredReportInsights,
+      tier: selectedTier,
+      analysisSelection,
+    });
+    if (llmEmailDraft?.ok && llmEmailDraft.draft) {
+      tieredReportInsights.negotiation_email_draft = llmEmailDraft.draft;
+    }
+  } catch {
+    // Keep deterministic fallback draft when LLM email generation fails.
+  }
 
   const ptV1 = makePtV1({
     resultId,

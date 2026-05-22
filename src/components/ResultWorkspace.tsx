@@ -480,20 +480,33 @@ function buildRewriteDraft(data: PtResult): string {
 }
 
 function buildUpdateEmailDraft(data: PtResult): string {
+  const serverDraft = data.report?.negotiation_email_draft?.trim();
+  if (serverDraft) return serverDraft;
+
   const recommendation = data.report?.recommendation;
   const flags = data.report?.red_flags ?? [];
-  const highlights = flags.slice(0, 3).map((flag) => `- ${flag.title}: ${flag.plain_note}`);
+  const highlights = flags
+    .slice(0, 3)
+    .map((flag) =>
+      `- ${flag.title.replace(/\s+is not clearly stated$/i, "").replace(/\s+appears unclear$/i, "").trim()}`
+    );
 
   const lines = [
     "Subject: Requested updates to agreement terms",
     "",
     "Hi [Name],",
     "",
-    "Thanks again for sharing the agreement. I reviewed it and would like to request a few updates before signing.",
+    "Thanks again for sharing the agreement. I reviewed it and would like to request a few revisions before signing.",
     "",
     ...(highlights.length > 0
-      ? ["Key updates requested:", ...highlights, ""]
-      : ["The current agreement looks strong overall, with only a few clarity adjustments requested.", ""]),
+      ? [
+          "The main terms I'd like to update are:",
+          ...highlights,
+          "",
+          "Could you revise these items so scope, obligations, and risk allocation are explicit for both sides?",
+          "",
+        ]
+      : ["I'd like a few clarification edits so the responsibilities are explicit for both sides.", ""]),
     recommendation
       ? `Current review recommendation: ${recommendation.label}. ${recommendation.reason}`
       : "I want to make sure key rights and obligations are explicitly clear for both sides.",
@@ -507,12 +520,29 @@ function buildUpdateEmailDraft(data: PtResult): string {
   return lines.join("\n");
 }
 
+function parseEmailDraft(content: string) {
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const subjectIdx = lines.findIndex((line) => /^subject\s*:/i.test(line.trim()));
+  if (subjectIdx === -1) {
+    return {
+      subject: "",
+      body: content.trim(),
+    };
+  }
+
+  const subject = lines[subjectIdx].replace(/^subject\s*:/i, "").trim();
+  const body = [...lines.slice(0, subjectIdx), ...lines.slice(subjectIdx + 1)].join("\n").trim();
+
+  return { subject, body };
+}
+
 export default function ResultWorkspace({ data, retentionDays, accessKey }: ResultWorkspaceProps) {
   const [activeReportTab, setActiveReportTab] = useState<ReportTab>("summary");
   const [activeBasicTab, setActiveBasicTab] = useState<BasicTab>("summary");
   const [addonNotice, setAddonNotice] = useState<string | null>(null);
   const [addonDraft, setAddonDraft] = useState<AddonDraft | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pendingJumpTargetId, setPendingJumpTargetId] = useState<string | null>(null);
   const [documentViewMode, setDocumentViewMode] = useState<DocumentViewMode>("original");
   const [documentRevision, setDocumentRevision] = useState(data.document?.revision);
 
@@ -591,10 +621,31 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
     };
   }, [accessKey, data.result_id, effectiveDocumentRevision?.status]);
 
+  useEffect(() => {
+    if (!pendingJumpTargetId) return;
+    const nextFrame = window.requestAnimationFrame(() => {
+      const target = document.getElementById(pendingJumpTargetId);
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (target instanceof HTMLButtonElement) {
+        target.focus();
+      }
+      setPendingJumpTargetId(null);
+    });
+
+    return () => window.cancelAnimationFrame(nextFrame);
+  }, [activeReportTab, pendingJumpTargetId]);
+
   const redFlags = data.report?.red_flags ?? [];
   const clauseBreakdown = data.report?.clause_breakdown ?? [];
   const questionsToAsk = data.report?.questions_to_ask ?? [];
   const isLowRiskNoFlags = data.report?.risk.label === "low" && redFlags.length === 0;
+  const activeEmailDraft = addonDraft?.key === "update_email" ? addonDraft : null;
+
+  function jumpToReportTab(tab: ReportTab, targetId?: string) {
+    setActiveReportTab(tab);
+    setPendingJumpTargetId(targetId ?? null);
+  }
 
   function activateAddon(addon: AddonKey) {
     if (addon === "rewrite_contract") {
@@ -624,6 +675,12 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
     } catch {
       setAddonNotice("Unable to copy automatically. You can still select and copy manually.");
     }
+  }
+
+  function dismissAddonDraft() {
+    setAddonDraft(null);
+    setAddonNotice(null);
+    setCopied(false);
   }
 
 
@@ -1028,24 +1085,6 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
       </aside>
 
       <section className="pt-card p-4">
-        {addonDraft ? (
-          <article className="mb-3 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-[var(--pt-ink)]">{addonDraft.title}</h3>
-              <button
-                type="button"
-                onClick={copyAddonDraft}
-                className="rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
-              >
-                {copied ? "Copied" : "Copy"}
-              </button>
-            </div>
-            <pre className="mt-2 whitespace-pre-wrap rounded-md border border-[var(--pt-border)] bg-white p-3 text-xs leading-5 text-[var(--pt-ink)]">
-              {addonDraft.content}
-            </pre>
-          </article>
-        ) : null}
-
         {data.report ? (
           <>
             <div className="mb-3">
@@ -1398,16 +1437,26 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
 
                       <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
                         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                          Direct action
+                          Next step shortcuts
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => activateAddon("rewrite_contract")}
-                          className="mt-2 flex w-full items-center gap-2 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
-                        >
-                          <Image src="/graphics/icon-doc.svg" alt="" width={16} height={16} className="h-4 w-4" />
-                          Rewrite Contract
-                        </button>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => jumpToReportTab("questions", "questions-email-draft-button")}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1.5 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                          >
+                            <Image src="/graphics/icon-search.svg" alt="" width={14} height={14} className="h-3.5 w-3.5" />
+                            Draft negotiation email
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => jumpToReportTab("document")}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1.5 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                          >
+                            <Image src="/graphics/icon-doc.svg" alt="" width={14} height={14} className="h-3.5 w-3.5" />
+                            Review document edits
+                          </button>
+                        </div>
                       </article>
 
                       {redFlags.map((flag) => (
@@ -1430,22 +1479,6 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                         </article>
                       ))}
 
-                      <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                          Communication
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => activateAddon("update_email")}
-                          className="mt-2 flex w-full items-center gap-2 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
-                        >
-                          <Image src="/graphics/icon-search.svg" alt="" width={16} height={16} className="h-4 w-4" />
-                          Draft Negotiation Email
-                        </button>
-                        {addonNotice ? (
-                          <p className="mt-2 text-[11px] text-[var(--pt-muted)]">{addonNotice}</p>
-                        ) : null}
-                      </article>
                     </>
                   ) : (
                     <div className="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
@@ -1625,6 +1658,78 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                           </details>
                         </div>
                       </article>
+                      <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                          Communication
+                        </p>
+                        <button
+                          id="questions-email-draft-button"
+                          type="button"
+                          onClick={() => activateAddon("update_email")}
+                          className="mt-2 flex w-full items-center gap-2 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                        >
+                          <Image src="/graphics/icon-search.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                          Draft Negotiation Email
+                        </button>
+                        {addonNotice ? (
+                          <p className="mt-2 text-[11px] text-[var(--pt-muted)]">{addonNotice}</p>
+                        ) : null}
+                      </article>
+                      {activeEmailDraft ? (
+                        <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <Image
+                                src="/graphics/icon-search.svg"
+                                alt=""
+                                width={16}
+                                height={16}
+                                className="h-4 w-4 rounded-sm border border-[var(--pt-border)] bg-white p-[2px]"
+                              />
+                              <div>
+                                <p className="text-sm font-semibold text-[var(--pt-ink)]">Negotiation Email Draft</p>
+                                <p className="text-xs text-[var(--pt-muted)]">Review, personalize, and send.</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={copyAddonDraft}
+                                className="rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                              >
+                                {copied ? "Copied" : "Copy"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={dismissAddonDraft}
+                                className="rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+                          {(() => {
+                            const parsed = parseEmailDraft(activeEmailDraft.content);
+                            return (
+                              <div className="mt-3 rounded-lg border border-[var(--pt-border)] bg-white">
+                                {parsed.subject ? (
+                                  <div className="border-b border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2">
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                                      Subject
+                                    </p>
+                                    <p className="mt-0.5 text-sm font-semibold text-[var(--pt-ink)]">{parsed.subject}</p>
+                                  </div>
+                                ) : null}
+                                <div className="px-3 py-3">
+                                  <div className="whitespace-pre-wrap text-sm leading-6 text-[var(--pt-ink)]/90">
+                                    {parsed.body || activeEmailDraft.content}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </article>
+                      ) : null}
                       <article className="pt-card-soft p-3">
                         <ul className="list-disc space-y-2 pl-5 text-[15px] leading-6 text-[var(--pt-ink)]/85">
                           {questionsToAsk.map((question, idx) => (
@@ -1636,9 +1741,83 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                       </article>
                     </>
                   ) : (
-                    <div className="pt-card-soft p-3 text-sm text-[var(--pt-muted)]">
-                      No questions were suggested for this report.
-                    </div>
+                    <>
+                      <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                          Communication
+                        </p>
+                        <button
+                          id="questions-email-draft-button"
+                          type="button"
+                          onClick={() => activateAddon("update_email")}
+                          className="mt-2 flex w-full items-center gap-2 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                        >
+                          <Image src="/graphics/icon-search.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                          Draft Negotiation Email
+                        </button>
+                        {addonNotice ? (
+                          <p className="mt-2 text-[11px] text-[var(--pt-muted)]">{addonNotice}</p>
+                        ) : null}
+                      </article>
+                      {activeEmailDraft ? (
+                        <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <Image
+                                src="/graphics/icon-search.svg"
+                                alt=""
+                                width={16}
+                                height={16}
+                                className="h-4 w-4 rounded-sm border border-[var(--pt-border)] bg-white p-[2px]"
+                              />
+                              <div>
+                                <p className="text-sm font-semibold text-[var(--pt-ink)]">Negotiation Email Draft</p>
+                                <p className="text-xs text-[var(--pt-muted)]">Review, personalize, and send.</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={copyAddonDraft}
+                                className="rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                              >
+                                {copied ? "Copied" : "Copy"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={dismissAddonDraft}
+                                className="rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+                              >
+                                Hide
+                              </button>
+                            </div>
+                          </div>
+                          {(() => {
+                            const parsed = parseEmailDraft(activeEmailDraft.content);
+                            return (
+                              <div className="mt-3 rounded-lg border border-[var(--pt-border)] bg-white">
+                                {parsed.subject ? (
+                                  <div className="border-b border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2">
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+                                      Subject
+                                    </p>
+                                    <p className="mt-0.5 text-sm font-semibold text-[var(--pt-ink)]">{parsed.subject}</p>
+                                  </div>
+                                ) : null}
+                                <div className="px-3 py-3">
+                                  <div className="whitespace-pre-wrap text-sm leading-6 text-[var(--pt-ink)]/90">
+                                    {parsed.body || activeEmailDraft.content}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </article>
+                      ) : null}
+                      <div className="pt-card-soft p-3 text-sm text-[var(--pt-muted)]">
+                        No questions were suggested for this report.
+                      </div>
+                    </>
                   )}
                 </>
               )}
@@ -1750,8 +1929,9 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                   */}
 
                   <p className="text-xs text-[var(--pt-muted)]">
-                    Save or bookmark this secure result link. It is typically available for up to{" "}
-                    {retentionDays} days and may expire automatically.
+                    This secure result link remains available for up to {retentionDays} days.
+                    Save or bookmark it to revisit your results during that period.
+                    Account-based result history is coming soon.
                   </p>
                 </>
               )}

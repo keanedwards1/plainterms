@@ -73,10 +73,11 @@ const sections = [
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
-      <Link href="/" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
-        ← Back to home
-      </Link>
+    <main className="pt-page-pad min-h-screen py-10">
+      <div className="pt-container-reading">
+        <Link href="/" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
+          ← Back to home
+        </Link>
 
       <h1 className="mt-5 text-4xl text-[var(--pt-ink)]">Privacy Policy</h1>
       <p className="mt-1 text-xs text-[var(--pt-muted)]">Effective April 17, 2026</p>
@@ -92,6 +93,7 @@ export default function PrivacyPage() {
           </article>
         ))}
       </section>
+      </div>
     </main>
   );
 }

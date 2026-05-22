@@ -95,12 +95,14 @@ export default async function ResultPage({ params, searchParams }: Props) {
 
   if (!accessKey) {
     return (
-      <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
-        <h1 className="text-3xl text-[var(--pt-ink)]">Secure link required</h1>
-        <p className="mt-3 text-[var(--pt-muted)]">
-          This result requires a secure access link from checkout. Please return to upload and run
-          verification again.
-        </p>
+      <main className="pt-page-pad min-h-screen py-10">
+        <div className="pt-container-reading">
+          <h1 className="text-3xl text-[var(--pt-ink)]">Secure link required</h1>
+          <p className="mt-3 text-[var(--pt-muted)]">
+            This result requires a secure access link from checkout. Please return to upload and run
+            verification again.
+          </p>
+        </div>
       </main>
     );
   }
@@ -112,17 +114,19 @@ export default async function ResultPage({ params, searchParams }: Props) {
   if (res.status === 202) {
     const detail = await readFailureDetail(res);
     return (
-      <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
-        <h1 className="text-3xl text-[var(--pt-ink)]">Analysis in progress</h1>
-        <p className="mt-3 text-[var(--pt-muted)]">
-          Your document is still being processed. This page should become available shortly.
-        </p>
-        <p className="mt-5 text-sm text-[var(--pt-muted)]">
-          <strong>Result ID:</strong> {id}
-        </p>
-        <pre className="mt-3 overflow-auto rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-4 text-xs text-[var(--pt-ink)]">
-          {detail}
-        </pre>
+      <main className="pt-page-pad min-h-screen py-10">
+        <div className="pt-container-reading">
+          <h1 className="text-3xl text-[var(--pt-ink)]">Analysis in progress</h1>
+          <p className="mt-3 text-[var(--pt-muted)]">
+            Your document is still being processed. This page should become available shortly.
+          </p>
+          <p className="mt-5 text-sm text-[var(--pt-muted)]">
+            <strong>Result ID:</strong> {id}
+          </p>
+          <pre className="mt-3 overflow-auto rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-4 text-xs text-[var(--pt-ink)]">
+            {detail}
+          </pre>
+        </div>
       </main>
     );
   }
@@ -132,32 +136,36 @@ export default async function ResultPage({ params, searchParams }: Props) {
 
     if (res.status === 410) {
       return (
-        <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
-          <h1 className="text-3xl text-[var(--pt-ink)]">Result expired</h1>
-          <p className="mt-3 text-[var(--pt-muted)]">
-            This result is no longer available. Secure result links typically expire after about {retentionDays} days.
-            Uploading the contract again will create a new result.
-          </p>
-          <p className="mt-5 text-sm text-[var(--pt-muted)]">
-            <strong>Result ID:</strong> {id}
-          </p>
-          <pre className="mt-3 overflow-auto rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-4 text-xs text-[var(--pt-ink)]">
-            {detail}
-          </pre>
+        <main className="pt-page-pad min-h-screen py-10">
+          <div className="pt-container-reading">
+            <h1 className="text-3xl text-[var(--pt-ink)]">Result expired</h1>
+            <p className="mt-3 text-[var(--pt-muted)]">
+              This result is no longer available. Secure result links typically expire after about {retentionDays} days.
+              Uploading the contract again will create a new result.
+            </p>
+            <p className="mt-5 text-sm text-[var(--pt-muted)]">
+              <strong>Result ID:</strong> {id}
+            </p>
+            <pre className="mt-3 overflow-auto rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-4 text-xs text-[var(--pt-ink)]">
+              {detail}
+            </pre>
+          </div>
         </main>
       );
     }
 
     return (
-      <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
-        <h1 className="text-3xl text-[var(--pt-ink)]">Result not available</h1>
-        <p className="mt-3 text-[var(--pt-muted)]">We couldn&apos;t load this analysis right now.</p>
-        <p className="mt-5 text-sm text-[var(--pt-muted)]">
-          <strong>Status:</strong> {res.status}
-        </p>
-        <pre className="mt-3 overflow-auto rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-4 text-xs text-[var(--pt-ink)]">
-          {detail}
-        </pre>
+      <main className="pt-page-pad min-h-screen py-10">
+        <div className="pt-container-reading">
+          <h1 className="text-3xl text-[var(--pt-ink)]">Result not available</h1>
+          <p className="mt-3 text-[var(--pt-muted)]">We couldn&apos;t load this analysis right now.</p>
+          <p className="mt-5 text-sm text-[var(--pt-muted)]">
+            <strong>Status:</strong> {res.status}
+          </p>
+          <pre className="mt-3 overflow-auto rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-4 text-xs text-[var(--pt-ink)]">
+            {detail}
+          </pre>
+        </div>
       </main>
     );
   }
@@ -167,9 +175,11 @@ export default async function ResultPage({ params, searchParams }: Props) {
 
   if (!parsed.success) {
     return (
-      <main className="mx-auto min-h-screen w-full max-w-4xl px-5 py-10 sm:px-8">
-        <h1 className="text-3xl text-[var(--pt-ink)]">Result format error</h1>
-        <p className="mt-3 text-[var(--pt-muted)]">The server returned an unexpected format.</p>
+      <main className="pt-page-pad min-h-screen py-10">
+        <div className="pt-container-reading">
+          <h1 className="text-3xl text-[var(--pt-ink)]">Result format error</h1>
+          <p className="mt-3 text-[var(--pt-muted)]">The server returned an unexpected format.</p>
+        </div>
       </main>
     );
   }
@@ -179,10 +189,10 @@ export default async function ResultPage({ params, searchParams }: Props) {
   const fileNameLabel = data.document?.file_name ?? "Contract document";
 
   return (
-    <main className="px-5 py-5 sm:px-8 lg:px-12 [--pt-muted:#7f7466]">
+    <main className="pt-page-pad py-5 [--pt-muted:#7f7466]">
       <TrackResultViewed resultId={data.result_id} />
 
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-5">
+      <div className="pt-container-wide flex flex-col gap-5">
         <section className="pt-card p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link

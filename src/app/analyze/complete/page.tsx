@@ -134,7 +134,7 @@ export default function AnalyzeCompletePage() {
   const currentStage = [...STAGES].reverse().find((s) => progress >= s.threshold) ?? STAGES[0];
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-5 sm:px-8">
+    <main className="pt-page-pad flex min-h-screen items-center justify-center">
       <div className="w-full max-w-lg">
         <h1 className="text-3xl text-[var(--pt-ink)]">Final safety checks</h1>
         <p className="mt-3 text-[var(--pt-muted)]">

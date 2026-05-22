@@ -11,7 +11,7 @@ export default function SiteHeader() {
 
   return (
     <header className="pt-nav">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 sm:px-8 lg:px-12">
+      <div className="pt-page-pad pt-container-wide flex w-full items-center justify-between py-4">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[var(--pt-accent)] text-xs font-bold text-[var(--pt-accent-ink)]">
             P

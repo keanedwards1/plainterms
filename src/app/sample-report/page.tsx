@@ -11,8 +11,8 @@ export default function SampleReportPage() {
   const tabs = ["Summary", "Insights", "Red Flags", "Key Terms", "Questions", "Full Report"];
 
   return (
-    <main className="px-5 pb-12 pt-8 sm:px-8 lg:px-12">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="pt-page-pad pb-12 pt-8">
+      <div className="pt-container-wide space-y-6">
         <section className="pt-card overflow-hidden p-6 sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
             <div>

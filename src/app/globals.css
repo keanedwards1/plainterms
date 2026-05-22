@@ -32,6 +32,9 @@
     radial-gradient(1200px 700px at 88% -8%, #ffe0d2 0%, rgba(255, 224, 210, 0) 60%),
     radial-gradient(900px 540px at -4% 8%, #ffeabf 0%, rgba(255, 234, 191, 0) 55%),
     var(--pt-bg);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: min(132rem, 150vw) min(54rem, 78vh), min(104rem, 132vw) min(44rem, 62vh), auto;
+  min-height: 100dvh;
   color: var(--pt-ink);
   font-family: var(--font-sans);
 }
@@ -50,6 +53,20 @@ a {
 
 .pt-app-shell {
   min-height: 100vh;
+}
+
+.pt-page-pad {
+  padding-inline: clamp(1rem, 2.4vw, 2.8rem);
+}
+
+.pt-container-wide {
+  width: min(100%, 112rem);
+  margin-inline: auto;
+}
+
+.pt-container-reading {
+  width: min(100%, 74rem);
+  margin-inline: auto;
 }
 
 .pt-nav {

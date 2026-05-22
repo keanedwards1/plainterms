@@ -337,6 +337,7 @@ export function transformPtV1ToUiV1(ptV1) {
           "Important terms should be reviewed before signing.",
       }
     : null;
+  const negotiationEmailDraft = ensureString(reportObj?.negotiation_email_draft).trim();
   const risk = isObject(reportObj?.risk)
     ? {
         score:
@@ -399,6 +400,7 @@ export function transformPtV1ToUiV1(ptV1) {
             },
           red_flags: uiFlags,
           clause_breakdown: uiClauses,
+          ...(negotiationEmailDraft ? { negotiation_email_draft: negotiationEmailDraft } : {}),
           negotiation_bullets: hasNegotiationBullets
             ? negotiationBullets
             : { high: [], medium: [], low: [] },
@@ -561,6 +563,14 @@ export function assertPtUiV1Contract(ptUiV1) {
       assert(
         typeof clause.why_it_matters === "string" && clause.why_it_matters,
         "pt.ui.v1 report clause why_it_matters required"
+      );
+    }
+
+    if (ptUiV1.report.negotiation_email_draft !== undefined) {
+      assert(
+        typeof ptUiV1.report.negotiation_email_draft === "string" &&
+          ptUiV1.report.negotiation_email_draft.trim().length > 0,
+        "pt.ui.v1 report.negotiation_email_draft must be a non-empty string when present"
       );
     }
 
