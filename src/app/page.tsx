@@ -80,31 +80,31 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <main className="pt-page-pad pb-12 pt-8">
-      <div className="pt-container-wide space-y-10">
-        <section className="grid gap-6 lg:grid-cols-[1.45fr_0.95fr] lg:items-stretch">
+    <main className="pt-page-pad pb-12 pt-8 3xl:pb-20 3xl:pt-14">
+      <div className="pt-container-wide space-y-10 3xl:space-y-16">
+        <section className="grid gap-6 lg:grid-cols-[1.45fr_0.95fr] lg:items-stretch 3xl:gap-8">
           <article className="pt-card h-full overflow-hidden">
             <div className="grid h-full lg:grid-cols-2">
-              <div className="flex h-full flex-col bg-[var(--pt-accent)] p-8 text-[var(--pt-accent-ink)] sm:p-10">
-                <p className="text-sm font-semibold uppercase tracking-[0.15em] text-[#ffe8df]">
+              <div className="flex h-full flex-col bg-[var(--pt-accent)] p-8 text-[var(--pt-accent-ink)] sm:p-10 3xl:p-16">
+                <p className="text-sm font-semibold uppercase tracking-[0.15em] text-[#ffe8df] 3xl:text-base">
                   PlainTerms
                 </p>
-                <h1 className="mt-8 text-3xl leading-tight sm:text-4xl lg:text-[2.65rem]">
+                <h1 className="mt-8 text-3xl leading-tight sm:text-4xl lg:text-[2.65rem] 3xl:text-6xl 3xl:mt-12">
                   Get detailed contract analysis at a fraction of the cost of a lawyer.
                 </h1>
-                <p className="mt-5 max-w-xs text-base text-[#ffe8df]">
+                <p className="mt-5 max-w-xs text-base text-[#ffe8df] 3xl:text-lg 3xl:max-w-sm 3xl:mt-7">
                   Contract review built for creators. Understand your rights and protect your work.
                 </p>
-                <div className="mt-auto flex flex-wrap items-center gap-3 pt-8">
+                <div className="mt-auto flex flex-wrap items-center gap-3 pt-8 3xl:pt-12">
                   <Link
                     href="/analyze"
-                    className="inline-flex w-full items-center justify-center rounded-lg border border-[#e3b4a7] bg-[#fff8f3] px-5 py-3 text-sm font-semibold text-[#6f2f20]! transition-colors hover:bg-white sm:w-[250px]"
+                    className="inline-flex w-full items-center justify-center rounded-lg border border-[#e3b4a7] bg-[#fff8f3] px-5 py-3 text-sm font-semibold text-[#6f2f20]! transition-colors hover:bg-white sm:w-[250px] 3xl:w-70 3xl:py-4 3xl:text-base"
                   >
                     Get My Contract Reviewed
                   </Link>
                   <Link
                     href="/sample-report"
-                    className="inline-flex w-full items-center justify-center rounded-lg border border-[var(--pt-accent-soft)] bg-[#e85f49] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--pt-accent)] sm:w-[250px]"
+                    className="inline-flex w-full items-center justify-center rounded-lg border border-[var(--pt-accent-soft)] bg-[#e85f49] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--pt-accent)] sm:w-[250px] 3xl:w-70 3xl:py-4 3xl:text-base"
                   >
                     See Sample Report
                   </Link>
@@ -135,18 +135,18 @@ export default function HomePage() {
             </div>
           </article>
 
-          <aside id="sample-preview" className="pt-card h-full p-6">
+          <aside id="sample-preview" className="pt-card h-full p-6 3xl:p-10">
             <div className="flex h-full flex-col">
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--pt-muted)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--pt-muted)] 3xl:text-sm">
                   Report preview
                 </p>
-                <span className="rounded-full bg-[var(--pt-surface-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--pt-muted)]">
+                <span className="rounded-full bg-[var(--pt-surface-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--pt-muted)] 3xl:text-xs">
                   Report {PRICING[1].price}
                 </span>
               </div>
 
-              <h2 className="text-3xl leading-tight text-[var(--pt-ink)]">
+              <h2 className="text-3xl leading-tight text-[var(--pt-ink)] 3xl:text-4xl">
                 Know exactly what to negotiate before you sign.
               </h2>
 
@@ -205,13 +205,13 @@ export default function HomePage() {
           </aside>
         </section>
 
-        <section className="pt-card p-7">
-          <h2 className="text-center text-4xl text-[var(--pt-ink)]">Built for creators across a multitude of platforms</h2>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-4">
+        <section className="pt-card p-7 3xl:p-12">
+          <h2 className="text-center text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Built for creators across a multitude of platforms</h2>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-4 3xl:mt-8 3xl:gap-6">
             {SOCIAL_PLATFORMS.map((item) => (
               <span
                 key={item.label}
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--pt-border)] bg-white px-3 py-1.5 text-sm font-semibold text-[var(--pt-muted)]"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--pt-border)] bg-white px-3 py-1.5 text-sm font-semibold text-[var(--pt-muted)] 3xl:px-5 3xl:py-2.5 3xl:text-base"
               >
                 <Image src={item.icon} alt={item.label} width={20} height={20} className="h-5 w-5" />
                 {item.label}
@@ -220,10 +220,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="how-it-works" className="pt-card p-7">
-          <h2 className="text-4xl text-[var(--pt-ink)]">How it works</h2>
-          <p className="mt-2 text-sm text-[var(--pt-muted)]">From upload to negotiation-ready in minutes.</p>
-          <div className="mt-8">
+        <section id="how-it-works" className="pt-card p-7 3xl:p-12">
+          <h2 className="text-4xl text-[var(--pt-ink)] 3xl:text-5xl">How it works</h2>
+          <p className="mt-2 text-sm text-[var(--pt-muted)] 3xl:text-base 3xl:mt-3">From upload to negotiation-ready in minutes.</p>
+          <div className="mt-8 3xl:mt-12">
             {/* Timeline connector row */}
             <div className="relative hidden sm:flex items-center justify-between px-[calc(100%/6)]">
               <div className="absolute left-[calc(100%/6)] right-[calc(100%/6)] top-1/2 h-px -translate-y-1/2 bg-[var(--pt-border)]" />
@@ -235,7 +235,7 @@ export default function HomePage() {
             </div>
 
             {/* Step content */}
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="mt-6 grid gap-4 sm:grid-cols-3 3xl:gap-8">
               {[
                 {
                   step: "01",
@@ -253,49 +253,49 @@ export default function HomePage() {
                   body: "Walk into negotiations armed with talking points, fallback language, and a ready-to-send email draft.",
                 },
               ].map((step) => (
-                <article key={step.step} className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5 sm:text-center">
+                <article key={step.step} className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5 sm:text-center 3xl:p-8">
                   <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--pt-accent)] text-sm font-bold text-[var(--pt-accent)] sm:hidden">
                     {step.step}
                   </div>
-                  <h3 className="text-xl text-[var(--pt-ink)]">{step.title}</h3>
-                  <p className="mt-1 text-sm text-[var(--pt-muted)]">{step.body}</p>
+                  <h3 className="text-xl text-[var(--pt-ink)] 3xl:text-2xl">{step.title}</h3>
+                  <p className="mt-1 text-sm text-[var(--pt-muted)] 3xl:text-base 3xl:mt-3">{step.body}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section id="pricing" className="pt-card p-7">
+        <section id="pricing" className="pt-card p-7 3xl:p-12">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-4xl text-[var(--pt-ink)]">Pricing</h2>
-              <p className="mt-2 text-sm text-[var(--pt-muted)]">
+              <h2 className="text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Pricing</h2>
+              <p className="mt-2 text-sm text-[var(--pt-muted)] 3xl:text-base 3xl:mt-3">
                 Per-contract pricing, no subscription.
               </p>
             </div>
             <Link
               href="/analyze"
-              className="pt-btn-primary inline-block px-6 py-3 text-sm font-semibold"
+              className="pt-btn-primary inline-block px-6 py-3 text-sm font-semibold 3xl:px-8 3xl:py-4 3xl:text-base"
             >
               Start Review
             </Link>
           </div>
-          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          <div className="mt-6 grid gap-4 lg:grid-cols-3 3xl:gap-8 3xl:mt-10">
               {PRICING.map((tier) => (
                 <article
                   key={tier.name}
-                  className={`flex h-full flex-col rounded-xl border bg-[var(--pt-surface)] p-5 lg:min-h-[430px] ${
+                  className={`flex h-full flex-col rounded-xl border bg-[var(--pt-surface)] p-5 lg:min-h-[430px] 3xl:p-8 3xl:min-h-130 ${
                     tier.popular
                       ? "border-[var(--pt-accent)] shadow-[0_14px_20px_-14px_rgba(241,118,93,0.45)]"
                       : "border-[var(--pt-border)]"
                   }`}
                 >
-                  <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${tier.color}`}>
+                  <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold 3xl:text-sm 3xl:px-3 3xl:py-1.5 ${tier.color}`}>
                     {tier.popular ? "Most Popular" : "Single Payment"}
                   </span>
-                  <p className="mt-3 text-2xl font-semibold text-[var(--pt-ink)]">{tier.name}</p>
-                  <p className="mt-1 text-5xl leading-none text-[var(--pt-ink)]">{tier.price}</p>
-                  <p className="mt-2 text-sm font-semibold text-[var(--pt-ink)]">{tier.legalPackage}</p>
+                  <p className="mt-3 text-2xl font-semibold text-[var(--pt-ink)] 3xl:text-3xl">{tier.name}</p>
+                  <p className="mt-1 text-5xl leading-none text-[var(--pt-ink)] 3xl:text-6xl">{tier.price}</p>
+                  <p className="mt-2 text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">{tier.legalPackage}</p>
                   <div className="mt-2 rounded-lg border border-dashed border-[var(--pt-border)] px-3 py-2">
                     <p className="text-xs uppercase tracking-[0.12em] text-[var(--pt-muted)]">
                       Typical lawyer cost:{" "}
@@ -305,7 +305,7 @@ export default function HomePage() {
                     </p>
                     <p className="mt-1 text-xs text-[var(--pt-muted)]">{tier.attorneyScope}</p>
                   </div>
-                  <ul className="mt-4 space-y-1.5 text-sm text-[var(--pt-muted)]">
+                  <ul className="mt-4 space-y-1.5 text-sm text-[var(--pt-muted)] 3xl:text-base 3xl:space-y-2.5 3xl:mt-6">
                     {tier.items.map((item) => (
                       <li key={item}>• {item}</li>
                     ))}
@@ -325,9 +325,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        <footer className="pt-card-soft px-6 py-5">
+        <footer className="pt-card-soft px-6 py-5 3xl:px-10 3xl:py-7">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm font-medium text-[var(--pt-muted)]">
+            <p className="text-sm font-medium text-[var(--pt-muted)] 3xl:text-base">
               Informational analysis, not legal advice. Always consult a lawyer for high-stakes decisions.
             </p>
             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--pt-muted)]">

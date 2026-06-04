@@ -284,29 +284,29 @@ export default function AnalyzePage() {
   }
 
   return (
-    <main className="pt-page-pad pb-12 pt-8">
+    <main className="pt-page-pad pb-12 pt-8 3xl:pb-16 3xl:pt-12">
       <div className="pt-container-wide">
-        <Link href="/" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
+        <Link href="/" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)] 3xl:text-base">
           ← Back to home
         </Link>
 
-      <section className="mt-5 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="mt-5 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] 3xl:mt-8 3xl:gap-8">
         <div>
           <p className="pt-kicker mb-3">
             Step 1 of 3
           </p>
-          <h1 className="text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
+          <h1 className="text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl 3xl:text-6xl">
             Upload your contract for a clear review.
           </h1>
-          <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)]">
+          <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)] 3xl:text-lg 3xl:mt-6 3xl:max-w-2xl">
             Upload a PDF or DOCX and receive a structured summary, key risks, and next-step
             guidance before signing.
           </p>
         </div>
 
-        <aside className="rounded-[var(--pt-radius)] border border-[#c8d8e6] bg-[#eaf3fa] p-5 text-sm text-[var(--pt-muted)] shadow-[0_14px_26px_-24px_var(--pt-shadow)]">
-          <h2 className="text-lg text-[var(--pt-ink)]">Secure review flow</h2>
-          <ul className="mt-3 space-y-2">
+        <aside className="rounded-[var(--pt-radius)] border border-[#c8d8e6] bg-[#eaf3fa] p-5 text-sm text-[var(--pt-muted)] shadow-[0_14px_26px_-24px_var(--pt-shadow)] 3xl:p-8">
+          <h2 className="text-lg text-[var(--pt-ink)] 3xl:text-xl">Secure review flow</h2>
+          <ul className="mt-3 space-y-2 3xl:text-base 3xl:space-y-3 3xl:mt-5">
             <li>• Private upload and validation</li>
             <li>• Plain-English clause explanations</li>
             <li>• Action plan before signature</li>
@@ -317,56 +317,57 @@ export default function AnalyzePage() {
             alt=""
             width={88}
             height={88}
-            className="mt-4 h-20 w-20 rounded-xl border border-[#c8d8e6] bg-white p-2"
+            className="mt-4 h-20 w-20 rounded-xl border border-[#c8d8e6] bg-white p-2 3xl:h-24 3xl:w-24 3xl:mt-6"
           />
         </aside>
       </section>
 
-      <section className="mt-8 pt-card p-6">
+      <section className="mt-8 3xl:mt-10 3xl:grid 3xl:grid-cols-[1fr_0.52fr] 3xl:items-stretch 3xl:gap-8">
+      <div className="pt-card p-6 3xl:p-8">
         <form onSubmit={onSubmit}>
-          <label className="mb-3 block text-sm font-semibold text-[var(--pt-ink)]">
+          <label className="mb-3 block text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">
             Contract file (PDF or DOCX)
           </label>
 
-          <div className="rounded-2xl border-2 border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-5">
+          <div className="rounded-2xl border-2 border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-5 3xl:p-8">
             <input
               type="file"
               accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--pt-accent)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--pt-accent-ink)] hover:file:brightness-95"
+              className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--pt-accent)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--pt-accent-ink)] hover:file:brightness-95 3xl:text-base 3xl:file:text-base 3xl:file:px-6 3xl:file:py-3"
             />
             {file && (
-              <p className="mt-3 text-sm text-[var(--pt-muted)]">
+              <p className="mt-3 text-sm text-[var(--pt-muted)] 3xl:text-base">
                 Selected: <span className="font-semibold text-[var(--pt-ink)]">{file.name}</span>{" "}
                 ({prettyFileSize(file.size)})
               </p>
             )}
           </div>
 
-          <div className="mt-5 pt-card-soft p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+          <div className="mt-5 pt-card-soft p-4 3xl:p-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)] 3xl:text-sm">
               Internal settings
             </p>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm text-[var(--pt-muted)]">
+            <div className="mt-3 grid gap-4 sm:grid-cols-2 3xl:gap-6">
+              <label className="grid gap-2 text-sm text-[var(--pt-muted)] 3xl:text-base">
                 Review profile
                 <select
                   value={analysisMode}
                   onChange={(e) => setAnalysisMode(e.target.value as AnalysisModeOption)}
-                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)]"
+                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)] 3xl:px-4 3xl:py-3 3xl:text-base"
                 >
                   <option value="rules">Standard review</option>
                   <option value="llm">Deep review (internal)</option>
                 </select>
               </label>
 
-              <label className="grid gap-2 text-sm text-[var(--pt-muted)]">
+              <label className="grid gap-2 text-sm text-[var(--pt-muted)] 3xl:text-base">
                 Model option (internal)
                 <select
                   value={llmModel}
                   disabled={analysisMode !== "llm"}
                   onChange={(e) => setLlmModel(e.target.value as LlmModelOption)}
-                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)] disabled:cursor-not-allowed disabled:opacity-50 3xl:px-4 3xl:py-3 3xl:text-base"
                 >
                   {LLM_MODEL_OPTIONS.map((model) => (
                     <option key={model} value={model}>
@@ -376,7 +377,7 @@ export default function AnalyzePage() {
                 </select>
               </label>
             </div>
-            <p className="mt-3 text-xs text-[var(--pt-muted)]">
+            <p className="mt-3 text-xs text-[var(--pt-muted)] 3xl:text-sm">
               Current run:{" "}
               <span className="font-semibold text-[var(--pt-ink)]">
                 {analysisMode === "rules" ? "Standard review profile" : `Deep review (${llmModel})`}
@@ -385,17 +386,17 @@ export default function AnalyzePage() {
           </div>
 
           {file && (
-            <div className="mt-5 pt-card-soft p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
+            <div className="mt-5 pt-card-soft p-4 3xl:p-6">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)] 3xl:text-sm">
                 Choose your depth of analysis and report detail
               </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="mt-3 grid gap-3 sm:grid-cols-3 3xl:gap-5 3xl:mt-5">
                 {REPORT_TIER_OPTIONS.map((tier) => {
                   const selected = reportTier === tier;
                   return (
                     <label
                       key={tier}
-                      className={`cursor-pointer rounded-xl border p-3 ${
+                      className={`cursor-pointer rounded-xl border p-3 3xl:p-5 ${
                         selected
                           ? "border-[var(--pt-accent)] bg-[var(--pt-surface)]"
                           : "border-[var(--pt-border)] bg-[var(--pt-surface)]"
@@ -409,10 +410,10 @@ export default function AnalyzePage() {
                         onChange={() => setReportTier(tier)}
                         className="sr-only"
                       />
-                      <p className="text-sm font-semibold text-[var(--pt-ink)]">
+                      <p className="text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">
                         {REPORT_TIER_LABELS[tier]}
                       </p>
-                      <p className="mt-1 text-xs text-[var(--pt-muted)]">
+                      <p className="mt-1 text-xs text-[var(--pt-muted)] 3xl:text-sm 3xl:mt-2">
                         {REPORT_TIER_DESCRIPTIONS[tier]}
                       </p>
                     </label>
@@ -422,11 +423,11 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center gap-3 3xl:mt-8">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="pt-btn-primary px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              className="pt-btn-primary px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 3xl:px-8 3xl:py-4 3xl:text-base"
             >
               {isSubmitting ? "Processing..." : "Continue to payment"}
             </button>
@@ -495,12 +496,49 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          <p className="mt-5 text-xs text-[var(--pt-muted)]">
+          <p className="mt-5 text-xs text-[var(--pt-muted)] 3xl:text-sm 3xl:mt-7">
             Your secure result link remains available for up to {RESULT_RETENTION_DAYS} days after checkout.
             Save or bookmark the result page to revisit your results during that period.
             Account-based result history is coming soon.
           </p>
         </form>
+      </div>
+
+      <aside className="hidden 3xl:block">
+        <div className="pt-card h-full p-7">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--pt-muted)">Clauses we cover</p>
+          <p className="mt-1 text-sm text-(--pt-muted)">Every contract is analyzed across these areas.</p>
+          <ul className="mt-5 space-y-2">
+            {[
+              "Who's Involved",
+              "What Work Is Included",
+              "Timeline & Ending the Agreement",
+              "Pay & Invoicing",
+              "Ownership of Work",
+              "Confidentiality",
+              "Restrictions",
+              "Liability & Responsibility",
+              "Disputes & Governing Law",
+              "Practical Details",
+              "Questions & Missing Info",
+            ].map((label) => (
+              <li key={label} className="flex items-center gap-2.5 text-sm text-foreground">
+                <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-(--pt-accent)" />
+                {label}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-6 rounded-xl border border-dashed border-(--pt-border) p-4">
+            <p className="text-xs font-semibold text-(--pt-muted) uppercase tracking-[0.14em]">Your report also includes</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {["Risk score", "Recommendation", "Red flags", "Negotiation points", "Questions to ask"].map((tag) => (
+                <span key={tag} className="rounded-full border border-(--pt-border) bg-(--pt-surface-soft) px-2.5 py-1 text-xs font-semibold text-(--pt-muted)">{tag}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </aside>
+
       </section>
       </div>
     </main>

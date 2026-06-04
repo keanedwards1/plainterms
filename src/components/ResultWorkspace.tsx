@@ -523,15 +523,22 @@ function buildUpdateEmailDraft(data: PtResult): string {
 function parseEmailDraft(content: string) {
   const lines = content.replace(/\r\n/g, "\n").split("\n");
   const subjectIdx = lines.findIndex((line) => /^subject\s*:/i.test(line.trim()));
+
+  const cleanBody = (raw: string) =>
+    raw
+      .replace(/^current review recommendation\s*:?.+$/gim, "")
+      .replace(/^questions to confirm as you revise\s*:?\s*\n(^- .+\n?)*/gim, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
   if (subjectIdx === -1) {
-    return {
-      subject: "",
-      body: content.trim(),
-    };
+    return { subject: "", body: cleanBody(content.trim()) };
   }
 
   const subject = lines[subjectIdx].replace(/^subject\s*:/i, "").trim();
-  const body = [...lines.slice(0, subjectIdx), ...lines.slice(subjectIdx + 1)].join("\n").trim();
+  const body = cleanBody(
+    [...lines.slice(0, subjectIdx), ...lines.slice(subjectIdx + 1)].join("\n").trim()
+  );
 
   return { subject, body };
 }
@@ -1435,29 +1442,6 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                         </div>
                       </article>
 
-                      <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                          Next step shortcuts
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => jumpToReportTab("questions", "questions-email-draft-button")}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1.5 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
-                          >
-                            <Image src="/graphics/icon-search.svg" alt="" width={14} height={14} className="h-3.5 w-3.5" />
-                            Draft negotiation email
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => jumpToReportTab("document")}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1.5 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
-                          >
-                            <Image src="/graphics/icon-doc.svg" alt="" width={14} height={14} className="h-3.5 w-3.5" />
-                            Review document edits
-                          </button>
-                        </div>
-                      </article>
 
                       {redFlags.map((flag) => (
                         <article key={flag.id} className="pt-card-soft p-3">
@@ -1610,99 +1594,78 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                 <>
                   {questionsToAsk.length > 0 ? (
                     <>
-                      <article className="rounded-lg border border-[var(--pt-border)] bg-gradient-to-r from-[#fff8f3] to-[#fff1dd] p-3">
-                        <div className="flex items-center gap-2">
-                          <Image
-                            src="/globe.svg"
-                            alt=""
-                            width={24}
-                            height={24}
-                            className="h-6 w-6 rounded-md border border-[var(--pt-border)] bg-white p-1"
-                          />
-                          <p className="text-sm font-semibold text-[var(--pt-ink)]">Conversation Prep</p>
-                        </div>
-                        <p className="mt-1 text-sm text-[var(--pt-ink)]/80">
-                          Use these questions in your next call or email to clarify risk areas.
+                      <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) px-4 py-3">
+                        <p className="text-sm font-semibold text-foreground">Questions to raise with the other party</p>
+                        <p className="mt-1 text-sm text-(--pt-muted)">
+                          Before you sign, bring these questions to the brand, agency, or company offering this agreement. You can ask them in a call or use the email draft below to send them in writing.
                         </p>
-                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                          <div className="rounded-md border border-[#ead3a1] bg-[#fff4df] px-3 py-2">
-                            <p className="text-xs text-[#8c6526]">Questions prepared</p>
-                            <p className="text-lg font-semibold text-[#6e4f1e]">{questionsToAsk.length}</p>
-                          </div>
-                          <div className="rounded-md border border-[#efc1b6] bg-[#ffe8e3] px-3 py-2">
-                            <p className="text-xs text-[#9e3f2d]">Flags to discuss</p>
-                            <p className="text-lg font-semibold text-[#7f2e1f]">{highFlagCount + mediumFlagCount}</p>
-                          </div>
-                        </div>
                       </article>
-                      <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
-                        <p className="text-sm font-semibold text-[var(--pt-ink)]">Suggested Conversation Flow</p>
-                        <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                          <details className="rounded-md border border-[#ead3a1] bg-white p-3" open>
-                            <summary className="cursor-pointer text-sm font-semibold text-[#8c6526]">Start</summary>
-                            <p className="mt-1 text-sm text-[var(--pt-ink)]/85">
-                              Ask scope and payment timing questions first to anchor commercial terms.
-                            </p>
+
+                      <div className="space-y-2">
+                        {questionsToAsk.map((question, idx) => (
+                          <details key={`question-${idx}`} className="group rounded-xl border border-(--pt-border) bg-(--pt-surface)">
+                            <summary className="flex cursor-pointer list-none items-start gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-(--pt-border) bg-(--pt-surface-soft) text-[11px] font-bold text-(--pt-muted)">
+                                {idx + 1}
+                              </span>
+                              <span className="flex-1 text-[15px] leading-6 text-foreground">
+                                {annotateLegalTerms(question, `question-summary-${idx}`)}
+                              </span>
+                              <svg
+                                className="mt-1 h-4 w-4 shrink-0 text-(--pt-muted) transition-transform group-open:rotate-180"
+                                viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"
+                              >
+                                <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </summary>
+                            <div className="border-t border-(--pt-border) px-4 py-3 pl-12">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-(--pt-muted)">Why ask this</p>
+                              <p className="mt-1 text-sm text-(--pt-muted)">
+                                This question helps clarify a term or gap identified in the contract. Their answer will tell you whether the agreement matches what was discussed verbally.
+                              </p>
+                            </div>
                           </details>
-                          <details className="rounded-md border border-[#efc1b6] bg-white p-3" open={highFlagCount > 0}>
-                            <summary className="cursor-pointer text-sm font-semibold text-[#9e3f2d]">Challenge</summary>
-                            <p className="mt-1 text-sm text-[var(--pt-ink)]/85">
-                              Address high/medium risk clauses directly and request concrete wording changes.
-                            </p>
-                          </details>
-                          <details className="rounded-md border border-[#b2ddd4] bg-white p-3" open>
-                            <summary className="cursor-pointer text-sm font-semibold text-[#1d655f]">Close</summary>
-                            <p className="mt-1 text-sm text-[var(--pt-ink)]/85">
-                              Confirm revised draft turnaround and ask for clean redlines before signature.
-                            </p>
-                          </details>
-                        </div>
-                      </article>
-                      <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                          Communication
+                        ))}
+                      </div>
+
+                      <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) px-4 py-3">
+                        <p className="text-sm font-semibold text-foreground">Send these questions by email</p>
+                        <p className="mt-1 text-sm text-(--pt-muted)">
+                          Generate a ready-to-send email addressed to the other party, covering the questions above and your key negotiation points.
                         </p>
                         <button
                           id="questions-email-draft-button"
                           type="button"
                           onClick={() => activateAddon("update_email")}
-                          className="mt-2 flex w-full items-center gap-2 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-(--pt-border) bg-white px-3 py-2 text-sm font-semibold text-foreground hover:border-(--pt-accent)"
                         >
                           <Image src="/graphics/icon-search.svg" alt="" width={16} height={16} className="h-4 w-4" />
-                          Draft Negotiation Email
+                          Generate negotiation email
                         </button>
                         {addonNotice ? (
-                          <p className="mt-2 text-[11px] text-[var(--pt-muted)]">{addonNotice}</p>
+                          <p className="mt-2 text-[11px] text-(--pt-muted)">{addonNotice}</p>
                         ) : null}
                       </article>
+
                       {activeEmailDraft ? (
-                        <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
+                        <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) p-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <Image
-                                src="/graphics/icon-search.svg"
-                                alt=""
-                                width={16}
-                                height={16}
-                                className="h-4 w-4 rounded-sm border border-[var(--pt-border)] bg-white p-[2px]"
-                              />
-                              <div>
-                                <p className="text-sm font-semibold text-[var(--pt-ink)]">Negotiation Email Draft</p>
-                                <p className="text-xs text-[var(--pt-muted)]">Review, personalize, and send.</p>
-                              </div>
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">Negotiation email draft</p>
+                              <p className="text-xs text-(--pt-muted)">Review and personalize before sending.</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={copyAddonDraft}
-                                className="rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                                className="rounded-md border border-(--pt-border) bg-white px-2.5 py-1 text-xs font-semibold text-foreground hover:border-(--pt-accent)"
                               >
                                 {copied ? "Copied" : "Copy"}
                               </button>
                               <button
                                 type="button"
                                 onClick={dismissAddonDraft}
-                                className="rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+                                className="rounded-md border border-(--pt-border) bg-white px-2.5 py-1 text-xs font-semibold text-(--pt-muted) hover:text-foreground"
                               >
                                 Hide
                               </button>
@@ -1711,17 +1674,15 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                           {(() => {
                             const parsed = parseEmailDraft(activeEmailDraft.content);
                             return (
-                              <div className="mt-3 rounded-lg border border-[var(--pt-border)] bg-white">
+                              <div className="mt-3 rounded-lg border border-(--pt-border) bg-white">
                                 {parsed.subject ? (
-                                  <div className="border-b border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2">
-                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                                      Subject
-                                    </p>
-                                    <p className="mt-0.5 text-sm font-semibold text-[var(--pt-ink)]">{parsed.subject}</p>
+                                  <div className="border-b border-(--pt-border) bg-(--pt-surface-soft) px-3 py-2">
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-(--pt-muted)">Subject</p>
+                                    <p className="mt-0.5 text-sm font-semibold text-foreground">{parsed.subject}</p>
                                   </div>
                                 ) : null}
                                 <div className="px-3 py-3">
-                                  <div className="whitespace-pre-wrap text-sm leading-6 text-[var(--pt-ink)]/90">
+                                  <div className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
                                     {parsed.body || activeEmailDraft.content}
                                   </div>
                                 </div>
@@ -1730,63 +1691,47 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                           })()}
                         </article>
                       ) : null}
-                      <article className="pt-card-soft p-3">
-                        <ul className="list-disc space-y-2 pl-5 text-[15px] leading-6 text-[var(--pt-ink)]/85">
-                          {questionsToAsk.map((question, idx) => (
-                            <li key={`question-${idx}`}>
-                              {annotateLegalTerms(question, `question-${idx}`)}
-                            </li>
-                          ))}
-                        </ul>
-                      </article>
                     </>
                   ) : (
                     <>
-                      <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                          Communication
+                      <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) px-4 py-3">
+                        <p className="text-sm font-semibold text-foreground">Send your negotiation points by email</p>
+                        <p className="mt-1 text-sm text-(--pt-muted)">
+                          No specific questions were flagged for this contract, but you can still generate a negotiation email covering the key risks identified in this review.
                         </p>
                         <button
                           id="questions-email-draft-button"
                           type="button"
                           onClick={() => activateAddon("update_email")}
-                          className="mt-2 flex w-full items-center gap-2 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-(--pt-border) bg-white px-3 py-2 text-sm font-semibold text-foreground hover:border-(--pt-accent)"
                         >
                           <Image src="/graphics/icon-search.svg" alt="" width={16} height={16} className="h-4 w-4" />
-                          Draft Negotiation Email
+                          Generate negotiation email
                         </button>
                         {addonNotice ? (
-                          <p className="mt-2 text-[11px] text-[var(--pt-muted)]">{addonNotice}</p>
+                          <p className="mt-2 text-[11px] text-(--pt-muted)">{addonNotice}</p>
                         ) : null}
                       </article>
+
                       {activeEmailDraft ? (
-                        <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
+                        <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) p-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <Image
-                                src="/graphics/icon-search.svg"
-                                alt=""
-                                width={16}
-                                height={16}
-                                className="h-4 w-4 rounded-sm border border-[var(--pt-border)] bg-white p-[2px]"
-                              />
-                              <div>
-                                <p className="text-sm font-semibold text-[var(--pt-ink)]">Negotiation Email Draft</p>
-                                <p className="text-xs text-[var(--pt-muted)]">Review, personalize, and send.</p>
-                              </div>
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">Negotiation email draft</p>
+                              <p className="text-xs text-(--pt-muted)">Review and personalize before sending.</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={copyAddonDraft}
-                                className="rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+                                className="rounded-md border border-(--pt-border) bg-white px-2.5 py-1 text-xs font-semibold text-foreground hover:border-(--pt-accent)"
                               >
                                 {copied ? "Copied" : "Copy"}
                               </button>
                               <button
                                 type="button"
                                 onClick={dismissAddonDraft}
-                                className="rounded-md border border-[var(--pt-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+                                className="rounded-md border border-(--pt-border) bg-white px-2.5 py-1 text-xs font-semibold text-(--pt-muted) hover:text-foreground"
                               >
                                 Hide
                               </button>
@@ -1795,17 +1740,15 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                           {(() => {
                             const parsed = parseEmailDraft(activeEmailDraft.content);
                             return (
-                              <div className="mt-3 rounded-lg border border-[var(--pt-border)] bg-white">
+                              <div className="mt-3 rounded-lg border border-(--pt-border) bg-white">
                                 {parsed.subject ? (
-                                  <div className="border-b border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2">
-                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                                      Subject
-                                    </p>
-                                    <p className="mt-0.5 text-sm font-semibold text-[var(--pt-ink)]">{parsed.subject}</p>
+                                  <div className="border-b border-(--pt-border) bg-(--pt-surface-soft) px-3 py-2">
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-(--pt-muted)">Subject</p>
+                                    <p className="mt-0.5 text-sm font-semibold text-foreground">{parsed.subject}</p>
                                   </div>
                                 ) : null}
                                 <div className="px-3 py-3">
-                                  <div className="whitespace-pre-wrap text-sm leading-6 text-[var(--pt-ink)]/90">
+                                  <div className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
                                     {parsed.body || activeEmailDraft.content}
                                   </div>
                                 </div>
@@ -1814,9 +1757,6 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
                           })()}
                         </article>
                       ) : null}
-                      <div className="pt-card-soft p-3 text-sm text-[var(--pt-muted)]">
-                        No questions were suggested for this report.
-                      </div>
                     </>
                   )}
                 </>
