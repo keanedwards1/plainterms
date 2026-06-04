@@ -1263,23 +1263,51 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                     )}
                   </article>
 
-                  {isProtectTier && protectExtras && protectExtras.negotiation_plan.length > 0 && (
+                  {isProtectTier && protectExtras?.priority_stack && (
                     <article className="pt-card-soft p-3">
-                      <h3 className="text-lg font-semibold text-[var(--pt-ink)]">Negotiation Plan</h3>
-                      <p className="mt-1 text-sm text-[var(--pt-muted)]">Your prioritized action sequence for negotiating this agreement.</p>
-                      <ol className="mt-2 space-y-2">
-                        {protectExtras.negotiation_plan.map((step, idx) => (
-                          <li
-                            key={`neg-plan-${idx}`}
-                            className="flex items-start gap-2.5 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-[15px] leading-6 text-[var(--pt-ink)]/90"
-                          >
-                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] text-[11px] font-bold text-[var(--pt-muted)]">
-                              {idx + 1}
-                            </span>
-                            {annotateLegalTerms(step, `neg-plan-${idx}`)}
-                          </li>
-                        ))}
-                      </ol>
+                      <h3 className="text-lg font-semibold text-[var(--pt-ink)]">Negotiation Priority Stack</h3>
+                      <p className="mt-1 text-sm text-[var(--pt-muted)]">What to fight for, what to accept if they push back, and what you can let go of.</p>
+                      <div className="mt-3 space-y-2">
+                        {protectExtras.priority_stack.fight_for.length > 0 && (
+                          <div className="rounded-lg border border-[#efc1b6] bg-[#fff0ee] p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Fight for</p>
+                            <ul className="mt-1.5 space-y-1">
+                              {protectExtras.priority_stack.fight_for.map((item, idx) => (
+                                <li key={`fight-${idx}`} className="flex items-start gap-2 text-sm text-[#7f2e1f]">
+                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#e7745c]" />
+                                  {annotateLegalTerms(item, `fight-${idx}`)}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {protectExtras.priority_stack.accept_if_pushback.length > 0 && (
+                          <div className="rounded-lg border border-[#ead3a1] bg-[#fff9ef] p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Accept if they push back</p>
+                            <ul className="mt-1.5 space-y-1">
+                              {protectExtras.priority_stack.accept_if_pushback.map((item, idx) => (
+                                <li key={`accept-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
+                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
+                                  {annotateLegalTerms(item, `accept-${idx}`)}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {protectExtras.priority_stack.can_concede.length > 0 && (
+                          <div className="rounded-lg border border-[#b2ddd4] bg-[#edf8f5] p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Can concede</p>
+                            <ul className="mt-1.5 space-y-1">
+                              {protectExtras.priority_stack.can_concede.map((item, idx) => (
+                                <li key={`concede-${idx}`} className="flex items-start gap-2 text-sm text-[#154f4a]">
+                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#2ba59f]" />
+                                  {annotateLegalTerms(item, `concede-${idx}`)}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                     </article>
                   )}
 
@@ -1547,16 +1575,33 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
 
                       {isProtectTier && protectExtras && protectExtras.deeper_rewrites.length > 0 && (
                         <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
-                          <p className="text-sm font-semibold text-[var(--pt-ink)]">Deeper Rewrite Suggestions</p>
-                          <p className="mt-1 text-xs text-[var(--pt-muted)]">Stronger rewrite language for your highest-risk items.</p>
-                          <ul className="mt-3 space-y-2">
+                          <p className="text-sm font-semibold text-[var(--pt-ink)]">Rewrite Options</p>
+                          <p className="mt-1 text-xs text-[var(--pt-muted)]">For each risk area — push hard, find middle ground, or hold the line.</p>
+                          <div className="mt-3 space-y-4">
                             {protectExtras.deeper_rewrites.map((rw) => (
-                              <li key={rw.id} className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5">
+                              <div key={rw.id} className="rounded-lg border border-[var(--pt-border)] bg-white p-3">
                                 <p className="text-sm font-semibold text-[var(--pt-ink)]">{rw.issue}</p>
-                                <p className="mt-1 text-sm leading-6 text-[var(--pt-muted)]">{rw.suggestion}</p>
-                              </li>
+                                {rw.alternatives ? (
+                                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                                    <div className="rounded-md border border-[#efc1b6] bg-[#fff0ee] px-2.5 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Push hard</p>
+                                      <p className="mt-1 text-xs leading-5 text-[#7f2e1f]">{rw.alternatives.aggressive}</p>
+                                    </div>
+                                    <div className="rounded-md border border-[#ead3a1] bg-[#fff9ef] px-2.5 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Middle ground</p>
+                                      <p className="mt-1 text-xs leading-5 text-[#6e4f1e]">{rw.alternatives.balanced}</p>
+                                    </div>
+                                    <div className="rounded-md border border-[#b2ddd4] bg-[#edf8f5] px-2.5 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Hold the line</p>
+                                      <p className="mt-1 text-xs leading-5 text-[#154f4a]">{rw.alternatives.minimum}</p>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="mt-1 text-sm leading-6 text-[var(--pt-muted)]">{rw.suggestion}</p>
+                                )}
+                              </div>
                             ))}
-                          </ul>
+                          </div>
                         </article>
                       )}
 
@@ -1741,7 +1786,38 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                 </>
               )}
 
-              {activeReportTab === "document" && documentReviewContent}
+              {activeReportTab === "document" && (
+                isCoreTier ? (
+                  <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-6">
+                    <div className="flex items-start gap-4">
+                      <Image
+                        src="/graphics/icon-doc.svg"
+                        alt=""
+                        width={44}
+                        height={44}
+                        className="h-11 w-11 shrink-0 rounded-lg border border-[#e9d3b0] bg-white p-2"
+                      />
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan — not included</p>
+                        <p className="mt-1 text-base font-semibold text-[#6e4f1e]">Document review is available in Report and Protect</p>
+                        <p className="mt-1 text-sm text-[#6e4f1e]">
+                          Upgrade to see your contract with risk areas highlighted, suggested wording changes tracked inline, and a fully revised draft ready to send.
+                        </p>
+                        {teaserReport69 && (
+                          <ul className="mt-3 space-y-1">
+                            {teaserReport69.bullets.map((bullet, idx) => (
+                              <li key={`teaser-doc-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
+                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
+                                {bullet}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                ) : documentReviewContent
+              )}
 
               {activeReportTab === "questions" && (
                 <>

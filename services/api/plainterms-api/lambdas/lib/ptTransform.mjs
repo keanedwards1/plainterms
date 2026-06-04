@@ -224,11 +224,20 @@ function toUiProtectExtras(raw) {
       const issue = ensureString(item.issue).trim();
       const suggestion = ensureString(item.suggestion).trim();
       if (!issue || !suggestion) return null;
-      return {
+      const out = {
         id: ensureString(item.id, `rw_${idx + 1}`),
         issue,
         suggestion,
       };
+      if (isObject(item.alternatives)) {
+        const aggressive = ensureString(item.alternatives.aggressive).trim();
+        const balanced = ensureString(item.alternatives.balanced).trim();
+        const minimum = ensureString(item.alternatives.minimum).trim();
+        if (aggressive && balanced && minimum) {
+          out.alternatives = { aggressive, balanced, minimum };
+        }
+      }
+      return out;
     })
     .filter(Boolean);
 
@@ -248,6 +257,16 @@ function toUiProtectExtras(raw) {
     .filter((x) => typeof x === "string")
     .map((x) => x.trim())
     .filter(Boolean);
+
+  let priorityStack = null;
+  if (isObject(raw.priority_stack)) {
+    const fightFor = asArray(raw.priority_stack.fight_for).filter((x) => typeof x === "string").map((x) => x.trim()).filter(Boolean);
+    const acceptIfPushback = asArray(raw.priority_stack.accept_if_pushback).filter((x) => typeof x === "string").map((x) => x.trim()).filter(Boolean);
+    const canConcede = asArray(raw.priority_stack.can_concede).filter((x) => typeof x === "string").map((x) => x.trim()).filter(Boolean);
+    if (fightFor.length > 0 || acceptIfPushback.length > 0 || canConcede.length > 0) {
+      priorityStack = { fight_for: fightFor, accept_if_pushback: acceptIfPushback, can_concede: canConcede };
+    }
+  }
 
   const advancedClauseCoverage = asArray(raw.advanced_clause_coverage)
     .map((item) => {
@@ -269,6 +288,7 @@ function toUiProtectExtras(raw) {
     deeper_rewrites: deeperRewrites,
     fallback_positions: fallbackPositions,
     negotiation_plan: negotiationPlan,
+    ...(priorityStack ? { priority_stack: priorityStack } : {}),
     advanced_clause_coverage: advancedClauseCoverage,
   };
 }

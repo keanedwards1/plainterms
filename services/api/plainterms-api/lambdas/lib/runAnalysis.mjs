@@ -90,6 +90,13 @@ function withDocumentRevision(uiResult, revision) {
 }
 
 function buildInitialDocumentRevision(uiResult) {
+  const tier = typeof uiResult?.report?.tier === "string" ? uiResult.report.tier : "report_69";
+  if (tier === "scan_39") {
+    return {
+      status: "not_available",
+      message: "Document review is available in Report and Protect tiers.",
+    };
+  }
   const extracted =
     typeof uiResult?.document?.extracted_text === "string" ? uiResult.document.extracted_text : "";
   if (!extracted.trim()) {
@@ -168,6 +175,93 @@ function buildProtectUpsellSignals(report) {
   };
 }
 
+function buildAlternatives(flag) {
+  const title = String(flag?.title ?? "").toLowerCase();
+
+  if (/indemn/.test(title)) {
+    return {
+      aggressive: "Request mutual indemnity, capped at the total fees paid under this agreement, covering only each party's own actions.",
+      balanced: "Accept one-sided indemnity but cap your exposure at the total contract value with a carve-out for gross negligence.",
+      minimum: "Confirm the indemnity scope is limited to third-party claims and does not cover the other party's own negligence.",
+    };
+  }
+  if (/ip|intellectual property|ownership|usage rights/.test(title)) {
+    return {
+      aggressive: "Request that all IP created remains yours, with a limited, revocable license granted to the client for the agreed purpose only.",
+      balanced: "Accept work-for-hire for final deliverables but retain rights to underlying tools, methods, and any pre-existing work.",
+      minimum: "Ensure the license is scoped to the specific campaign or project with no sublicensing or paid media reuse without additional compensation.",
+    };
+  }
+  if (/payment|fee|compensation|invoice/.test(title)) {
+    return {
+      aggressive: "Request 50% upfront with the balance due within 15 days of delivery, plus a 1.5%/month late fee.",
+      balanced: "Accept net-30 terms but add a late fee clause and a kill fee equal to work completed if the client cancels.",
+      minimum: "Confirm a clear payment due date and that disputing part of an invoice does not excuse late payment on undisputed amounts.",
+    };
+  }
+  if (/scope|deliverable/.test(title)) {
+    return {
+      aggressive: "Request a fully detailed scope attachment with explicit revision limits, milestone sign-offs, and a written change order process.",
+      balanced: "Accept a general scope but add a clause capping revisions at two rounds and requiring written approval for scope additions.",
+      minimum: "Confirm the deliverables list is attached and signed, not just referenced by name.",
+    };
+  }
+  if (/exclusiv|non.?compete|restrict/.test(title)) {
+    return {
+      aggressive: "Request removal of all exclusivity and post-term restrictions entirely.",
+      balanced: "Accept narrow exclusivity limited to a specific competitor category, capped at the contract term only.",
+      minimum: "Ensure the restriction has a defined end date and does not apply to existing client relationships.",
+    };
+  }
+  if (/liability|cap/.test(title)) {
+    return {
+      aggressive: "Request a mutual liability cap equal to total fees paid, with carve-outs only for willful misconduct or fraud.",
+      balanced: "Accept a one-sided cap but ensure the dollar amount is stated explicitly and is proportionate to contract value.",
+      minimum: "Confirm the cap is stated in dollar terms rather than left open-ended, regardless of which party it applies to.",
+    };
+  }
+  if (/terminat|term\b/.test(title)) {
+    return {
+      aggressive: "Request mutual termination for convenience with 14-day notice and a kill fee equal to all work completed to date.",
+      balanced: "Accept the other side's termination rights if a defined kill fee is included for completed work.",
+      minimum: "Ensure there is a defined notice period and that termination does not forfeit fees already earned.",
+    };
+  }
+  if (/governing law|jurisdiction|venue/.test(title)) {
+    return {
+      aggressive: "Request governing law and venue in your home state.",
+      balanced: "Accept the other party's jurisdiction if the contract value is low enough that litigation is unlikely in practice.",
+      minimum: "Confirm that any mandatory arbitration clause is mutual and not buried in the jurisdiction section.",
+    };
+  }
+  if (/approval/.test(title)) {
+    return {
+      aggressive: "Request final approval rights over all content before any posting, with a defined turnaround window and deemed-approval clause.",
+      balanced: "Accept a review window (e.g. 48 hours) after which silence equals approval, with one round of edits included.",
+      minimum: "Ensure you have the right to review and flag concerns before content goes live, even if approval is not guaranteed.",
+    };
+  }
+  return {
+    aggressive: "Push for full removal or complete revision of this clause in your favor.",
+    balanced: "Negotiate this clause to be mutual, capped in scope and duration, with both parties' obligations stated clearly.",
+    minimum: "At minimum, confirm the clause boundaries are explicit and measurable, not left to one party's sole discretion.",
+  };
+}
+
+function buildPriorityStack(flags) {
+  const toLabel = (flag) =>
+    String(flag?.title ?? "")
+      .replace(/\s+is not clearly stated$/i, "")
+      .replace(/\s+appears unclear$/i, "")
+      .trim();
+
+  const fightFor = flags.filter((f) => f?.severity === "high").slice(0, 3).map(toLabel).filter(Boolean);
+  const acceptIfPushback = flags.filter((f) => f?.severity === "medium").slice(0, 3).map(toLabel).filter(Boolean);
+  const canConcede = flags.filter((f) => f?.severity === "low").slice(0, 2).map(toLabel).filter(Boolean);
+
+  return { fight_for: fightFor, accept_if_pushback: acceptIfPushback, can_concede: canConcede };
+}
+
 function applyTierToReport(baseReport, selectedTier) {
   const tier = normalizeReportTier(selectedTier);
   const report = JSON.parse(JSON.stringify(baseReport ?? {}));
@@ -211,6 +305,7 @@ function applyTierToReport(baseReport, selectedTier) {
 
   if (tier === "protect_99") {
     const topFlags = asArray(report.red_flags).slice(0, 6);
+    const allFlags = asArray(report.red_flags);
     const advancedCoverage = asArray(report.clause_breakdown)
       .filter((clause) => ADVANCED_RISK_CLAUSE_KEYS.has(String(clause?.key ?? "")))
       .map((clause) => ({
@@ -227,13 +322,15 @@ function applyTierToReport(baseReport, selectedTier) {
       deeper_rewrites: topFlags.map((flag, idx) => ({
         id: `rw_${idx + 1}`,
         issue: flag?.title ?? "Risk issue",
-        suggestion: `Proposed stronger rewrite: ${flag?.plain_note ?? "Clarify and narrow this clause."}`,
+        suggestion: flag?.plain_note ?? "Clarify and narrow this clause.",
+        alternatives: buildAlternatives(flag),
       })),
       fallback_positions: topFlags.map((flag, idx) => ({
         id: `fb_${idx + 1}`,
-        position: `Fallback position for "${flag?.title ?? "this issue"}": request narrower scope, shorter duration, and explicit mutuality where applicable.`,
+        position: `Fallback for "${String(flag?.title ?? "this issue").replace(/\s+is not clearly stated$/i, "").replace(/\s+appears unclear$/i, "").trim()}": request narrower scope, shorter duration, and explicit mutuality where applicable.`,
       })),
       negotiation_plan: negotiationPlan,
+      priority_stack: buildPriorityStack(allFlags),
       advanced_clause_coverage: advancedCoverage,
     };
   }

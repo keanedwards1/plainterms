@@ -86,12 +86,25 @@ export const PtProtectUpsell = z.object({
   reasons: z.array(z.string()),
 });
 
+export const PtClauseAlternatives = z.object({
+  aggressive: z.string(),
+  balanced: z.string(),
+  minimum: z.string(),
+});
+
+export const PtPriorityStack = z.object({
+  fight_for: z.array(z.string()),
+  accept_if_pushback: z.array(z.string()),
+  can_concede: z.array(z.string()),
+});
+
 export const PtProtectExtras = z.object({
   deeper_rewrites: z.array(
     z.object({
       id: z.string(),
       issue: z.string(),
       suggestion: z.string(),
+      alternatives: PtClauseAlternatives.optional(),
     })
   ),
   fallback_positions: z.array(
@@ -101,6 +114,7 @@ export const PtProtectExtras = z.object({
     })
   ),
   negotiation_plan: z.array(z.string()),
+  priority_stack: PtPriorityStack.optional(),
   advanced_clause_coverage: z.array(
     z.object({
       key: z.string().optional(),
