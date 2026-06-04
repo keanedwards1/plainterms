@@ -662,6 +662,13 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   const clauseBreakdown = data.report?.clause_breakdown ?? [];
   const questionsToAsk = data.report?.questions_to_ask ?? [];
   const isLowRiskNoFlags = data.report?.risk.label === "low" && redFlags.length === 0;
+  const reportTier = data.report?.tier ?? "report_69";
+  const isCoreTier = reportTier === "scan_39";
+  const isProtectTier = reportTier === "protect_99";
+  const protectExtras = data.report?.protect_extras;
+  const teaserReport69 = data.report?.teaser_report_69;
+  const teaserProtect99 = data.report?.teaser_protect_99;
+  const protectUpsell = data.report?.protect_upsell;
   const activeEmailDraft = addonDraft?.key === "update_email" ? addonDraft : null;
 
   function jumpToReportTab(tab: ReportTab, targetId?: string) {
@@ -1255,11 +1262,56 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                       </div>
                     )}
                   </article>
+
+                  {isProtectTier && protectExtras && protectExtras.negotiation_plan.length > 0 && (
+                    <article className="pt-card-soft p-3">
+                      <h3 className="text-lg font-semibold text-[var(--pt-ink)]">Negotiation Plan</h3>
+                      <p className="mt-1 text-sm text-[var(--pt-muted)]">Your prioritized action sequence for negotiating this agreement.</p>
+                      <ol className="mt-2 space-y-2">
+                        {protectExtras.negotiation_plan.map((step, idx) => (
+                          <li
+                            key={`neg-plan-${idx}`}
+                            className="flex items-start gap-2.5 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-[15px] leading-6 text-[var(--pt-ink)]/90"
+                          >
+                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] text-[11px] font-bold text-[var(--pt-muted)]">
+                              {idx + 1}
+                            </span>
+                            {annotateLegalTerms(step, `neg-plan-${idx}`)}
+                          </li>
+                        ))}
+                      </ol>
+                    </article>
+                  )}
+
+                  {!isProtectTier && protectUpsell?.should_upsell_protect && teaserProtect99 && (
+                    <article className="rounded-lg border border-[#c9d7f7] bg-gradient-to-r from-[#f0f3fd] to-[#f8f9fe] p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#54629b]">Recommended for this contract</p>
+                      <p className="mt-1 text-sm font-semibold text-[#374175]">{teaserProtect99.headline}</p>
+                      {protectUpsell.reasons.length > 0 && (
+                        <p className="mt-1 text-xs text-[#54629b]">{protectUpsell.reasons[0]}</p>
+                      )}
+                      <ul className="mt-2 space-y-1">
+                        {teaserProtect99.bullets.map((bullet, idx) => (
+                          <li key={`teaser-protect-${idx}`} className="flex items-start gap-2 text-sm text-[#4c5a86]">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#5d73c8]" />
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
+                  )}
                 </>
               )}
 
               {activeReportTab === "insights" && (
                 <>
+                  {isCoreTier && teaserReport69 && (
+                    <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan preview</p>
+                      <p className="mt-1 text-sm font-semibold text-[#6e4f1e]">You&apos;re seeing insights based on your Core scan results.</p>
+                      <p className="mt-1 text-sm text-[#6e4f1e]">Upgrade to Report for deeper analysis, full clause coverage, and question readiness scoring.</p>
+                    </article>
+                  )}
                   <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff6ea] via-[#fff9f2] to-[#ffeed8] p-4">
                     <div className="flex items-center gap-2">
                       <Image
@@ -1478,6 +1530,50 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         </article>
                       ))}
 
+                      {isCoreTier && teaserReport69 && (
+                        <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan preview</p>
+                          <p className="mt-1 text-sm font-semibold text-[#6e4f1e]">{teaserReport69.headline}</p>
+                          <ul className="mt-2 space-y-1">
+                            {teaserReport69.bullets.map((bullet, idx) => (
+                              <li key={`teaser-flags-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
+                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
+                                {bullet}
+                              </li>
+                            ))}
+                          </ul>
+                        </article>
+                      )}
+
+                      {isProtectTier && protectExtras && protectExtras.deeper_rewrites.length > 0 && (
+                        <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+                          <p className="text-sm font-semibold text-[var(--pt-ink)]">Deeper Rewrite Suggestions</p>
+                          <p className="mt-1 text-xs text-[var(--pt-muted)]">Stronger rewrite language for your highest-risk items.</p>
+                          <ul className="mt-3 space-y-2">
+                            {protectExtras.deeper_rewrites.map((rw) => (
+                              <li key={rw.id} className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5">
+                                <p className="text-sm font-semibold text-[var(--pt-ink)]">{rw.issue}</p>
+                                <p className="mt-1 text-sm leading-6 text-[var(--pt-muted)]">{rw.suggestion}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        </article>
+                      )}
+
+                      {isProtectTier && protectExtras && protectExtras.fallback_positions.length > 0 && (
+                        <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+                          <p className="text-sm font-semibold text-[var(--pt-ink)]">Fallback Positions</p>
+                          <p className="mt-1 text-xs text-[var(--pt-muted)]">Use these as your negotiating floor if the other side pushes back.</p>
+                          <ul className="mt-3 space-y-2">
+                            {protectExtras.fallback_positions.map((pos) => (
+                              <li key={pos.id} className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5 text-sm leading-6 text-[var(--pt-ink)]/85">
+                                {annotateLegalTerms(pos.position, `fallback-${pos.id}`)}
+                              </li>
+                            ))}
+                          </ul>
+                        </article>
+                      )}
+
                     </>
                   ) : (
                     <div className="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-4">
@@ -1594,6 +1690,48 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                           </p>
                         </article>
                       ))}
+
+                      {isCoreTier && teaserReport69 && (
+                        <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan preview</p>
+                          <p className="mt-1 text-sm font-semibold text-[#6e4f1e]">{teaserReport69.headline}</p>
+                          <p className="mt-1 text-sm text-[#6e4f1e]">Upgrade to see all clauses including missing and unclear terms, with full explanations and watch-for notes.</p>
+                          <ul className="mt-2 space-y-1">
+                            {teaserReport69.bullets.map((bullet, idx) => (
+                              <li key={`teaser-terms-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
+                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
+                                {bullet}
+                              </li>
+                            ))}
+                          </ul>
+                        </article>
+                      )}
+
+                      {isProtectTier && protectExtras && protectExtras.advanced_clause_coverage.length > 0 && (
+                        <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
+                          <p className="text-sm font-semibold text-[var(--pt-ink)]">Advanced Clause Coverage</p>
+                          <p className="mt-1 text-xs text-[var(--pt-muted)]">Extended clause analysis for complex risk areas in this agreement.</p>
+                          <ul className="mt-3 space-y-2">
+                            {protectExtras.advanced_clause_coverage.map((clause, idx) => (
+                              <li
+                                key={`adv-clause-${idx}`}
+                                className="flex items-center justify-between gap-2 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2"
+                              >
+                                <p className="text-sm text-[var(--pt-ink)]">{clause.title ?? clause.key}</p>
+                                {clause.status && (
+                                  <span
+                                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${clauseStatusClass(
+                                      clause.status as "present" | "unclear" | "missing"
+                                    )}`}
+                                  >
+                                    {clause.status}
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </article>
+                      )}
                     </>
                   ) : (
                     <div className="pt-card-soft p-3 text-sm text-[var(--pt-muted)]">
@@ -1779,6 +1917,21 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
 
               {activeReportTab === "full" && (
                 <>
+                  {isCoreTier && teaserReport69 && (
+                    <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan preview</p>
+                      <p className="mt-1 text-sm font-semibold text-[#6e4f1e]">{teaserReport69.headline}</p>
+                      <p className="mt-1 text-sm text-[#6e4f1e]">The Full Report view shows all clauses — including missing and unclear ones — with evidence snippets. Available in Report and Protect tiers.</p>
+                      <ul className="mt-2 space-y-1">
+                        {teaserReport69.bullets.map((bullet, idx) => (
+                          <li key={`teaser-full-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
+                  )}
                   <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
                     <div className="flex items-center gap-2">
                       <Image
