@@ -5,13 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import {
-  DEFAULT_ANALYSIS_MODE,
-  DEFAULT_LLM_MODEL,
-  LLM_MODEL_OPTIONS,
-  type AnalysisModeOption,
-  type LlmModelOption,
-} from "@/lib/analysisOptions";
-import {
   DEFAULT_REPORT_TIER,
   REPORT_TIER_DESCRIPTIONS,
   REPORT_TIER_LABELS,
@@ -63,17 +56,7 @@ const SUBMIT_STEP_DESCRIPTIONS: Record<SubmitStep, string> = {
   "redirecting-to-checkout": "Redirecting you to payment now.",
 };
 
-const LOCAL_STORAGE_ANALYSIS_MODE_KEY = "pt.analysisMode";
-const LOCAL_STORAGE_LLM_MODEL_KEY = "pt.llmModel";
 const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
-
-function isAnalysisModeOption(value: string): value is AnalysisModeOption {
-  return value === "rules" || value === "llm";
-}
-
-function isLlmModelOption(value: string): value is LlmModelOption {
-  return LLM_MODEL_OPTIONS.includes(value as LlmModelOption);
-}
 
 function isReportTierOption(value: string): value is ReportTierOption {
   return REPORT_TIER_OPTIONS.includes(value as ReportTierOption);
@@ -125,8 +108,6 @@ export default function AnalyzePage() {
   const [error, setError] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<SubmitStep | null>(null);
   const [checkoutCanceled, setCheckoutCanceled] = React.useState(false);
-  const [analysisMode, setAnalysisMode] = React.useState<AnalysisModeOption>(DEFAULT_ANALYSIS_MODE);
-  const [llmModel, setLlmModel] = React.useState<LlmModelOption>(DEFAULT_LLM_MODEL);
   const [reportTier, setReportTier] = React.useState<ReportTierOption>(DEFAULT_REPORT_TIER);
 
   React.useEffect(() => {
@@ -136,16 +117,7 @@ export default function AnalyzePage() {
 
   React.useEffect(() => {
     try {
-      const storedMode = window.localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODE_KEY);
-      const storedModel = window.localStorage.getItem(LOCAL_STORAGE_LLM_MODEL_KEY);
       const storedReportTier = window.localStorage.getItem(LOCAL_STORAGE_REPORT_TIER_KEY);
-
-      if (storedMode && isAnalysisModeOption(storedMode)) {
-        setAnalysisMode(storedMode);
-      }
-      if (storedModel && isLlmModelOption(storedModel)) {
-        setLlmModel(storedModel);
-      }
       if (storedReportTier && isReportTierOption(storedReportTier)) {
         setReportTier(storedReportTier);
       }
@@ -156,13 +128,11 @@ export default function AnalyzePage() {
 
   React.useEffect(() => {
     try {
-      window.localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODE_KEY, analysisMode);
-      window.localStorage.setItem(LOCAL_STORAGE_LLM_MODEL_KEY, llmModel);
       window.localStorage.setItem(LOCAL_STORAGE_REPORT_TIER_KEY, reportTier);
     } catch {
       // Storage is best effort only.
     }
-  }, [analysisMode, llmModel, reportTier]);
+  }, [reportTier]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -255,9 +225,7 @@ export default function AnalyzePage() {
             contentType: file.type || "application/octet-stream",
             size: file.size,
             precheckToken: precheckJson.precheckToken,
-            analysisMode,
             reportTier,
-            ...(analysisMode === "llm" ? { llmModel } : {}),
           }),
         });
 
@@ -344,46 +312,6 @@ export default function AnalyzePage() {
             )}
           </div>
 
-          <div className="mt-5 pt-card-soft p-4 3xl:p-6">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)] 3xl:text-sm">
-              Internal settings
-            </p>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2 3xl:gap-6">
-              <label className="grid gap-2 text-sm text-[var(--pt-muted)] 3xl:text-base">
-                Review profile
-                <select
-                  value={analysisMode}
-                  onChange={(e) => setAnalysisMode(e.target.value as AnalysisModeOption)}
-                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)] 3xl:px-4 3xl:py-3 3xl:text-base"
-                >
-                  <option value="rules">Standard review</option>
-                  <option value="llm">Deep review (internal)</option>
-                </select>
-              </label>
-
-              <label className="grid gap-2 text-sm text-[var(--pt-muted)] 3xl:text-base">
-                Model option (internal)
-                <select
-                  value={llmModel}
-                  disabled={analysisMode !== "llm"}
-                  onChange={(e) => setLlmModel(e.target.value as LlmModelOption)}
-                  className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-sm text-[var(--pt-ink)] disabled:cursor-not-allowed disabled:opacity-50 3xl:px-4 3xl:py-3 3xl:text-base"
-                >
-                  {LLM_MODEL_OPTIONS.map((model) => (
-                    <option key={model} value={model}>
-                      {model}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <p className="mt-3 text-xs text-[var(--pt-muted)] 3xl:text-sm">
-              Current run:{" "}
-              <span className="font-semibold text-[var(--pt-ink)]">
-                {analysisMode === "rules" ? "Standard review profile" : `Deep review (${llmModel})`}
-              </span>
-            </p>
-          </div>
 
           {file && (
             <div className="mt-5 pt-card-soft p-4 3xl:p-6">
