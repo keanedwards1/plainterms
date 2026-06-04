@@ -204,7 +204,8 @@ export const handler = async (event) => {
       }
     }
 
-    return jsonResponse(event, 200, uiResult, METHODS);
+    const abVariant = res.Item.ab_variant?.S ?? null;
+    return jsonResponse(event, 200, { ...uiResult, _ab_variant: abVariant }, METHODS);
   } catch {
     return jsonResponse(event, 502, { error: "Failed to load result right now. Please retry shortly." }, METHODS);
   }

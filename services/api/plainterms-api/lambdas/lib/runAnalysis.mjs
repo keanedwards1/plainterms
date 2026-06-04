@@ -590,6 +590,25 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report, 
   };
 }
 
+function resolveFinalAnalysisSelection(analysisSelection, reportTier) {
+  // Explicit llm override from internal settings — respect it for manual testing.
+  if (analysisSelection.analysisMode === "llm" && analysisSelection.llmModel) {
+    return { analysisMode: "llm", llmModel: analysisSelection.llmModel, abVariant: "override" };
+  }
+
+  // Protect tier always uses gpt-5.5, no A/B test.
+  if (reportTier === "protect_99") {
+    return { analysisMode: "llm", llmModel: "gpt-5.5", abVariant: "protect" };
+  }
+
+  // Core and Report tiers: 50/50 between rules (variant_a) and gpt-5.2 (variant_b).
+  const abVariant = Math.random() < 0.5 ? "a_rules" : "b_gpt52";
+  if (abVariant === "b_gpt52") {
+    return { analysisMode: "llm", llmModel: "gpt-5.2", abVariant };
+  }
+  return { analysisMode: "rules", llmModel: null, abVariant };
+}
+
 export async function runAnalysis(payload, analysisSelection = {}, addonSelection = {}) {
   const objectKeyCheck = validateObjectKey(payload?.objectKey);
   if (!objectKeyCheck.ok) {
@@ -619,6 +638,9 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   const createdAt = new Date().toISOString();
   const expiresAtEpoch = Math.floor(Date.now() / 1000) + getRetentionDays() * 24 * 60 * 60;
 
+  const selectedTier = normalizeReportTier(analysisSelection?.reportTier);
+  const finalSelection = resolveFinalAnalysisSelection(analysisSelection, selectedTier);
+
   const bucket = process.env.UPLOAD_BUCKET;
   const extraction = await extractDocumentTextFromUpload({
     bucket,
@@ -633,8 +655,8 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
       filename: normalizedPayload.filename,
       contentType: normalizedPayload.contentType,
       extractedText: extraction.extractedText,
-      analysisMode: analysisSelection?.analysisMode ?? null,
-      llmModel: analysisSelection?.llmModel ?? null,
+      analysisMode: finalSelection.analysisMode,
+      llmModel: finalSelection.llmModel,
     });
   } catch (err) {
     llmAnalysis = {
@@ -648,13 +670,12 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
     extractedText: extraction.extractedText,
     llmFields: llmAnalysis?.fields,
   });
-  const selectedTier = normalizeReportTier(analysisSelection?.reportTier);
   const tieredReportInsights = applyTierToReport(reportInsights, selectedTier);
   try {
     const llmEmailDraft = await generateNegotiationEmailDraftWithLlm({
       report: tieredReportInsights,
       tier: selectedTier,
-      analysisSelection,
+      analysisSelection: finalSelection,
     });
     if (llmEmailDraft?.ok && llmEmailDraft.draft) {
       tieredReportInsights.negotiation_email_draft = llmEmailDraft.draft;
@@ -687,6 +708,7 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
       object_key: { S: normalizedPayload.objectKey },
       access_key_hash: { S: resultAccessKeyHash },
       status: { S: "complete" },
+      ab_variant: { S: finalSelection.abVariant },
       pt_v1_result: { S: JSON.stringify(ptV1) },
       ui_result: { S: JSON.stringify(uiResult) },
     },

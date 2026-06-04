@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { PtResult as PtResultSchema, SECTION_TITLES, type PtResult } from "@/lib/plainterms-schema";
+import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 
 type ResultWorkspaceProps = {
   data: PtResult;
   retentionDays: number;
   accessKey?: string;
+  abVariant?: string;
 };
 
 type ReportTab = "summary" | "insights" | "flags" | "terms" | "questions" | "document" | "full";
@@ -543,7 +545,20 @@ function parseEmailDraft(content: string) {
   return { subject, body };
 }
 
-export default function ResultWorkspace({ data, retentionDays, accessKey }: ResultWorkspaceProps) {
+export default function ResultWorkspace({ data, retentionDays, accessKey, abVariant }: ResultWorkspaceProps) {
+  const [surveyRating, setSurveyRating] = useState<"positive" | "negative" | null>(null);
+
+  function submitSurveyRating(rating: "positive" | "negative") {
+    setSurveyRating(rating);
+    void trackFunnelMetric({
+      event: "survey_rating",
+      funnelId: getOrCreateFunnelId(),
+      resultId: data.result_id,
+      rating,
+      abVariant,
+    });
+  }
+
   const [activeReportTab, setActiveReportTab] = useState<ReportTab>("summary");
   const [activeBasicTab, setActiveBasicTab] = useState<BasicTab>("summary");
   const [addonNotice, setAddonNotice] = useState<string | null>(null);
@@ -1916,6 +1931,36 @@ export default function ResultWorkspace({ data, retentionDays, accessKey }: Resu
           </>
         )}
       </section>
+
+      <div className="pt-card-soft mt-4 flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+        {surveyRating === null ? (
+          <>
+            <p className="text-sm font-semibold text-[var(--pt-ink)]">How was your experience?</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => submitSurveyRating("positive")}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
+                aria-label="Good experience"
+              >
+                😊
+              </button>
+              <button
+                type="button"
+                onClick={() => submitSurveyRating("negative")}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-red-300 hover:bg-red-50"
+                aria-label="Poor experience"
+              >
+                😞
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-[var(--pt-muted)]">
+            Thanks for the feedback — it helps us improve.
+          </p>
+        )}
+      </div>
     </section>
   );
 }

@@ -4,7 +4,8 @@ export type FunnelMetricEvent =
   | "upload_start"
   | "checkout_start"
   | "checkout_success"
-  | "result_viewed";
+  | "result_viewed"
+  | "survey_rating";
 
 type FunnelMetricPayload = {
   event: FunnelMetricEvent;
@@ -13,6 +14,8 @@ type FunnelMetricPayload = {
   sessionId?: string;
   fileSizeBytes?: number;
   fileType?: string;
+  rating?: "positive" | "negative";
+  abVariant?: string;
 };
 
 const FUNNEL_ID_KEY = "pt_funnel_id";
@@ -50,6 +53,8 @@ export async function trackFunnelMetric(payload: FunnelMetricPayload): Promise<v
     sessionId: payload.sessionId,
     fileSizeBytes: payload.fileSizeBytes,
     fileType: payload.fileType,
+    rating: payload.rating,
+    abVariant: payload.abVariant,
     pathname: window.location.pathname,
     clientTs: new Date().toISOString(),
   });

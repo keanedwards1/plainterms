@@ -2,7 +2,7 @@ import { getLogContext } from "@/lib/observability";
 import { z } from "zod";
 
 const FunnelMetricPayload = z.object({
-  event: z.enum(["upload_start", "checkout_start", "checkout_success", "result_viewed"]),
+  event: z.enum(["upload_start", "checkout_start", "checkout_success", "result_viewed", "survey_rating"]),
   funnelId: z.string().min(8).max(128),
   pathname: z.string().min(1).max(300).optional(),
   resultId: z.string().min(1).max(200).optional(),
@@ -10,6 +10,8 @@ const FunnelMetricPayload = z.object({
   fileSizeBytes: z.number().int().nonnegative().max(100_000_000).optional(),
   fileType: z.string().min(1).max(120).optional(),
   clientTs: z.string().datetime().optional(),
+  rating: z.enum(["positive", "negative"]).optional(),
+  abVariant: z.string().max(64).optional(),
 });
 
 function clientIp(req: Request): string | undefined {
@@ -137,6 +139,8 @@ export async function POST(req: Request) {
         fileSizeBytes: payload.data.fileSizeBytes,
         fileType: payload.data.fileType,
         clientTs: payload.data.clientTs,
+        rating: payload.data.rating,
+        abVariant: payload.data.abVariant,
         ip: clientIp(req),
       })
     );

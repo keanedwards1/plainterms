@@ -171,6 +171,7 @@ export default async function ResultPage({ params, searchParams }: Props) {
   }
 
   const json = await res.json();
+  const abVariant = typeof json._ab_variant === "string" ? json._ab_variant : undefined;
   const parsed = PtResult.safeParse(json);
 
   if (!parsed.success) {
@@ -217,7 +218,7 @@ export default async function ResultPage({ params, searchParams }: Props) {
           </div>
         </section>
 
-        <ResultWorkspace data={data} retentionDays={retentionDays} accessKey={accessKey} />
+        <ResultWorkspace data={data} retentionDays={retentionDays} accessKey={accessKey} abVariant={abVariant} />
       </div>
     </main>
   );
