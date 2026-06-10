@@ -55,6 +55,8 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 # Use either of these for Search Console meta verification:
 # GOOGLE_SITE_VERIFICATION=your_verification_token
 # NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=your_verification_token
+# Optional: password-protect the whole site while changes are in progress
+# CONSTRUCTION_PASSWORD=temporary_password
 # Optional: webhook endpoint for 5xx API alerts from Next.js routes
 # ALERT_WEBHOOK_URL=https://hooks.slack.com/services/...
 # Optional fallback for legacy code paths:
@@ -70,6 +72,7 @@ Set this in:
 `NEXT_PUBLIC_GA_MEASUREMENT_ID` enables Google Analytics 4 tracking.
 `METRICS_ALLOWED_ORIGINS` and `NEXT_PUBLIC_SITE_URL` help `/api/metrics` enforce trusted origins.
 `GOOGLE_SITE_VERIFICATION` (or `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) adds the Search Console verification meta tag.
+`CONSTRUCTION_PASSWORD` turns on the temporary under-construction gate. Remove the env var to disable it.
 
 Quick Vercel CLI setup:
 
