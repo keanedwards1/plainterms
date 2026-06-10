@@ -2,6 +2,7 @@
 
 export type FunnelMetricEvent =
   | "upload_start"
+  | "preview_ready"
   | "checkout_start"
   | "checkout_success"
   | "result_viewed"
@@ -80,4 +81,3 @@ export async function trackFunnelMetric(payload: FunnelMetricPayload): Promise<v
     // Best-effort telemetry.
   }
 }
-

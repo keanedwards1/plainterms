@@ -2,7 +2,7 @@ import { getLogContext } from "@/lib/observability";
 import { z } from "zod";
 
 const FunnelMetricPayload = z.object({
-  event: z.enum(["upload_start", "checkout_start", "checkout_success", "result_viewed", "survey_rating"]),
+  event: z.enum(["upload_start", "preview_ready", "checkout_start", "checkout_success", "result_viewed", "survey_rating"]),
   funnelId: z.string().min(8).max(128),
   pathname: z.string().min(1).max(300).optional(),
   resultId: z.string().min(1).max(200).optional(),

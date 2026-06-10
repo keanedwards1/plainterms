@@ -433,7 +433,10 @@ Resources:
           STRIPE_TEST_ADDON_UPDATE_EMAIL_PRICE_PARAM: !Ref StripeTestAddonUpdateEmailPriceIdParamName
           APP_BASE_URL: !Ref AppBaseUrl
           PRECHECK_TOKEN_SECRET_PARAM: !Ref PrecheckTokenSecretParamName
+          RESULTS_TABLE: !Ref ResultsTable
       Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ResultsTable
         - Statement:
             Effect: Allow
             Action:
@@ -465,6 +468,58 @@ Resources:
           Properties:
             RestApiId: !Ref PlainTermsApi
             Path: /checkout
+            Method: OPTIONS
+
+  PreviewAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: previewAnalysis.handler
+      Timeout: 330
+      MemorySize: 512
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+          RESULT_TTL_DAYS: "30"
+          ANALYSIS_TIMEOUT_MS: "300000"
+          UPLOAD_BUCKET: !Ref UploadBucket
+          UPLOAD_MAX_BYTES: "26214400"
+          ANALYSIS_MODE: !Ref AnalysisMode
+          LLM_BASE_URL: "https://api.openai.com/v1"
+          LLM_MODEL: !Ref LlmModel
+          LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
+          DOCUMENT_REVISION_FUNCTION_NAME: !Ref GenerateRevisionFunction
+          PRECHECK_TOKEN_SECRET_PARAM: !Ref PrecheckTokenSecretParamName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${PrecheckTokenSecretParamName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt GenerateRevisionFunction.Arn
+      Events:
+        PreviewPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /preview
+            Method: POST
+        PreviewOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /preview
             Method: OPTIONS
 
   VerifyCheckoutFunction:

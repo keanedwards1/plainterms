@@ -5,7 +5,7 @@ import { REPORT_TIER_OPTIONS } from "@/lib/pricingOptions";
 import { postJsonProxy } from "@/lib/postJsonProxy";
 import { z } from "zod";
 
-const CheckoutRequest = z.object({
+const UploadCheckoutRequest = z.object({
   objectKey: z.string().min(1),
   filename: z.string().min(1),
   contentType: z.string().min(1),
@@ -16,6 +16,14 @@ const CheckoutRequest = z.object({
   reportTier: z.enum(REPORT_TIER_OPTIONS).optional(),
   selectedAddons: z.array(z.enum(ADDON_OPTIONS)).optional(),
 });
+
+const PreviewCheckoutRequest = z.object({
+  previewResultId: z.string().min(1),
+  previewAccessKey: z.string().min(1),
+  reportTier: z.enum(REPORT_TIER_OPTIONS).optional(),
+});
+
+const CheckoutRequest = z.union([PreviewCheckoutRequest, UploadCheckoutRequest]);
 
 const CheckoutResponse = z.object({
   checkoutSessionId: z.string().min(1),

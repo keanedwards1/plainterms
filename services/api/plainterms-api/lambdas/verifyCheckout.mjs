@@ -175,6 +175,31 @@ async function issueAccessForResultAndScrubSession({
   };
 }
 
+async function issueAccessForPreviewUnlockAndScrubSession({ stripe, sessionId, session }) {
+  const resultId = session?.metadata?.previewResultId;
+  if (!resultId) {
+    throw new Error("Missing previewResultId in session metadata.");
+  }
+
+  const rotatedAccessKey = await issueResultAccessKeyForResult(resultId);
+  await safeUpdateSessionMetadata(stripe, sessionId, {
+    ...(session.metadata ?? {}),
+    resultId: String(resultId),
+    previewResultId: "",
+    previewUnlock: "complete",
+    resultAccessKey: "",
+    analysisStatus: "complete",
+    analysisOwner: "",
+    analysisCompletedAt: new Date().toISOString(),
+  });
+
+  return {
+    resultId,
+    accessKey: rotatedAccessKey,
+    reused: true,
+  };
+}
+
 async function attemptAutoRefund({ stripe, sessionId, session, analysisMessage }) {
   const existingRefundId = session.metadata?.refundId;
   if (existingRefundId) {
@@ -267,6 +292,15 @@ export const handler = async (event) => {
         sessionId,
         session,
         reused: true,
+      });
+      return jsonResponse(event, 200, response);
+    }
+
+    if (session.metadata?.previewUnlock === "true" && session.metadata?.previewResultId) {
+      const response = await issueAccessForPreviewUnlockAndScrubSession({
+        stripe,
+        sessionId,
+        session,
       });
       return jsonResponse(event, 200, response);
     }

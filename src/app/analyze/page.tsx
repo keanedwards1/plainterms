@@ -4,22 +4,10 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
-import {
-  DEFAULT_REPORT_TIER,
-  REPORT_TIER_DESCRIPTIONS,
-  REPORT_TIER_LABELS,
-  REPORT_TIER_OPTIONS,
-  type ReportTierOption,
-} from "@/lib/pricingOptions";
 
 type UploadUrlResponse = {
   uploadUrl: string;
   objectKey: string;
-};
-
-type CheckoutResponse = {
-  checkoutSessionId: string;
-  checkoutUrl: string;
 };
 
 type PrecheckResponse = {
@@ -27,40 +15,33 @@ type PrecheckResponse = {
   precheckToken: string;
 };
 
-const parsedRetentionDays = Number(process.env.NEXT_PUBLIC_RESULT_RETENTION_DAYS ?? "30");
-const RESULT_RETENTION_DAYS =
-  Number.isFinite(parsedRetentionDays) && parsedRetentionDays > 0
-    ? Math.floor(parsedRetentionDays)
-    : 30;
+type PreviewResponse = {
+  resultId: string;
+  previewAccessKey: string;
+};
 
 type SubmitStep =
   | "requesting-upload-url"
   | "uploading-file"
   | "validating-file"
-  | "starting-checkout"
-  | "redirecting-to-checkout";
+  | "running-analysis"
+  | "opening-preview";
 
 const SUBMIT_STEP_ORDER: SubmitStep[] = [
   "requesting-upload-url",
   "uploading-file",
   "validating-file",
-  "starting-checkout",
-  "redirecting-to-checkout",
+  "running-analysis",
+  "opening-preview",
 ];
 
 const SUBMIT_STEP_DESCRIPTIONS: Record<SubmitStep, string> = {
   "requesting-upload-url": "Setting up a secure upload session.",
   "uploading-file": "Uploading your contract to encrypted storage.",
   "validating-file": "Running malware scan, validating file type, and extracting readable text.",
-  "starting-checkout": "Preparing secure checkout with your validated file.",
-  "redirecting-to-checkout": "Redirecting you to payment now.",
+  "running-analysis": "Scoring risk and counting red flags before payment.",
+  "opening-preview": "Opening your free risk preview.",
 };
-
-const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
-
-function isReportTierOption(value: string): value is ReportTierOption {
-  return REPORT_TIER_OPTIONS.includes(value as ReportTierOption);
-}
 
 async function readErrorResponse(res: Response): Promise<string> {
   const contentType = res.headers.get("content-type") ?? "";
@@ -90,10 +71,10 @@ function stepLabel(step: SubmitStep): string {
       return "Uploading file";
     case "validating-file":
       return "Validating file";
-    case "starting-checkout":
-      return "Starting checkout";
-    case "redirecting-to-checkout":
-      return "Redirecting to payment";
+    case "running-analysis":
+      return "Running free preview";
+    case "opening-preview":
+      return "Opening preview";
   }
 }
 
@@ -108,31 +89,11 @@ export default function AnalyzePage() {
   const [error, setError] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<SubmitStep | null>(null);
   const [checkoutCanceled, setCheckoutCanceled] = React.useState(false);
-  const [reportTier, setReportTier] = React.useState<ReportTierOption>(DEFAULT_REPORT_TIER);
 
   React.useEffect(() => {
     const url = new URL(window.location.href);
     setCheckoutCanceled(url.searchParams.get("canceled") === "1");
   }, []);
-
-  React.useEffect(() => {
-    try {
-      const storedReportTier = window.localStorage.getItem(LOCAL_STORAGE_REPORT_TIER_KEY);
-      if (storedReportTier && isReportTierOption(storedReportTier)) {
-        setReportTier(storedReportTier);
-      }
-    } catch {
-      // Storage is best effort only.
-    }
-  }, []);
-
-  React.useEffect(() => {
-    try {
-      window.localStorage.setItem(LOCAL_STORAGE_REPORT_TIER_KEY, reportTier);
-    } catch {
-      // Storage is best effort only.
-    }
-  }, [reportTier]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -213,35 +174,36 @@ export default function AnalyzePage() {
         throw new Error("File validation did not pass. Please upload another file.");
       }
 
-      currentStep = "starting-checkout";
+      currentStep = "running-analysis";
       setStep(currentStep);
-      void trackFunnelMetric({ event: "checkout_start", funnelId });
-          const checkoutRes = await fetch("/api/checkout", {
+      const previewRes = await fetch("/api/preview", {
         method: "POST",
         headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            objectKey: uploadJson.objectKey,
-            filename: file.name,
-            contentType: file.type || "application/octet-stream",
-            size: file.size,
-            precheckToken: precheckJson.precheckToken,
-            reportTier,
-          }),
-        });
+        body: JSON.stringify({
+          objectKey: uploadJson.objectKey,
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+          size: file.size,
+          precheckToken: precheckJson.precheckToken,
+        }),
+      });
 
-      if (!checkoutRes.ok) {
-        const detail = await readErrorResponse(checkoutRes);
-        throw new Error(`Checkout failed (${checkoutRes.status}): ${detail}`);
+      if (!previewRes.ok) {
+        const detail = await readErrorResponse(previewRes);
+        throw new Error(`Preview failed (${previewRes.status}): ${detail}`);
       }
 
-      const data = (await checkoutRes.json()) as CheckoutResponse;
-      if (!data.checkoutUrl) {
-        throw new Error("Checkout succeeded but no checkout URL was returned.");
+      const data = (await previewRes.json()) as PreviewResponse;
+      if (!data.resultId || !data.previewAccessKey) {
+        throw new Error("Preview succeeded but no secure preview link was returned.");
       }
 
-      currentStep = "redirecting-to-checkout";
+      void trackFunnelMetric({ event: "preview_ready", funnelId, resultId: data.resultId });
+      currentStep = "opening-preview";
       setStep(currentStep);
-      window.location.assign(data.checkoutUrl);
+      window.location.assign(
+        `/preview/${encodeURIComponent(data.resultId)}?p=${encodeURIComponent(data.previewAccessKey)}`
+      );
     } catch (err) {
       const detail = err instanceof Error ? err.message : "Unknown error";
       setError(`${stepLabel(currentStep)}: ${detail}`);
@@ -261,14 +223,14 @@ export default function AnalyzePage() {
       <section className="mt-5 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] 3xl:mt-8 3xl:gap-8">
         <div>
           <p className="pt-kicker mb-3">
-            Step 1 of 3
+            Free risk preview
           </p>
           <h1 className="text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl 3xl:text-6xl">
-            Upload your contract for a clear review.
+            See the risk score before you pay.
           </h1>
           <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)] 3xl:text-lg 3xl:mt-6 3xl:max-w-2xl">
-            Upload a PDF or DOCX and receive a structured summary, key risks, and next-step
-            guidance before signing.
+            Upload a PDF or DOCX and get the free scare first: risk score and red-flag count.
+            Unlock the actual flags, rewrites, and email draft only if the result matters.
           </p>
         </div>
 
@@ -276,8 +238,8 @@ export default function AnalyzePage() {
           <h2 className="text-lg text-[var(--pt-ink)] 3xl:text-xl">Secure review flow</h2>
           <ul className="mt-3 space-y-2 3xl:text-base 3xl:space-y-3 3xl:mt-5">
             <li>• Private upload and validation</li>
-            <li>• Plain-English clause explanations</li>
-            <li>• Action plan before signature</li>
+            <li>• Free risk score before checkout</li>
+            <li>• Details unlock only after payment</li>
             <li>• Informational only, not legal advice</li>
           </ul>
           <Image
@@ -313,51 +275,13 @@ export default function AnalyzePage() {
           </div>
 
 
-          {file && (
-            <div className="mt-5 pt-card-soft p-4 3xl:p-6">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)] 3xl:text-sm">
-                Choose your depth of analysis and report detail
-              </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3 3xl:gap-5 3xl:mt-5">
-                {REPORT_TIER_OPTIONS.map((tier) => {
-                  const selected = reportTier === tier;
-                  return (
-                    <label
-                      key={tier}
-                      className={`cursor-pointer rounded-xl border p-3 3xl:p-5 ${
-                        selected
-                          ? "border-[var(--pt-accent)] bg-[var(--pt-surface)]"
-                          : "border-[var(--pt-border)] bg-[var(--pt-surface)]"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="report-tier"
-                        value={tier}
-                        checked={selected}
-                        onChange={() => setReportTier(tier)}
-                        className="sr-only"
-                      />
-                      <p className="text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">
-                        {REPORT_TIER_LABELS[tier]}
-                      </p>
-                      <p className="mt-1 text-xs text-[var(--pt-muted)] 3xl:text-sm 3xl:mt-2">
-                        {REPORT_TIER_DESCRIPTIONS[tier]}
-                      </p>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           <div className="mt-5 flex flex-wrap items-center gap-3 3xl:mt-8">
             <button
               type="submit"
               disabled={isSubmitting}
               className="pt-btn-primary px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 3xl:px-8 3xl:py-4 3xl:text-base"
             >
-              {isSubmitting ? "Processing..." : "Continue to payment"}
+              {isSubmitting ? "Analyzing..." : "Run free risk preview"}
             </button>
             {isSubmitting && step && <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>}
           </div>
@@ -420,14 +344,13 @@ export default function AnalyzePage() {
 
           {checkoutCanceled && !error && (
             <div className="pt-alert-warn mt-5 p-3 text-sm">
-              Checkout was canceled. You can continue to payment again when ready.
+              Checkout was canceled. Your free preview can be unlocked again when ready.
             </div>
           )}
 
           <p className="mt-5 text-xs text-[var(--pt-muted)] 3xl:text-sm 3xl:mt-7">
-            Your secure result link remains available for up to {RESULT_RETENTION_DAYS} days after checkout.
-            Save or bookmark the result page to revisit your results during that period.
-            Account-based result history is coming soon.
+            The free preview shows only the risk score and flag counts. Specific clauses, source text,
+            rewrites, and email drafts stay locked until payment.
           </p>
         </form>
       </div>

@@ -732,6 +732,8 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   const resultId = makeResultId();
   const resultAccessKey = createResultAccessKey();
   const resultAccessKeyHash = hashResultAccessKey(resultAccessKey);
+  const previewAccessKey = createResultAccessKey();
+  const previewAccessKeyHash = hashResultAccessKey(previewAccessKey);
   const createdAt = new Date().toISOString();
   const expiresAtEpoch = Math.floor(Date.now() / 1000) + getRetentionDays() * 24 * 60 * 60;
 
@@ -804,6 +806,7 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
       expires_at: { N: String(expiresAtEpoch) },
       object_key: { S: normalizedPayload.objectKey },
       access_key_hash: { S: resultAccessKeyHash },
+      access_key_hash_preview: { S: previewAccessKeyHash },
       status: { S: "complete" },
       ab_variant: { S: finalSelection.abVariant },
       pt_v1_result: { S: JSON.stringify(ptV1) },
@@ -836,5 +839,5 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
       );
     }
   }
-  return { resultId, accessKey: resultAccessKey };
+  return { resultId, accessKey: resultAccessKey, previewAccessKey };
 }

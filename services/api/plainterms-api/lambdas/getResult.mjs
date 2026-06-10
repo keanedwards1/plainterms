@@ -21,6 +21,19 @@ function matchesAnyAccessHash({ accessKey, hashes }) {
   return hashes.some((hash) => typeof hash === "string" && hash && secureEqualStrings(providedAccessKeyHash, hash));
 }
 
+function getPreviewAccessKey(event) {
+  return (
+    event?.queryStringParameters?.p ??
+    event?.queryStringParameters?.previewKey ??
+    event?.queryStringParameters?.preview_key
+  );
+}
+
+function wantsPreview(event) {
+  const raw = event?.queryStringParameters?.preview;
+  return raw === "1" || raw === "true";
+}
+
 function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -68,6 +81,62 @@ async function queueDocumentRevisionJob(resultId) {
   return true;
 }
 
+function buildPreviewResult(uiResult, abVariant) {
+  const report = uiResult?.report ?? {};
+  const flags = asArray(report.red_flags);
+  const clauses = asArray(report.clause_breakdown);
+  const riskScore = Number(report?.risk?.score ?? 0);
+  const riskLabel = report?.risk?.label === "low" || report?.risk?.label === "medium" || report?.risk?.label === "high"
+    ? report.risk.label
+    : "medium";
+  const redFlagCount = flags.length;
+  const highFlagCount = flags.filter((flag) => flag?.severity === "high").length;
+  const mediumFlagCount = flags.filter((flag) => flag?.severity === "medium").length;
+  const lowFlagCount = flags.filter((flag) => flag?.severity === "low").length;
+  const missingClauseCount = clauses.filter((clause) => clause?.status === "missing").length;
+  const unclearClauseCount = clauses.filter((clause) => clause?.status === "unclear").length;
+  const presentClauseCount = clauses.filter((clause) => clause?.status === "present").length;
+
+  return {
+    schema_version: "pt.preview.v1",
+    result_id: uiResult?.result_id,
+    created_at: uiResult?.created_at,
+    headline: `Risk ${riskScore}/100 · ${redFlagCount} red flag${redFlagCount === 1 ? "" : "s"} found`,
+    overview:
+      redFlagCount > 0
+        ? "This contract has issues worth reviewing before you sign. Unlock the report to see the specific flags, clause notes, rewrites, and email draft."
+        : "No major red flags were detected, but the full report can still show clause-level detail and suggested cleanup before signature.",
+    document: {
+      file_name: uiResult?.document?.file_name ?? "Contract document",
+      content_type: uiResult?.document?.content_type,
+      word_count: uiResult?.document?.word_count,
+    },
+    risk: {
+      score: riskScore,
+      label: riskLabel,
+    },
+    red_flag_count: redFlagCount,
+    severity_counts: {
+      high: highFlagCount,
+      medium: mediumFlagCount,
+      low: lowFlagCount,
+    },
+    clause_counts: {
+      present: presentClauseCount,
+      unclear: unclearClauseCount,
+      missing: missingClauseCount,
+      total: clauses.length,
+    },
+    locked: {
+      red_flags: redFlagCount,
+      clause_breakdown: clauses.length,
+      rewrites: true,
+      negotiation_email: true,
+    },
+    _ab_variant: abVariant,
+  };
+}
+
 export const handler = async (event) => {
   const methodResponse = methodGuard(event, "GET", METHODS);
   if (methodResponse) return methodResponse;
@@ -77,7 +146,11 @@ export const handler = async (event) => {
     return jsonResponse(event, 400, { error: "Missing result id" }, METHODS);
   }
 
-  const accessKey = event?.queryStringParameters?.k ?? event?.queryStringParameters?.key;
+  const previewAccessKey = getPreviewAccessKey(event);
+  const previewMode = wantsPreview(event) || (typeof previewAccessKey === "string" && previewAccessKey.trim());
+  const accessKey = previewMode
+    ? previewAccessKey
+    : event?.queryStringParameters?.k ?? event?.queryStringParameters?.key;
   if (typeof accessKey !== "string" || !accessKey.trim()) {
     return jsonResponse(event, 401, { error: "Missing result access key." }, METHODS);
   }
@@ -96,11 +169,15 @@ export const handler = async (event) => {
       return jsonResponse(event, 404, { error: "Result not found", status: "not_found" }, METHODS);
     }
 
-    const expectedAccessKeyHash = res.Item.access_key_hash?.S ?? "";
-    const previousAccessKeyHash = res.Item.access_key_hash_previous?.S ?? "";
+    const expectedAccessKeyHash = previewMode
+      ? res.Item.access_key_hash_preview?.S ?? ""
+      : res.Item.access_key_hash?.S ?? "";
+    const previousAccessKeyHash = previewMode ? "" : res.Item.access_key_hash_previous?.S ?? "";
     if (!expectedAccessKeyHash && !previousAccessKeyHash) {
       return jsonResponse(event, 401, {
-        error: "This result requires a refreshed secure access link. Please verify checkout again.",
+        error: previewMode
+          ? "This preview requires a refreshed secure preview link. Please upload again."
+          : "This result requires a refreshed secure access link. Please verify checkout again.",
       }, METHODS);
     }
 
@@ -159,6 +236,11 @@ export const handler = async (event) => {
       }, METHODS);
     }
 
+    const abVariant = res.Item.ab_variant?.S ?? null;
+    if (previewMode) {
+      return jsonResponse(event, 200, buildPreviewResult(uiResult, abVariant), METHODS);
+    }
+
     if (!uiResult?.document?.revision) {
       const extractedText =
         typeof uiResult?.document?.extracted_text === "string" ? uiResult.document.extracted_text : "";
@@ -204,7 +286,6 @@ export const handler = async (event) => {
       }
     }
 
-    const abVariant = res.Item.ab_variant?.S ?? null;
     return jsonResponse(event, 200, { ...uiResult, _ab_variant: abVariant }, METHODS);
   } catch {
     return jsonResponse(event, 502, { error: "Failed to load result right now. Please retry shortly." }, METHODS);
