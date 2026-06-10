@@ -262,7 +262,7 @@ function buildPriorityStack(flags) {
   return { fight_for: fightFor, accept_if_pushback: acceptIfPushback, can_concede: canConcede };
 }
 
-function applyTierToReport(baseReport, selectedTier) {
+export function applyTierToReport(baseReport, selectedTier) {
   const tier = normalizeReportTier(selectedTier);
   const report = JSON.parse(JSON.stringify(baseReport ?? {}));
   const protectUpsell = buildProtectUpsellSignals(report);
@@ -270,15 +270,15 @@ function applyTierToReport(baseReport, selectedTier) {
   report.tier = tier;
   report.protect_upsell = protectUpsell;
   report.teaser_report_69 = {
-    headline: "Upgrade to Report ($79)",
+    headline: "Complete clause view",
     bullets: [
-      "Unlock full clause-by-clause breakdown.",
-      "Get complete negotiation bullets and clearer next-step guidance.",
-      "Includes follow-up Q&A capability in the report tier workflow.",
+      "Full clause-by-clause breakdown.",
+      "Complete negotiation bullets and clearer next-step guidance.",
+      "Follow-up Q&A capability in the report tier workflow.",
     ],
   };
   report.teaser_protect_99 = {
-    headline: "Upgrade to Protect ($149)",
+    headline: "Negotiation prep",
     bullets: [
       "Deeper rewrite suggestions with fallback positions.",
       "Advanced clause coverage and stronger negotiation plan.",
@@ -706,7 +706,7 @@ function resolveFinalAnalysisSelection(analysisSelection, reportTier) {
   return { analysisMode: "rules", llmModel: null, abVariant };
 }
 
-export async function runAnalysis(payload, analysisSelection = {}, addonSelection = {}) {
+export async function runAnalysis(payload, analysisSelection = {}, addonSelection = {}, runOptions = {}) {
   const objectKeyCheck = validateObjectKey(payload?.objectKey);
   if (!objectKeyCheck.ok) {
     throw new Error(objectKeyCheck.error);
@@ -770,17 +770,19 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
     llmFields: llmAnalysis?.fields,
   });
   const tieredReportInsights = applyTierToReport(reportInsights, selectedTier);
-  try {
-    const llmEmailDraft = await generateNegotiationEmailDraftWithLlm({
-      report: tieredReportInsights,
-      tier: selectedTier,
-      analysisSelection: finalSelection,
-    });
-    if (llmEmailDraft?.ok && llmEmailDraft.draft) {
-      tieredReportInsights.negotiation_email_draft = llmEmailDraft.draft;
+  if (!runOptions.deferPaidArtifacts) {
+    try {
+      const llmEmailDraft = await generateNegotiationEmailDraftWithLlm({
+        report: tieredReportInsights,
+        tier: selectedTier,
+        analysisSelection: finalSelection,
+      });
+      if (llmEmailDraft?.ok && llmEmailDraft.draft) {
+        tieredReportInsights.negotiation_email_draft = llmEmailDraft.draft;
+      }
+    } catch {
+      // Keep deterministic fallback draft when LLM email generation fails.
     }
-  } catch {
-    // Keep deterministic fallback draft when LLM email generation fails.
   }
 
   const ptV1 = makePtV1({
@@ -794,8 +796,10 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   });
   assertPtV1Contract(ptV1);
   let uiResult = transformPtV1ToUiV1(ptV1);
-  const initialRevision = buildInitialDocumentRevision(uiResult);
-  uiResult = withDocumentRevision(uiResult, initialRevision);
+  const initialRevision = runOptions.deferPaidArtifacts ? null : buildInitialDocumentRevision(uiResult);
+  if (initialRevision) {
+    uiResult = withDocumentRevision(uiResult, initialRevision);
+  }
   assertPtUiV1Contract(uiResult);
 
   const cmd = new PutItemCommand({
@@ -815,7 +819,7 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   });
 
   await db.send(cmd);
-  if (initialRevision.status === "processing") {
+  if (initialRevision?.status === "processing") {
     try {
       await queueDocumentRevisionJob(resultId);
     } catch (err) {

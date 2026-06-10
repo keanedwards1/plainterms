@@ -39,7 +39,7 @@ const SUBMIT_STEP_DESCRIPTIONS: Record<SubmitStep, string> = {
   "requesting-upload-url": "Setting up a secure upload session.",
   "uploading-file": "Uploading your contract to encrypted storage.",
   "validating-file": "Running malware scan, validating file type, and extracting readable text.",
-  "running-analysis": "Scoring risk and counting red flags before payment.",
+  "running-analysis": "Reading the file and preparing your risk preview.",
   "opening-preview": "Opening your free risk preview.",
 };
 
@@ -72,7 +72,7 @@ function stepLabel(step: SubmitStep): string {
     case "validating-file":
       return "Validating file";
     case "running-analysis":
-      return "Running free preview";
+      return "Preparing risk preview";
     case "opening-preview":
       return "Opening preview";
   }
@@ -229,8 +229,8 @@ export default function AnalyzePage() {
             See the risk score before you pay.
           </h1>
           <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)] 3xl:text-lg 3xl:mt-6 3xl:max-w-2xl">
-            Upload a PDF or DOCX and get the free scare first: risk score and red-flag count.
-            Unlock the actual flags, rewrites, and email draft only if the result matters.
+            Upload a PDF or DOCX and get a free risk score and red-flag count in minutes.
+            Decide what level of review you need after you see the result.
           </p>
         </div>
 
@@ -281,7 +281,7 @@ export default function AnalyzePage() {
               disabled={isSubmitting}
               className="pt-btn-primary px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 3xl:px-8 3xl:py-4 3xl:text-base"
             >
-              {isSubmitting ? "Analyzing..." : "Run free risk preview"}
+              {isSubmitting ? "Checking..." : "Check my contract risk"}
             </button>
             {isSubmitting && step && <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>}
           </div>

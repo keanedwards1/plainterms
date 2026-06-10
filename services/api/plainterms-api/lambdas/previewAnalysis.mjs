@@ -29,7 +29,7 @@ async function runAnalysisWithTimeout(args, analysisSelection) {
   let timer = null;
   try {
     return await Promise.race([
-      runAnalysis(args, analysisSelection, { selectedAddons: [] }),
+      runAnalysis(args, analysisSelection, { selectedAddons: [] }, { deferPaidArtifacts: true }),
       new Promise((_, reject) => {
         timer = setTimeout(() => {
           reject(

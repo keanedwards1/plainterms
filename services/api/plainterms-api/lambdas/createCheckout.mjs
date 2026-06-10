@@ -74,6 +74,58 @@ async function verifyPreviewResultAccess(resultId, previewAccessKey) {
   return { ok: true, resultId: normalizedId };
 }
 
+async function verifyResultAccess(resultId, accessKey) {
+  const tableName = process.env.RESULTS_TABLE;
+  if (!tableName) {
+    return { ok: false, status: 500, error: "Missing required env var: RESULTS_TABLE" };
+  }
+
+  const normalizedId = String(resultId ?? "").trim();
+  const normalizedKey = String(accessKey ?? "").trim();
+  if (!normalizedId || !normalizedKey) {
+    return { ok: false, status: 400, error: "resultId and accessKey are required." };
+  }
+
+  const res = await db.send(
+    new GetItemCommand({
+      TableName: tableName,
+      Key: {
+        result_id: { S: normalizedId },
+      },
+    })
+  );
+
+  if (!res.Item) {
+    return { ok: false, status: 404, error: "Result not found." };
+  }
+
+  if ((res.Item.status?.S ?? "complete") !== "complete" || !res.Item.ui_result?.S) {
+    return { ok: false, status: 409, error: "Result is not ready yet." };
+  }
+
+  let uiResult;
+  try {
+    uiResult = JSON.parse(res.Item.ui_result.S);
+  } catch {
+    return { ok: false, status: 500, error: "Stored result is invalid." };
+  }
+
+  if (isExpired(res.Item)) {
+    return { ok: false, status: 410, error: "Result has expired. Please upload again." };
+  }
+
+  const providedHash = hashResultAccessKey(normalizedKey);
+  const currentHash = res.Item.access_key_hash?.S ?? "";
+  const previousHash = res.Item.access_key_hash_previous?.S ?? "";
+  const matchesCurrent = currentHash && secureEqualStrings(providedHash, currentHash);
+  const matchesPrevious = previousHash && secureEqualStrings(providedHash, previousHash);
+  if (!matchesCurrent && !matchesPrevious) {
+    return { ok: false, status: 403, error: "Invalid result access key." };
+  }
+
+  return { ok: true, resultId: normalizedId, reportTier: uiResult?.report?.tier ?? "report_69" };
+}
+
 export const handler = async (event) => {
   const methodResponse = methodGuard(event, "POST", METHODS);
   if (methodResponse) return methodResponse;
@@ -90,6 +142,9 @@ export const handler = async (event) => {
   const previewResultId = payload.previewResultId;
   const previewAccessKey = payload.previewAccessKey;
   const isPreviewUnlock = hasString(previewResultId) || hasString(previewAccessKey);
+  const resultId = payload.resultId;
+  const accessKey = payload.accessKey;
+  const isResultUpgrade = hasString(resultId) || hasString(accessKey);
   const selectionCheck = parseAnalysisSelection(payload);
   const addonCheck = parseAddonSelection(payload);
 
@@ -107,10 +162,12 @@ export const handler = async (event) => {
       }
 
       const selectedTier = selectionCheck.selection.reportTier;
-      if (selectedTier !== "report_69") {
+      const tierRank = { scan_39: 1, report_69: 2, protect_99: 3 };
+      const currentTier = resultCheck.reportTier;
+      if (!tierRank[selectedTier] || tierRank[selectedTier] <= (tierRank[currentTier] ?? 0)) {
         return jsonResponse(event, 400, {
-          error: "Preview unlock currently supports the Report tier only.",
-          code: "unsupported_preview_unlock_tier",
+          error: "Please choose a higher report tier for this result.",
+          code: "invalid_result_upgrade_tier",
         }, METHODS);
       }
 
@@ -154,6 +211,67 @@ export const handler = async (event) => {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       logServerError("checkout.preview_create_error", message);
+      return jsonResponse(event, 500, {
+        error: "Checkout creation failed. Please try again.",
+        code: "checkout_creation_failed",
+      }, METHODS);
+    }
+  }
+
+  if (isResultUpgrade) {
+    try {
+      const resultCheck = await verifyResultAccess(resultId, accessKey);
+      if (!resultCheck.ok) {
+        return jsonResponse(event, resultCheck.status, {
+          error: resultCheck.error,
+        }, METHODS);
+      }
+
+      if (!selectionCheck.ok) {
+        return jsonResponse(event, 400, { error: selectionCheck.error }, METHODS);
+      }
+
+      const selectedTier = selectionCheck.selection.reportTier;
+      const { stripeSecretKey, stripePriceIds } = await getStripeConfig();
+      const selectedPriceId = stripePriceIds?.[selectedTier];
+      if (!selectedPriceId) {
+        return jsonResponse(event, 500, {
+          error: `Missing Stripe price configuration for tier: ${selectedTier}`,
+        }, METHODS);
+      }
+
+      const appBaseUrl = (process.env.APP_BASE_URL ?? "").replace(/\/+$/, "");
+      if (!appBaseUrl) {
+        return jsonResponse(event, 500, { error: "Missing required env var: APP_BASE_URL" }, METHODS);
+      }
+
+      const stripe = new Stripe(stripeSecretKey);
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        line_items: [{ price: selectedPriceId, quantity: 1 }],
+        success_url: `${appBaseUrl}/analyze/complete?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appBaseUrl}/result/${encodeURIComponent(resultCheck.resultId)}?k=${encodeURIComponent(
+          String(accessKey).trim()
+        )}&canceled=1`,
+        metadata: {
+          resultUpgrade: "true",
+          resultId: resultCheck.resultId,
+          reportTier: selectedTier,
+          selectedAddons: "",
+        },
+      });
+
+      if (!session.url) {
+        return jsonResponse(event, 500, { error: "Stripe session created without redirect URL" }, METHODS);
+      }
+
+      return jsonResponse(event, 200, {
+        checkoutSessionId: session.id,
+        checkoutUrl: session.url,
+      }, METHODS);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      logServerError("checkout.result_upgrade_create_error", message);
       return jsonResponse(event, 500, {
         error: "Checkout creation failed. Please try again.",
         code: "checkout_creation_failed",

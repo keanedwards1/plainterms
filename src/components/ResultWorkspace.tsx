@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { PtResult as PtResultSchema, SECTION_TITLES, type PtResult } from "@/lib/plainterms-schema";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
+import {
+  REPORT_TIER_NAMES,
+  REPORT_TIER_PRICES,
+  type ReportTierOption,
+} from "@/lib/pricingOptions";
 
 type ResultWorkspaceProps = {
   data: PtResult;
@@ -21,6 +26,11 @@ type AddonDraft = {
   title: string;
   content: string;
 };
+type UpgradePrompt = {
+  title: string;
+  description: string;
+  tiers: ReportTierOption[];
+};
 type AnnotationSeverity = "low" | "medium" | "high";
 type DocumentAnnotation = {
   id: string;
@@ -28,11 +38,6 @@ type DocumentAnnotation = {
   severity: AnnotationSeverity;
   explanation: string;
   suggestion: string;
-};
-type DocumentMatch = {
-  start: number;
-  end: number;
-  annotation: DocumentAnnotation;
 };
 type TrackedDiff = {
   start: number;
@@ -206,6 +211,38 @@ function DrilldownPanel({ title, meta, open, onToggle, children }: DrilldownPane
   );
 }
 
+type LockedDisclosureProps = {
+  title: string;
+  meta?: string;
+  description: string;
+  onOpen: () => void;
+};
+
+function LockedDisclosure({ title, meta, description, onOpen }: LockedDisclosureProps) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group w-full rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5 text-left transition-colors hover:border-[var(--pt-accent)]"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-[var(--pt-ink)]">{title}</p>
+          <p className="mt-0.5 text-xs leading-5 text-[var(--pt-muted)]">{description}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {meta ? <span className="hidden text-xs text-[var(--pt-muted)] sm:inline">{meta}</span> : null}
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] text-[var(--pt-muted)] transition-colors group-hover:border-[var(--pt-accent)] group-hover:text-[var(--pt-accent)]">
+            <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+              <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 
 function normalizeDocText(value: string) {
   return value.replace(/\s+/g, " ").trim();
@@ -315,44 +352,6 @@ function collectRegexMatches(text: string, regex: RegExp) {
     current = regex.exec(text);
   }
   return matches;
-}
-
-function buildDocumentMatches(text: string, annotations: DocumentAnnotation[]): DocumentMatch[] {
-  if (!text || annotations.length === 0) return [];
-
-  const matches: DocumentMatch[] = [];
-
-  function hasOverlap(start: number, end: number) {
-    return matches.some((item) => start < item.end && end > item.start);
-  }
-
-  for (const annotation of annotations) {
-    const normalizedTarget = normalizeDocText(annotation.target);
-    if (normalizedTarget.length >= 4) {
-      const phraseRegex = new RegExp(
-        escapeForRegex(normalizedTarget).replace(/\s+/g, "\\s+"),
-        "gi"
-      );
-      const phraseCandidates = collectRegexMatches(text, phraseRegex);
-      const phraseMatch = phraseCandidates.find((candidate) => !hasOverlap(candidate.start, candidate.end));
-      if (phraseMatch) {
-        matches.push({ start: phraseMatch.start, end: phraseMatch.end, annotation });
-        continue;
-      }
-    }
-
-    const fallbackTokens = normalizedTarget.split(/[^a-z0-9]+/i).filter((token) => token.length >= 4);
-    for (const token of fallbackTokens) {
-      const tokenRegex = new RegExp(`\\b${escapeForRegex(token)}\\b`, "gi");
-      const tokenCandidates = collectRegexMatches(text, tokenRegex);
-      const tokenMatch = tokenCandidates.find((candidate) => !hasOverlap(candidate.start, candidate.end));
-      if (!tokenMatch) continue;
-      matches.push({ start: tokenMatch.start, end: tokenMatch.end, annotation });
-      break;
-    }
-  }
-
-  return matches.sort((a, b) => a.start - b.start).slice(0, 30);
 }
 
 function buildTrackedDiffs(
@@ -545,6 +544,26 @@ function parseEmailDraft(content: string) {
   return { subject, body };
 }
 
+async function readCheckoutError(res: Response): Promise<string> {
+  const contentType = res.headers.get("content-type") ?? "";
+
+  try {
+    if (contentType.includes("application/json")) {
+      const json = (await res.json()) as { error?: unknown; message?: unknown };
+      if (typeof json.error === "string" && json.error.trim()) return json.error;
+      if (typeof json.message === "string" && json.message.trim()) return json.message;
+      return JSON.stringify(json).slice(0, 500);
+    }
+
+    const text = await res.text();
+    if (text.trim()) return text.slice(0, 500);
+  } catch {
+    // Fall back below.
+  }
+
+  return res.statusText || "Unknown error";
+}
+
 export default function ResultWorkspace({ data, retentionDays, accessKey, abVariant }: ResultWorkspaceProps) {
   const [surveyRating, setSurveyRating] = useState<"positive" | "negative" | null>(null);
 
@@ -564,9 +583,11 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   const [addonNotice, setAddonNotice] = useState<string | null>(null);
   const [addonDraft, setAddonDraft] = useState<AddonDraft | null>(null);
   const [copied, setCopied] = useState(false);
-  const [pendingJumpTargetId, setPendingJumpTargetId] = useState<string | null>(null);
   const [documentViewMode, setDocumentViewMode] = useState<DocumentViewMode>("original");
   const [documentRevision, setDocumentRevision] = useState(data.document?.revision);
+  const [upgradePrompt, setUpgradePrompt] = useState<UpgradePrompt | null>(null);
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [upgradeTier, setUpgradeTier] = useState<ReportTierOption | null>(null);
 
   const supportingSections = useMemo(
     () => data.sections.filter((section) => section.key !== "summary"),
@@ -643,21 +664,6 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
     };
   }, [accessKey, data.result_id, effectiveDocumentRevision?.status]);
 
-  useEffect(() => {
-    if (!pendingJumpTargetId) return;
-    const nextFrame = window.requestAnimationFrame(() => {
-      const target = document.getElementById(pendingJumpTargetId);
-      if (!target) return;
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-      if (target instanceof HTMLButtonElement) {
-        target.focus();
-      }
-      setPendingJumpTargetId(null);
-    });
-
-    return () => window.cancelAnimationFrame(nextFrame);
-  }, [activeReportTab, pendingJumpTargetId]);
-
   const redFlags = data.report?.red_flags ?? [];
   const clauseBreakdown = data.report?.clause_breakdown ?? [];
   const questionsToAsk = data.report?.questions_to_ask ?? [];
@@ -666,14 +672,55 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   const isCoreTier = reportTier === "scan_39";
   const isProtectTier = reportTier === "protect_99";
   const protectExtras = data.report?.protect_extras;
-  const teaserReport69 = data.report?.teaser_report_69;
-  const teaserProtect99 = data.report?.teaser_protect_99;
   const protectUpsell = data.report?.protect_upsell;
   const activeEmailDraft = addonDraft?.key === "update_email" ? addonDraft : null;
 
-  function jumpToReportTab(tab: ReportTab, targetId?: string) {
-    setActiveReportTab(tab);
-    setPendingJumpTargetId(targetId ?? null);
+  function openUpgradePrompt(prompt: UpgradePrompt) {
+    setUpgradePrompt(prompt);
+    setUpgradeError(null);
+  }
+
+  async function startResultUpgrade(tier: ReportTierOption) {
+    if (!accessKey) {
+      setUpgradeError("This result link needs a fresh secure access key before checkout can start.");
+      return;
+    }
+
+    setUpgradeTier(tier);
+    setUpgradeError(null);
+
+    try {
+      void trackFunnelMetric({
+        event: "checkout_start",
+        funnelId: getOrCreateFunnelId(),
+        resultId: data.result_id,
+        abVariant,
+      });
+
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          resultId: data.result_id,
+          accessKey,
+          reportTier: tier,
+        }),
+      });
+
+      if (!response.ok) {
+        const detail = await readCheckoutError(response);
+        throw new Error(`Checkout failed (${response.status}): ${detail}`);
+      }
+
+      const checkout = (await response.json()) as { checkoutUrl?: string };
+      if (!checkout.checkoutUrl) {
+        throw new Error("Checkout succeeded but did not return a checkout URL.");
+      }
+      window.location.assign(checkout.checkoutUrl);
+    } catch (err) {
+      setUpgradeError(err instanceof Error ? err.message : "Checkout could not be started.");
+      setUpgradeTier(null);
+    }
   }
 
   function activateAddon(addon: AddonKey) {
@@ -738,6 +785,37 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   const evidenceCoveragePct = Math.round(
     (evidenceClauseCount / Math.max(clauseBreakdown.length, 1)) * 100
   );
+  const reportUpgradeTiers: ReportTierOption[] = isCoreTier ? ["report_69", "protect_99"] : ["protect_99"];
+  const fullReportPrompt: UpgradePrompt = {
+    title: "Full clause analysis",
+    description:
+      "Open the complete clause view with missing and unclear terms, explanations, and evidence notes.",
+    tiers: reportUpgradeTiers,
+  };
+  const documentReviewPrompt: UpgradePrompt = {
+    title: "Document review",
+    description:
+      "Review the source text with document-level callouts, tracked changes, and revised wording where available.",
+    tiers: reportUpgradeTiers,
+  };
+  const protectPlanPrompt: UpgradePrompt = {
+    title: "Negotiation prep",
+    description:
+      "Open rewrite options, fallback positions, priority stack, and a ready-to-send negotiation email draft.",
+    tiers: ["protect_99"],
+  };
+  const rewriteOptionsPrompt: UpgradePrompt = {
+    title: "Rewrite options",
+    description:
+      "See alternative language for higher-risk issues, including push-hard, middle-ground, and minimum fallback positions.",
+    tiers: ["protect_99"],
+  };
+  const emailDraftPrompt: UpgradePrompt = {
+    title: "Negotiation email",
+    description:
+      "Generate a structured email that turns the report findings into requested contract changes.",
+    tiers: ["protect_99"],
+  };
   const [insightsDrilldownOpen, setInsightsDrilldownOpen] = useState(() => ({
     summary: true,
     terms: unclearClauses.length + missingClauses.length > 0,
@@ -1001,6 +1079,48 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   );
 
   return (
+    <>
+    {upgradePrompt ? (
+      <div className="fixed bottom-5 left-1/2 z-[200] w-[min(92vw,560px)] -translate-x-1/2 rounded-lg border border-[var(--pt-border)] bg-white p-4 shadow-[0_18px_40px_-24px_rgba(31,43,61,0.55)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-[var(--pt-ink)]">{upgradePrompt.title}</p>
+            <p className="mt-1 text-sm leading-6 text-[var(--pt-muted)]">{upgradePrompt.description}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setUpgradePrompt(null);
+              setUpgradeError(null);
+            }}
+            className="rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+          >
+            Close
+          </button>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {upgradePrompt.tiers.map((tier) => (
+            <button
+              key={`upgrade-${tier}`}
+              type="button"
+              onClick={() => startResultUpgrade(tier)}
+              disabled={upgradeTier !== null}
+              className="rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {upgradeTier === tier
+                ? "Opening..."
+                : `${REPORT_TIER_NAMES[tier]} ${REPORT_TIER_PRICES[tier]}`}
+            </button>
+          ))}
+        </div>
+        {upgradeError ? (
+          <p className="mt-3 rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">
+            {upgradeError}
+          </p>
+        ) : null}
+      </div>
+    ) : null}
+
     <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
       <aside className="pt-card p-4">
         {data.report ? (
@@ -1311,34 +1431,29 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                     </article>
                   )}
 
-                  {!isProtectTier && protectUpsell?.should_upsell_protect && teaserProtect99 && (
-                    <article className="rounded-lg border border-[#c9d7f7] bg-gradient-to-r from-[#f0f3fd] to-[#f8f9fe] p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#54629b]">Recommended for this contract</p>
-                      <p className="mt-1 text-sm font-semibold text-[#374175]">{teaserProtect99.headline}</p>
-                      {protectUpsell.reasons.length > 0 && (
-                        <p className="mt-1 text-xs text-[#54629b]">{protectUpsell.reasons[0]}</p>
-                      )}
-                      <ul className="mt-2 space-y-1">
-                        {teaserProtect99.bullets.map((bullet, idx) => (
-                          <li key={`teaser-protect-${idx}`} className="flex items-start gap-2 text-sm text-[#4c5a86]">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#5d73c8]" />
-                            {bullet}
-                          </li>
-                        ))}
-                      </ul>
-                    </article>
+                  {!isProtectTier && protectUpsell?.should_upsell_protect && (
+                    <LockedDisclosure
+                      title="Negotiation prep"
+                      meta={REPORT_TIER_NAMES.protect_99}
+                      description={
+                        protectUpsell.reasons[0] ??
+                        "A negotiation plan is available for contracts with elevated risk signals."
+                      }
+                      onOpen={() => openUpgradePrompt(protectPlanPrompt)}
+                    />
                   )}
                 </>
               )}
 
               {activeReportTab === "insights" && (
                 <>
-                  {isCoreTier && teaserReport69 && (
-                    <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan preview</p>
-                      <p className="mt-1 text-sm font-semibold text-[#6e4f1e]">You&apos;re seeing insights based on your Core scan results.</p>
-                      <p className="mt-1 text-sm text-[#6e4f1e]">Upgrade to Report for deeper analysis, full clause coverage, and question readiness scoring.</p>
-                    </article>
+                  {isCoreTier && (
+                    <LockedDisclosure
+                      title="Deeper insight view"
+                      meta={REPORT_TIER_NAMES.report_69}
+                      description="Open the full insight layer with clause coverage, evidence coverage, and question readiness."
+                      onOpen={() => openUpgradePrompt(fullReportPrompt)}
+                    />
                   )}
                   <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff6ea] via-[#fff9f2] to-[#ffeed8] p-4">
                     <div className="flex items-center gap-2">
@@ -1558,19 +1673,13 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         </article>
                       ))}
 
-                      {isCoreTier && teaserReport69 && (
-                        <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan preview</p>
-                          <p className="mt-1 text-sm font-semibold text-[#6e4f1e]">{teaserReport69.headline}</p>
-                          <ul className="mt-2 space-y-1">
-                            {teaserReport69.bullets.map((bullet, idx) => (
-                              <li key={`teaser-flags-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
-                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
-                                {bullet}
-                              </li>
-                            ))}
-                          </ul>
-                        </article>
+                      {isCoreTier && (
+                        <LockedDisclosure
+                          title="Full red-flag notes"
+                          meta={REPORT_TIER_NAMES.report_69}
+                          description="Open the full risk notes, clause context, and negotiation talking points behind these findings."
+                          onOpen={() => openUpgradePrompt(fullReportPrompt)}
+                        />
                       )}
 
                       {isProtectTier && protectExtras && protectExtras.deeper_rewrites.length > 0 && (
@@ -1617,6 +1726,15 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                             ))}
                           </ul>
                         </article>
+                      )}
+
+                      {!isProtectTier && (
+                        <LockedDisclosure
+                          title="Rewrite options"
+                          meta={REPORT_TIER_NAMES.protect_99}
+                          description="Open fallback language options and negotiating positions for the highest-priority risk areas."
+                          onOpen={() => openUpgradePrompt(rewriteOptionsPrompt)}
+                        />
                       )}
 
                     </>
@@ -1736,20 +1854,13 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         </article>
                       ))}
 
-                      {isCoreTier && teaserReport69 && (
-                        <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan preview</p>
-                          <p className="mt-1 text-sm font-semibold text-[#6e4f1e]">{teaserReport69.headline}</p>
-                          <p className="mt-1 text-sm text-[#6e4f1e]">Upgrade to see all clauses including missing and unclear terms, with full explanations and watch-for notes.</p>
-                          <ul className="mt-2 space-y-1">
-                            {teaserReport69.bullets.map((bullet, idx) => (
-                              <li key={`teaser-terms-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
-                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
-                                {bullet}
-                              </li>
-                            ))}
-                          </ul>
-                        </article>
+                      {isCoreTier && (
+                        <LockedDisclosure
+                          title="Complete term explanations"
+                          meta={REPORT_TIER_NAMES.report_69}
+                          description="Open missing and unclear terms with full explanations, watch-for notes, and source-backed context."
+                          onOpen={() => openUpgradePrompt(fullReportPrompt)}
+                        />
                       )}
 
                       {isProtectTier && protectExtras && protectExtras.advanced_clause_coverage.length > 0 && (
@@ -1777,6 +1888,15 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                           </ul>
                         </article>
                       )}
+
+                      {!isCoreTier && !isProtectTier && (
+                        <LockedDisclosure
+                          title="Advanced clause coverage"
+                          meta={REPORT_TIER_NAMES.protect_99}
+                          description="Open extended clause checks for complex risk areas and edge-case contract language."
+                          onOpen={() => openUpgradePrompt(protectPlanPrompt)}
+                        />
+                      )}
                     </>
                   ) : (
                     <div className="pt-card-soft p-3 text-sm text-[var(--pt-muted)]">
@@ -1788,34 +1908,12 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
 
               {activeReportTab === "document" && (
                 isCoreTier ? (
-                  <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-6">
-                    <div className="flex items-start gap-4">
-                      <Image
-                        src="/graphics/icon-doc.svg"
-                        alt=""
-                        width={44}
-                        height={44}
-                        className="h-11 w-11 shrink-0 rounded-lg border border-[#e9d3b0] bg-white p-2"
-                      />
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan — not included</p>
-                        <p className="mt-1 text-base font-semibold text-[#6e4f1e]">Document review is available in Report and Protect</p>
-                        <p className="mt-1 text-sm text-[#6e4f1e]">
-                          Upgrade to see your contract with risk areas highlighted, suggested wording changes tracked inline, and a fully revised draft ready to send.
-                        </p>
-                        {teaserReport69 && (
-                          <ul className="mt-3 space-y-1">
-                            {teaserReport69.bullets.map((bullet, idx) => (
-                              <li key={`teaser-doc-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
-                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
-                                {bullet}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                  </article>
+                  <LockedDisclosure
+                    title="Document review"
+                    meta={REPORT_TIER_NAMES.report_69}
+                    description="Open the contract text with risk areas highlighted and suggested wording changes where available."
+                    onOpen={() => openUpgradePrompt(documentReviewPrompt)}
+                  />
                 ) : documentReviewContent
               )}
 
@@ -1857,24 +1955,33 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         ))}
                       </div>
 
-                      <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) px-4 py-3">
-                        <p className="text-sm font-semibold text-foreground">Send these questions by email</p>
-                        <p className="mt-1 text-sm text-(--pt-muted)">
-                          Generate a ready-to-send email addressed to the other party, covering the questions above and your key negotiation points.
-                        </p>
-                        <button
-                          id="questions-email-draft-button"
-                          type="button"
-                          onClick={() => activateAddon("update_email")}
-                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-(--pt-border) bg-white px-3 py-2 text-sm font-semibold text-foreground hover:border-(--pt-accent)"
-                        >
-                          <Image src="/graphics/icon-search.svg" alt="" width={16} height={16} className="h-4 w-4" />
-                          Generate negotiation email
-                        </button>
-                        {addonNotice ? (
-                          <p className="mt-2 text-[11px] text-(--pt-muted)">{addonNotice}</p>
-                        ) : null}
-                      </article>
+                      {isProtectTier ? (
+                        <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) px-4 py-3">
+                          <p className="text-sm font-semibold text-foreground">Send these questions by email</p>
+                          <p className="mt-1 text-sm text-(--pt-muted)">
+                            Generate a ready-to-send email addressed to the other party, covering the questions above and your key negotiation points.
+                          </p>
+                          <button
+                            id="questions-email-draft-button"
+                            type="button"
+                            onClick={() => activateAddon("update_email")}
+                            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-(--pt-border) bg-white px-3 py-2 text-sm font-semibold text-foreground hover:border-(--pt-accent)"
+                          >
+                            <Image src="/graphics/icon-search.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                            Generate negotiation email
+                          </button>
+                          {addonNotice ? (
+                            <p className="mt-2 text-[11px] text-(--pt-muted)">{addonNotice}</p>
+                          ) : null}
+                        </article>
+                      ) : (
+                        <LockedDisclosure
+                          title="Negotiation email"
+                          meta={REPORT_TIER_NAMES.protect_99}
+                          description="Open a ready-to-send email that turns these questions and risk findings into requested contract changes."
+                          onOpen={() => openUpgradePrompt(emailDraftPrompt)}
+                        />
+                      )}
 
                       {activeEmailDraft ? (
                         <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) p-3">
@@ -1923,24 +2030,33 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                     </>
                   ) : (
                     <>
-                      <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) px-4 py-3">
-                        <p className="text-sm font-semibold text-foreground">Send your negotiation points by email</p>
-                        <p className="mt-1 text-sm text-(--pt-muted)">
-                          No specific questions were flagged for this contract, but you can still generate a negotiation email covering the key risks identified in this review.
-                        </p>
-                        <button
-                          id="questions-email-draft-button"
-                          type="button"
-                          onClick={() => activateAddon("update_email")}
-                          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-(--pt-border) bg-white px-3 py-2 text-sm font-semibold text-foreground hover:border-(--pt-accent)"
-                        >
-                          <Image src="/graphics/icon-search.svg" alt="" width={16} height={16} className="h-4 w-4" />
-                          Generate negotiation email
-                        </button>
-                        {addonNotice ? (
-                          <p className="mt-2 text-[11px] text-(--pt-muted)">{addonNotice}</p>
-                        ) : null}
-                      </article>
+                      {isProtectTier ? (
+                        <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) px-4 py-3">
+                          <p className="text-sm font-semibold text-foreground">Send your negotiation points by email</p>
+                          <p className="mt-1 text-sm text-(--pt-muted)">
+                            No specific questions were flagged for this contract, but you can still generate a negotiation email covering the key risks identified in this review.
+                          </p>
+                          <button
+                            id="questions-email-draft-button"
+                            type="button"
+                            onClick={() => activateAddon("update_email")}
+                            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-(--pt-border) bg-white px-3 py-2 text-sm font-semibold text-foreground hover:border-(--pt-accent)"
+                          >
+                            <Image src="/graphics/icon-search.svg" alt="" width={16} height={16} className="h-4 w-4" />
+                            Generate negotiation email
+                          </button>
+                          {addonNotice ? (
+                            <p className="mt-2 text-[11px] text-(--pt-muted)">{addonNotice}</p>
+                          ) : null}
+                        </article>
+                      ) : (
+                        <LockedDisclosure
+                          title="Negotiation email"
+                          meta={REPORT_TIER_NAMES.protect_99}
+                          description="Open a ready-to-send email that turns the risk findings into requested contract changes."
+                          onOpen={() => openUpgradePrompt(emailDraftPrompt)}
+                        />
+                      )}
 
                       {activeEmailDraft ? (
                         <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) p-3">
@@ -1993,20 +2109,13 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
 
               {activeReportTab === "full" && (
                 <>
-                  {isCoreTier && teaserReport69 && (
-                    <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff8ef] to-[#fffdf5] p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8c6526]">Core scan preview</p>
-                      <p className="mt-1 text-sm font-semibold text-[#6e4f1e]">{teaserReport69.headline}</p>
-                      <p className="mt-1 text-sm text-[#6e4f1e]">The Full Report view shows all clauses — including missing and unclear ones — with evidence snippets. Available in Report and Protect tiers.</p>
-                      <ul className="mt-2 space-y-1">
-                        {teaserReport69.bullets.map((bullet, idx) => (
-                          <li key={`teaser-full-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
-                            {bullet}
-                          </li>
-                        ))}
-                      </ul>
-                    </article>
+                  {isCoreTier && (
+                    <LockedDisclosure
+                      title="Complete clause view"
+                      meta={REPORT_TIER_NAMES.report_69}
+                      description="Open all detected clauses, including missing and unclear terms, with evidence snippets and plain-English notes."
+                      onOpen={() => openUpgradePrompt(fullReportPrompt)}
+                    />
                   )}
                   <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
                     <div className="flex items-center gap-2">
@@ -2191,5 +2300,6 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
         )}
       </div>
     </section>
+    </>
   );
 }

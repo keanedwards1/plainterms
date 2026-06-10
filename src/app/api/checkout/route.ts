@@ -23,7 +23,17 @@ const PreviewCheckoutRequest = z.object({
   reportTier: z.enum(REPORT_TIER_OPTIONS).optional(),
 });
 
-const CheckoutRequest = z.union([PreviewCheckoutRequest, UploadCheckoutRequest]);
+const ResultUpgradeCheckoutRequest = z.object({
+  resultId: z.string().min(1),
+  accessKey: z.string().min(1),
+  reportTier: z.enum(REPORT_TIER_OPTIONS),
+});
+
+const CheckoutRequest = z.union([
+  PreviewCheckoutRequest,
+  ResultUpgradeCheckoutRequest,
+  UploadCheckoutRequest,
+]);
 
 const CheckoutResponse = z.object({
   checkoutSessionId: z.string().min(1),

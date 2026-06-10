@@ -1,7 +1,7 @@
-import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, GetItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import crypto from "node:crypto";
 import Stripe from "stripe";
-import { runAnalysis } from "./lib/runAnalysis.mjs";
+import { applyTierToReport, runAnalysis } from "./lib/runAnalysis.mjs";
 import { getStripeSecretKey } from "./lib/stripeConfig.mjs";
 import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
 import { parseSelectedAddonsCsv } from "./lib/addonSelection.mjs";
@@ -138,6 +138,54 @@ async function issueResultAccessKeyForResult(resultId) {
   return accessKey;
 }
 
+async function applyPurchasedTierToStoredResult(resultId, selectedTier) {
+  const tableName = process.env.RESULTS_TABLE;
+  if (!tableName) {
+    throw new Error("Missing required env var: RESULTS_TABLE");
+  }
+
+  const res = await db.send(
+    new GetItemCommand({
+      TableName: tableName,
+      Key: {
+        result_id: { S: String(resultId) },
+      },
+    })
+  );
+
+  if (!res.Item?.ui_result?.S) return;
+
+  let uiResult;
+  try {
+    uiResult = JSON.parse(res.Item.ui_result.S);
+  } catch {
+    return;
+  }
+
+  const currentReport = uiResult?.report;
+  if (!currentReport) return;
+
+  const tieredReport = applyTierToReport(currentReport, selectedTier);
+  const nextUiResult = {
+    ...uiResult,
+    report: tieredReport,
+  };
+
+  await db.send(
+    new UpdateItemCommand({
+      TableName: tableName,
+      Key: {
+        result_id: { S: String(resultId) },
+      },
+      UpdateExpression: "SET ui_result = :ui, purchased_report_tier = :tier",
+      ExpressionAttributeValues: {
+        ":ui": { S: JSON.stringify(nextUiResult) },
+        ":tier": { S: selectedTier },
+      },
+    })
+  );
+}
+
 async function safeUpdateSessionMetadata(stripe, sessionId, metadataPatch) {
   try {
     await stripe.checkout.sessions.update(sessionId, {
@@ -159,6 +207,12 @@ async function issueAccessForResultAndScrubSession({
     throw new Error("Missing resultId in session metadata.");
   }
 
+  const selectionCheck = parseAnalysisSelection({
+    reportTier: session?.metadata?.reportTier,
+  });
+  if (selectionCheck.ok && selectionCheck.selection.reportTier) {
+    await applyPurchasedTierToStoredResult(resultId, selectionCheck.selection.reportTier);
+  }
   const rotatedAccessKey = await issueResultAccessKeyForResult(resultId);
   await safeUpdateSessionMetadata(stripe, sessionId, {
     ...(session.metadata ?? {}),
@@ -181,6 +235,11 @@ async function issueAccessForPreviewUnlockAndScrubSession({ stripe, sessionId, s
     throw new Error("Missing previewResultId in session metadata.");
   }
 
+  const selectionCheck = parseAnalysisSelection({
+    reportTier: session?.metadata?.reportTier,
+  });
+  const selectedTier = selectionCheck.ok ? selectionCheck.selection.reportTier : "report_69";
+  await applyPurchasedTierToStoredResult(resultId, selectedTier);
   const rotatedAccessKey = await issueResultAccessKeyForResult(resultId);
   await safeUpdateSessionMetadata(stripe, sessionId, {
     ...(session.metadata ?? {}),
@@ -188,6 +247,7 @@ async function issueAccessForPreviewUnlockAndScrubSession({ stripe, sessionId, s
     previewResultId: "",
     previewUnlock: "complete",
     resultAccessKey: "",
+    reportTier: selectedTier,
     analysisStatus: "complete",
     analysisOwner: "",
     analysisCompletedAt: new Date().toISOString(),

@@ -81,6 +81,37 @@ async function queueDocumentRevisionJob(resultId) {
   return true;
 }
 
+function buildInitialDocumentRevision(uiResult) {
+  const tier = typeof uiResult?.report?.tier === "string" ? uiResult.report.tier : "report_69";
+  if (tier === "scan_39") {
+    return {
+      status: "not_available",
+      message: "Document review is available in Report and Protect tiers.",
+    };
+  }
+
+  const extractedText =
+    typeof uiResult?.document?.extracted_text === "string" ? uiResult.document.extracted_text : "";
+  if (!extractedText.trim()) {
+    return {
+      status: "not_available",
+      message: "Document text was not available for revision generation.",
+    };
+  }
+
+  if (!hasMeaningfulRevisionTargets(uiResult)) {
+    return {
+      status: "not_needed",
+      message: "No material wording risks were identified for automated revision.",
+    };
+  }
+
+  return {
+    status: "processing",
+    message: "Generating revised wording in the background.",
+  };
+}
+
 function buildPreviewResult(uiResult, abVariant) {
   const report = uiResult?.report ?? {};
   const flags = asArray(report.red_flags);
@@ -104,8 +135,8 @@ function buildPreviewResult(uiResult, abVariant) {
     headline: `Risk ${riskScore}/100 · ${redFlagCount} red flag${redFlagCount === 1 ? "" : "s"} found`,
     overview:
       redFlagCount > 0
-        ? "This contract has issues worth reviewing before you sign. Unlock the report to see the specific flags, clause notes, rewrites, and email draft."
-        : "No major red flags were detected, but the full report can still show clause-level detail and suggested cleanup before signature.",
+        ? "This contract has issues worth reviewing before you sign."
+        : "No major red flags were detected from the extracted text.",
     document: {
       file_name: uiResult?.document?.file_name ?? "Contract document",
       content_type: uiResult?.document?.content_type,
@@ -242,22 +273,7 @@ export const handler = async (event) => {
     }
 
     if (!uiResult?.document?.revision) {
-      const extractedText =
-        typeof uiResult?.document?.extracted_text === "string" ? uiResult.document.extracted_text : "";
-      const nextRevision = !extractedText.trim()
-        ? {
-            status: "not_available",
-            message: "Document text was not available for revision generation.",
-          }
-        : hasMeaningfulRevisionTargets(uiResult)
-          ? {
-              status: "processing",
-              message: "Generating revised wording in the background.",
-            }
-          : {
-              status: "not_needed",
-              message: "No material wording risks were identified for automated revision.",
-            };
+      const nextRevision = buildInitialDocumentRevision(uiResult);
       uiResult = withRevision(uiResult, nextRevision);
 
       try {

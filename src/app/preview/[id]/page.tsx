@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
 import PreviewUnlockPanel from "@/components/PreviewUnlockPanel";
 
@@ -49,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: "Free Contract Risk Preview",
-    description: "A locked PlainTerms preview showing contract risk score and red-flag count.",
+    description: "A PlainTerms preview showing contract risk score and red-flag count.",
     alternates: {
       canonical: `/preview/${id}`,
     },
@@ -152,7 +151,6 @@ export default async function PreviewPage({ params, searchParams }: Props) {
   const data = (await res.json()) as PreviewResult;
   const createdAtLabel = formatResultDate(data.created_at);
   const fileNameLabel = data.document?.file_name ?? "Contract document";
-  const wordCount = data.document?.word_count;
   const clauseIssueCount = data.clause_counts.unclear + data.clause_counts.missing;
 
   return (
@@ -162,7 +160,7 @@ export default async function PreviewPage({ params, searchParams }: Props) {
           ← Analyze another file
         </Link>
 
-        <section className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="mt-5">
           <div className="pt-card overflow-hidden">
             <div className="border-b border-[var(--pt-border)] bg-[#fff8f1] p-5">
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--pt-muted)]">
@@ -191,7 +189,7 @@ export default async function PreviewPage({ params, searchParams }: Props) {
                   <p className="mt-2 text-5xl font-semibold leading-none text-[#6e4f1e]">
                     {data.red_flag_count}
                   </p>
-                  <p className="mt-1 text-sm text-[#8c6526]">details locked</p>
+                  <p className="mt-1 text-sm text-[#8c6526]">issue count</p>
                 </article>
                 <article className="rounded-lg border border-[#b2ddd4] bg-[#e1f4ef] p-4">
                   <p className="text-sm font-semibold text-[#1d655f]">Clause issues</p>
@@ -200,6 +198,16 @@ export default async function PreviewPage({ params, searchParams }: Props) {
                   </p>
                   <p className="mt-1 text-sm text-[#1d655f]">unclear or missing</p>
                 </article>
+              </div>
+
+              <div className="mt-4">
+                <PreviewUnlockPanel
+                  resultId={data.result_id}
+                  previewAccessKey={previewAccessKey}
+                  canceled={query.canceled === "1"}
+                  redFlagCount={data.red_flag_count}
+                  clauseCount={data.clause_counts.total}
+                />
               </div>
 
               <article className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
@@ -236,56 +244,10 @@ export default async function PreviewPage({ params, searchParams }: Props) {
                 </div>
               </article>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {[
-                  ["Red flag details", `${data.locked.red_flags} issue explanations`],
-                  ["Clause-by-clause report", `${data.locked.clause_breakdown} clauses analyzed`],
-                  ["Suggested rewrites", "Fallback wording and tracked edits"],
-                  ["Negotiation email", "Draft message to send for revisions"],
-                ].map(([title, subtitle]) => (
-                  <article
-                    key={title}
-                    className="relative overflow-hidden rounded-lg border border-[var(--pt-border)] bg-white p-4"
-                  >
-                    <div className="absolute inset-x-0 top-0 h-1 bg-[#de8f79]" />
-                    <div className="flex items-center gap-3">
-                      <Image src="/graphics/icon-doc.svg" alt="" width={28} height={28} className="h-7 w-7 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-1" />
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--pt-ink)]">{title}</p>
-                        <p className="text-xs text-[var(--pt-muted)]">{subtitle}</p>
-                      </div>
-                      <span className="ml-auto rounded-full border border-[#e9d3b0] bg-[#fff8ef] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">
-                        Locked
-                      </span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-
               <p className="mt-5 text-xs leading-5 text-[var(--pt-muted)]">
-                The preview intentionally excludes source text, clause evidence, flag titles, suggested edits,
-                and generated drafts. PlainTerms is informational only and is not legal advice.
-                {wordCount ? ` Document length detected: ${wordCount} words.` : ""}
+                PlainTerms is informational only and is not legal advice.
               </p>
             </div>
-          </div>
-
-          <div className="space-y-4">
-            <PreviewUnlockPanel
-              resultId={data.result_id}
-              previewAccessKey={previewAccessKey}
-              canceled={query.canceled === "1"}
-            />
-
-            <aside className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4 text-sm text-[var(--pt-muted)]">
-              <p className="font-semibold text-[var(--pt-ink)]">Security measures</p>
-              <ul className="mt-2 space-y-2">
-                <li>• Preview links use a separate access key from paid result links.</li>
-                <li>• The preview API returns counts only, never the full flags or source text.</li>
-                <li>• Paid result keys are issued only after Stripe confirms payment.</li>
-                <li>• Uploads still pass file type, size, malware, and text-readability checks.</li>
-              </ul>
-            </aside>
           </div>
         </section>
       </div>
