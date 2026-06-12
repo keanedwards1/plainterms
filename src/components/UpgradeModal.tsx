@@ -87,9 +87,9 @@ export default function UpgradeModal({
         className="relative z-10 w-full max-w-[860px] overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(31,43,61,0.6)]"
       >
         {/* Premium header band */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#2a2152] via-[#3a2b6b] to-[#5a3d8a] px-6 py-5 text-white sm:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#1f2b3d] via-[#3a3144] to-[#6e3f43] px-6 py-5 text-white sm:px-8">
           <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -bottom-16 right-16 h-40 w-40 rounded-full bg-[#de8f79]/25 blur-2xl" />
+          <div className="absolute -bottom-16 right-16 h-40 w-40 rounded-full bg-[var(--pt-accent)]/35 blur-2xl" />
           <div className="relative flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
               <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25">
