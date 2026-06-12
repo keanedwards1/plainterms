@@ -56,9 +56,10 @@ export const handler = async (event) => {
   const contentType = payload.contentType;
   const size = payload.size;
   const precheckToken = payload.precheckToken;
+  // The free preview never lets the client choose the analysis mode/model — that would
+  // let an attacker force the most expensive model on unpaid traffic. The model is decided
+  // server-side (and capped by ANALYSIS_MODE) in resolveFinalAnalysisSelection.
   const selectionCheck = parseAnalysisSelection({
-    analysisMode: payload.analysisMode,
-    llmModel: payload.llmModel,
     reportTier: "report_69",
   });
 

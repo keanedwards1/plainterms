@@ -688,6 +688,15 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report, 
 }
 
 function resolveFinalAnalysisSelection(analysisSelection, reportTier) {
+  // Hard cap from deployment config. When ANALYSIS_MODE is not "llm", analysis never
+  // escalates to a paid LLM call — regardless of client input, tier, or A/B assignment.
+  // The free preview computes the score and the paid report reuses that exact result,
+  // so this both prevents LLM spend on unpaid traffic and keeps preview/paid scores identical.
+  const serverMode = String(process.env.ANALYSIS_MODE ?? "rules").trim().toLowerCase();
+  if (serverMode !== "llm") {
+    return { analysisMode: "rules", llmModel: null, abVariant: "rules_locked" };
+  }
+
   // Explicit llm override from internal settings — respect it for manual testing.
   if (analysisSelection.analysisMode === "llm" && analysisSelection.llmModel) {
     return { analysisMode: "llm", llmModel: analysisSelection.llmModel, abVariant: "override" };

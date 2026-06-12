@@ -113,6 +113,10 @@ Parameters:
     Type: Number
     Default: 10
     Description: Stage-level API Gateway throttle burst limit.
+  PreviewMaxConcurrency:
+    Type: Number
+    Default: 25
+    Description: Reserved concurrency cap for the free preview analysis function, bounding abuse blast radius and protecting other functions' concurrency.
   ApiRequestCountAlarmThreshold:
     Type: Number
     Default: 900
@@ -477,6 +481,7 @@ Resources:
       Handler: previewAnalysis.handler
       Timeout: 330
       MemorySize: 512
+      ReservedConcurrentExecutions: !Ref PreviewMaxConcurrency
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
