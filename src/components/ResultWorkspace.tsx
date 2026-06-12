@@ -102,7 +102,7 @@ function annotateLegalTerms(text: string, keyPrefix: string) {
     if (!definition) return <span key={`${keyPrefix}-${idx}`}>{part}</span>;
 
     return (
-      <span key={`${keyPrefix}-${idx}`} className="group relative inline">
+      <span key={`${keyPrefix}-${idx}`} className="group/term relative inline">
         <span
           tabIndex={0}
           className="cursor-pointer rounded-[2px] underline decoration-dotted decoration-[var(--pt-ink)] underline-offset-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pt-ink)]/25"
@@ -112,7 +112,7 @@ function annotateLegalTerms(text: string, keyPrefix: string) {
         </span>
         <span
           role="tooltip"
-          className="pointer-events-none invisible absolute bottom-full left-1/2 z-[120] mb-2 w-64 -translate-x-1/2 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface)] p-2 text-left text-xs leading-5 text-[var(--pt-ink)] opacity-0 shadow-md transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+          className="pointer-events-none invisible absolute bottom-full left-1/2 z-[120] mb-2 w-64 -translate-x-1/2 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface)] p-2 text-left text-xs leading-5 text-[var(--pt-ink)] opacity-0 shadow-md transition-opacity duration-150 group-hover/term:visible group-hover/term:opacity-100 group-focus-within/term:visible group-focus-within/term:opacity-100"
         >
           {definition}
         </span>
