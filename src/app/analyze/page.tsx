@@ -4,6 +4,12 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
+import {
+  REPORT_TIER_DESCRIPTIONS,
+  REPORT_TIER_NAMES,
+  REPORT_TIER_PRICES,
+  type ReportTierOption,
+} from "@/lib/pricingOptions";
 
 type UploadUrlResponse = {
   uploadUrl: string;
@@ -20,19 +26,39 @@ type PreviewResponse = {
   previewAccessKey: string;
 };
 
+type CheckoutResponse = {
+  checkoutSessionId: string;
+  checkoutUrl: string;
+};
+
+type ReviewChoice = "free" | ReportTierOption;
+
+const TIER_ORDER: ReportTierOption[] = ["scan_39", "report_69", "protect_99"];
+const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
+
 type SubmitStep =
   | "requesting-upload-url"
   | "uploading-file"
   | "validating-file"
   | "running-analysis"
-  | "opening-preview";
+  | "opening-preview"
+  | "starting-checkout"
+  | "redirecting-to-checkout";
 
-const SUBMIT_STEP_ORDER: SubmitStep[] = [
+const FREE_STEP_ORDER: SubmitStep[] = [
   "requesting-upload-url",
   "uploading-file",
   "validating-file",
   "running-analysis",
   "opening-preview",
+];
+
+const PAID_STEP_ORDER: SubmitStep[] = [
+  "requesting-upload-url",
+  "uploading-file",
+  "validating-file",
+  "starting-checkout",
+  "redirecting-to-checkout",
 ];
 
 const SUBMIT_STEP_DESCRIPTIONS: Record<SubmitStep, string> = {
@@ -41,6 +67,8 @@ const SUBMIT_STEP_DESCRIPTIONS: Record<SubmitStep, string> = {
   "validating-file": "Running malware scan, validating file type, and extracting readable text.",
   "running-analysis": "Reading the file and preparing your risk preview.",
   "opening-preview": "Opening your free risk preview.",
+  "starting-checkout": "Preparing secure checkout with your validated file.",
+  "redirecting-to-checkout": "Redirecting you to encrypted Stripe payment.",
 };
 
 async function readErrorResponse(res: Response): Promise<string> {
@@ -75,6 +103,10 @@ function stepLabel(step: SubmitStep): string {
       return "Preparing risk preview";
     case "opening-preview":
       return "Opening preview";
+    case "starting-checkout":
+      return "Starting checkout";
+    case "redirecting-to-checkout":
+      return "Redirecting to payment";
   }
 }
 
@@ -89,10 +121,26 @@ export default function AnalyzePage() {
   const [error, setError] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<SubmitStep | null>(null);
   const [checkoutCanceled, setCheckoutCanceled] = React.useState(false);
+  const [reviewChoice, setReviewChoice] = React.useState<ReviewChoice>("free");
+
+  const stepOrder = reviewChoice === "free" ? FREE_STEP_ORDER : PAID_STEP_ORDER;
 
   React.useEffect(() => {
     const url = new URL(window.location.href);
     setCheckoutCanceled(url.searchParams.get("canceled") === "1");
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(LOCAL_STORAGE_REPORT_TIER_KEY);
+      if (stored && TIER_ORDER.includes(stored as ReportTierOption)) {
+        setReviewChoice(stored as ReportTierOption);
+      }
+      // One-time handoff from the sample/preview pages; free stays the default afterward.
+      window.localStorage.removeItem(LOCAL_STORAGE_REPORT_TIER_KEY);
+    } catch {
+      // Ignore storage failures; default stays on the free preview.
+    }
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
@@ -172,6 +220,40 @@ export default function AnalyzePage() {
       const precheckJson = (await precheckRes.json()) as PrecheckResponse;
       if (!precheckJson.precheckPassed || !precheckJson.precheckToken) {
         throw new Error("File validation did not pass. Please upload another file.");
+      }
+
+      if (reviewChoice !== "free") {
+        currentStep = "starting-checkout";
+        setStep(currentStep);
+        void trackFunnelMetric({ event: "checkout_start", funnelId });
+
+        const checkoutRes = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            objectKey: uploadJson.objectKey,
+            filename: file.name,
+            contentType: file.type || "application/octet-stream",
+            size: file.size,
+            precheckToken: precheckJson.precheckToken,
+            reportTier: reviewChoice,
+          }),
+        });
+
+        if (!checkoutRes.ok) {
+          const detail = await readErrorResponse(checkoutRes);
+          throw new Error(`Checkout failed (${checkoutRes.status}): ${detail}`);
+        }
+
+        const checkoutData = (await checkoutRes.json()) as CheckoutResponse;
+        if (!checkoutData.checkoutUrl) {
+          throw new Error("Checkout succeeded but no checkout URL was returned.");
+        }
+
+        currentStep = "redirecting-to-checkout";
+        setStep(currentStep);
+        window.location.assign(checkoutData.checkoutUrl);
+        return;
       }
 
       currentStep = "running-analysis";
@@ -274,6 +356,62 @@ export default function AnalyzePage() {
             )}
           </div>
 
+          <fieldset className="mt-6">
+            <legend className="mb-3 block text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">
+              Choose your review
+            </legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setReviewChoice("free")}
+                aria-pressed={reviewChoice === "free"}
+                className={`relative rounded-xl border p-4 text-left transition-colors ${
+                  reviewChoice === "free"
+                    ? "border-[#de8f79] bg-[#fff6f1] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
+                    : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
+                }`}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-base font-semibold text-[var(--pt-ink)]">Free risk preview</p>
+                  <p className="text-base font-semibold text-[#2ba59f]">$0</p>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-[var(--pt-muted)]">
+                  Risk score and red-flag counts. Decide what to unlock after you see it.
+                </p>
+                <span className="mt-2 inline-flex rounded-full border border-[#b2ddd4] bg-[#e1f4ef] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">
+                  Default
+                </span>
+              </button>
+
+              {TIER_ORDER.map((tier) => (
+                <button
+                  key={tier}
+                  type="button"
+                  onClick={() => setReviewChoice(tier)}
+                  aria-pressed={reviewChoice === tier}
+                  className={`relative rounded-xl border p-4 text-left transition-colors ${
+                    reviewChoice === tier
+                      ? "border-[#de8f79] bg-[#fff6f1] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
+                      : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
+                  }`}
+                >
+                  {tier === "report_69" ? (
+                    <span className="absolute -top-2.5 right-4 rounded-full bg-[#de8f79] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                      Most popular
+                    </span>
+                  ) : null}
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-base font-semibold text-[var(--pt-ink)]">{REPORT_TIER_NAMES[tier]}</p>
+                    <p className="text-base font-semibold text-[var(--pt-ink)]">{REPORT_TIER_PRICES[tier]}</p>
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-[var(--pt-muted)]">{REPORT_TIER_DESCRIPTIONS[tier]}</p>
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-[var(--pt-muted)]">
+              Paid reviews go straight to secure checkout after your file is validated.
+            </p>
+          </fieldset>
 
           <div className="mt-5 flex flex-wrap items-center gap-3 3xl:mt-8">
             <button
@@ -281,7 +419,11 @@ export default function AnalyzePage() {
               disabled={isSubmitting}
               className="pt-btn-primary px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 3xl:px-8 3xl:py-4 3xl:text-base"
             >
-              {isSubmitting ? "Checking..." : "Check my contract risk"}
+              {isSubmitting
+                ? "Working..."
+                : reviewChoice === "free"
+                  ? "Check my contract risk"
+                  : `Continue with ${REPORT_TIER_NAMES[reviewChoice]} ${REPORT_TIER_PRICES[reviewChoice]}`}
             </button>
             {isSubmitting && step && <p className="text-sm text-[var(--pt-muted)]">{stepLabel(step)}...</p>}
           </div>
@@ -301,14 +443,14 @@ export default function AnalyzePage() {
                 <div
                   className="h-full rounded-full bg-[var(--pt-accent)] transition-all duration-500"
                   style={{
-                    width: `${((SUBMIT_STEP_ORDER.indexOf(step) + 1) / SUBMIT_STEP_ORDER.length) * 100}%`,
+                    width: `${((stepOrder.indexOf(step) + 1) / stepOrder.length) * 100}%`,
                   }}
                 />
               </div>
 
               <div className="mt-3 grid gap-2">
-                {SUBMIT_STEP_ORDER.map((item, idx) => {
-                  const currentIndex = SUBMIT_STEP_ORDER.indexOf(step);
+                {stepOrder.map((item, idx) => {
+                  const currentIndex = stepOrder.indexOf(step);
                   const completed = idx < currentIndex;
                   const active = idx === currentIndex;
                   return (
