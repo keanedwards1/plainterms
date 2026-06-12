@@ -79,18 +79,6 @@ async function readFailureDetail(res: Response): Promise<string> {
   return res.statusText || "Unknown error";
 }
 
-function riskLabelClass(label: "low" | "medium" | "high") {
-  if (label === "high") return "border-[#efc1b6] bg-[#ffe8e3] text-[#9e3f2d]";
-  if (label === "medium") return "border-[#ead3a1] bg-[#fff4df] text-[#8c6526]";
-  return "border-[#b2ddd4] bg-[#e1f4ef] text-[#1d655f]";
-}
-
-function riskMeterClass(label: "low" | "medium" | "high") {
-  if (label === "high") return "bg-[#e7745c]";
-  if (label === "medium") return "bg-[#d8a84b]";
-  return "bg-[#2ba59f]";
-}
-
 function formatResultDate(raw: string) {
   const asDate = new Date(raw);
   if (Number.isNaN(asDate.getTime())) return raw;
@@ -151,105 +139,31 @@ export default async function PreviewPage({ params, searchParams }: Props) {
   const data = (await res.json()) as PreviewResult;
   const createdAtLabel = formatResultDate(data.created_at);
   const fileNameLabel = data.document?.file_name ?? "Contract document";
-  const clauseIssueCount = data.clause_counts.unclear + data.clause_counts.missing;
 
   return (
     <main className="pt-page-pad py-6 [--pt-muted:#7f7466]">
-      <div className="pt-container-wide">
+      <div className="pt-container-wide space-y-5">
         <Link href="/analyze" className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]">
           ← Analyze another file
         </Link>
 
-        <section className="mt-5">
-          <div className="pt-card overflow-hidden">
-            <div className="border-b border-[var(--pt-border)] bg-[#fff8f1] p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--pt-muted)]">
-                <span>File: {fileNameLabel}</span>
-                <span>Analyzed: {createdAtLabel}</span>
-              </div>
-              <h1 className="mt-4 max-w-4xl text-3xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
-                {data.headline}
-              </h1>
-              <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--pt-muted)]">
-                {data.overview}
-              </p>
-            </div>
+        <PreviewUnlockPanel
+          resultId={data.result_id}
+          previewAccessKey={previewAccessKey}
+          canceled={query.canceled === "1"}
+          fileName={fileNameLabel}
+          createdAtLabel={createdAtLabel}
+          headline={data.headline}
+          overview={data.overview}
+          risk={data.risk}
+          redFlagCount={data.red_flag_count}
+          severityCounts={data.severity_counts}
+          clauseCounts={data.clause_counts}
+        />
 
-            <div className="p-5">
-              <div className="grid gap-3 md:grid-cols-3">
-                <article className="rounded-lg border border-[#efc1b6] bg-[#ffe8e3] p-4">
-                  <p className="text-sm font-semibold text-[#9e3f2d]">Risk score</p>
-                  <p className="mt-2 text-5xl font-semibold leading-none text-[#7f2e1f]">
-                    {data.risk.score}
-                  </p>
-                  <p className="mt-1 text-sm text-[#9e3f2d]">out of 100</p>
-                </article>
-                <article className="rounded-lg border border-[#ead3a1] bg-[#fff4df] p-4">
-                  <p className="text-sm font-semibold text-[#8c6526]">Red flags found</p>
-                  <p className="mt-2 text-5xl font-semibold leading-none text-[#6e4f1e]">
-                    {data.red_flag_count}
-                  </p>
-                  <p className="mt-1 text-sm text-[#8c6526]">issue count</p>
-                </article>
-                <article className="rounded-lg border border-[#b2ddd4] bg-[#e1f4ef] p-4">
-                  <p className="text-sm font-semibold text-[#1d655f]">Clause issues</p>
-                  <p className="mt-2 text-5xl font-semibold leading-none text-[#154f4a]">
-                    {clauseIssueCount}
-                  </p>
-                  <p className="mt-1 text-sm text-[#1d655f]">unclear or missing</p>
-                </article>
-              </div>
-
-              <div className="mt-4">
-                <PreviewUnlockPanel
-                  resultId={data.result_id}
-                  previewAccessKey={previewAccessKey}
-                  canceled={query.canceled === "1"}
-                  redFlagCount={data.red_flag_count}
-                  clauseCount={data.clause_counts.total}
-                />
-              </div>
-
-              <article className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--pt-ink)]">Threat snapshot</p>
-                    <p className="mt-1 text-sm text-[var(--pt-muted)]">
-                      Shareable preview. Specific titles, notes, evidence, rewrites, and email content are locked.
-                    </p>
-                  </div>
-                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${riskLabelClass(data.risk.label)}`}>
-                    {data.risk.label.toUpperCase()} RISK
-                  </span>
-                </div>
-                <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#e8e0d4]">
-                  <div
-                    className={`h-full rounded-full ${riskMeterClass(data.risk.label)}`}
-                    style={{ width: `${Math.max(data.risk.score, 5)}%` }}
-                  />
-                </div>
-                <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  <div className="rounded-md border border-[#efc1b6] bg-white px-3 py-2">
-                    <p className="text-xs text-[#9e3f2d]">High severity</p>
-                    <p className="text-xl font-semibold text-[#7f2e1f]">{data.severity_counts.high}</p>
-                  </div>
-                  <div className="rounded-md border border-[#ead3a1] bg-white px-3 py-2">
-                    <p className="text-xs text-[#8c6526]">Medium severity</p>
-                    <p className="text-xl font-semibold text-[#6e4f1e]">{data.severity_counts.medium}</p>
-                  </div>
-                  <div className="rounded-md border border-[#b2ddd4] bg-white px-3 py-2">
-                    <p className="text-xs text-[#1d655f]">Low severity</p>
-                    <p className="text-xl font-semibold text-[#154f4a]">{data.severity_counts.low}</p>
-                  </div>
-                </div>
-              </article>
-
-              <p className="mt-5 text-xs leading-5 text-[var(--pt-muted)]">
-                PlainTerms is informational only and is not legal advice.
-              </p>
-            </div>
-          </div>
-        </section>
+        <p className="text-xs leading-5 text-[var(--pt-muted)]">
+          PlainTerms is informational only and is not legal advice.
+        </p>
       </div>
     </main>
   );
