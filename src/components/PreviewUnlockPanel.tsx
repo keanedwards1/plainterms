@@ -1,15 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import UpgradeModal, { type CheckoutProcessing } from "@/components/UpgradeModal";
-import {
-  REPORT_TIER_DESCRIPTIONS,
-  REPORT_TIER_NAMES,
-  REPORT_TIER_PRICES,
-  type ReportTierOption,
-} from "@/lib/pricingOptions";
+import ReportSidebar from "@/components/result/ReportSidebar";
+import { riskLabelClass, riskMeterClass } from "@/lib/reportStyles";
+import { type ReportTierOption } from "@/lib/pricingOptions";
 
 type RiskLabel = "low" | "medium" | "high";
 
@@ -50,14 +46,6 @@ type PreviewTab = {
   unlockDescription: string;
 };
 
-const TIER_ORDER: ReportTierOption[] = ["scan_39", "report_69", "protect_99"];
-
-const TIER_FEATURES: Record<ReportTierOption, string[]> = {
-  scan_39: ["Priority risk summary", "Top issue spotting", "Sign-or-negotiate guidance"],
-  report_69: ["Full red-flag review", "Clause-by-clause breakdown", "Questions to ask"],
-  protect_99: ["Rewrite options", "Negotiation plan", "Ready-to-send email draft"],
-};
-
 const CHECKOUT_STEPS = ["Securing your session", "Preparing your full report", "Opening secure checkout"];
 const CHECKOUT_STEP_DESCRIPTIONS = [
   "Verifying your secure preview link.",
@@ -65,37 +53,22 @@ const CHECKOUT_STEP_DESCRIPTIONS = [
   "Redirecting to encrypted Stripe checkout.",
 ];
 
-function riskLabelClass(label: RiskLabel) {
-  if (label === "high") return "border-[#efc1b6] bg-[#ffe8e3] text-[#9e3f2d]";
-  if (label === "medium") return "border-[#ead3a1] bg-[#fff4df] text-[#8c6526]";
-  return "border-[#b2ddd4] bg-[#e1f4ef] text-[#1d655f]";
-}
-
-function riskMeterClass(label: RiskLabel) {
-  if (label === "high") return "bg-[#e7745c]";
-  if (label === "medium") return "bg-[#d8a84b]";
-  return "bg-[#2ba59f]";
-}
-
-function deriveRecommendation(label: RiskLabel) {
+function deriveRecommendation(label: RiskLabel): { text: string; reason: string } {
   if (label === "high") {
     return {
       text: "Negotiate before signing",
       reason: "Several terms shift risk toward you. Push on the highest-severity issues first.",
-      cls: "border-[#efc1b6] bg-[#ffe8e3] text-[#9e3f2d]",
     };
   }
   if (label === "medium") {
     return {
       text: "Review key terms",
       reason: "A few clauses need clarification before you commit.",
-      cls: "border-[#ead3a1] bg-[#fff4df] text-[#8c6526]",
     };
   }
   return {
     text: "Looks broadly balanced",
     reason: "No major risk drivers stood out, but confirm the details that matter to you.",
-    cls: "border-[#b2ddd4] bg-[#e1f4ef] text-[#1d655f]",
   };
 }
 
@@ -274,60 +247,31 @@ export default function PreviewUnlockPanel({
   return (
     <>
       <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="pt-card p-4">
-          <h2 className="text-xl text-[var(--pt-ink)]">At A Glance</h2>
-
-          <nav aria-label="Result sections" className="mt-3 space-y-2">
-            {previewTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => openModalForTab(tab)}
-                className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                  tab.key === "summary"
-                    ? "border-[#de8f79] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.15)]"
-                    : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#de8f79] hover:text-[var(--pt-ink)]"
-                }`}
-                aria-label={`Unlock ${tab.label} section`}
-              >
-                <span className="flex items-center gap-2">
-                  <Image src={tab.icon} alt="" width={16} height={16} className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </span>
-                {tab.count !== undefined ? (
-                  <span className="pt-pill !px-2 !py-0.5 !text-[10px]">{tab.count === "all" ? "All" : tab.count}</span>
-                ) : null}
-              </button>
-            ))}
-          </nav>
-
-          <div className="mt-4 space-y-3">
-            <div className="pt-card-soft p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Risk</p>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${riskLabelClass(risk.label)}`}>
-                  {risk.label.toUpperCase()}
-                </span>
-                <span className="text-sm font-semibold text-[var(--pt-ink)]">{risk.score}/100</span>
-              </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e6d8c3]">
-                <div className={`h-full rounded-full ${riskMeterClass(risk.label)}`} style={{ width: `${Math.max(risk.score, 6)}%` }} />
-              </div>
+        <ReportSidebar
+          tabs={previewTabs.map((tab) => ({
+            key: tab.key,
+            label: tab.label,
+            icon: tab.icon,
+            count: tab.count,
+          }))}
+          activeKey="summary"
+          onSelectTab={(key) => {
+            const tab = previewTabs.find((t) => t.key === key);
+            if (tab) openModalForTab(tab);
+          }}
+          risk={risk}
+          recommendation={{
+            label: recommendation.text,
+            reason: recommendation.reason,
+            tone: risk.label,
+          }}
+          tabAriaLabel={(label) => `Unlock ${label} section`}
+          footer={
+            <div className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs text-[var(--pt-muted)]">
+              Informational only. Not legal advice.
             </div>
-
-            <div className="pt-card-soft p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Recommendation</p>
-              <span className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${recommendation.cls}`}>
-                {recommendation.text}
-              </span>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--pt-ink)]/85">{recommendation.reason}</p>
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs text-[var(--pt-muted)]">
-            Informational only. Not legal advice.
-          </div>
-        </aside>
+          }
+        />
 
         <section className="pt-card overflow-hidden">
           <div className="border-b border-[var(--pt-border)] bg-[#fff8f1] p-5">
@@ -389,38 +333,21 @@ export default function PreviewUnlockPanel({
               </div>
             </article>
 
-            <p className="mt-3 text-sm text-[var(--pt-muted)]">
-              Click any section on the left to unlock the full analysis.
-            </p>
-
-            <div className="mt-4 rounded-lg border border-[#e9d3b0] bg-[#fff8ef] p-4 shadow-[0_14px_26px_-24px_var(--pt-shadow)]">
-              <p className="text-sm font-semibold text-[#6e4f1e]">Choose your review</p>
-              <div className="mt-3 grid gap-3 md:grid-cols-3">
-                {TIER_ORDER.map((tier) => (
-                  <article key={tier} className="flex flex-col rounded-lg border border-[#e9d3b0] bg-white p-3">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <p className="text-base font-semibold text-[var(--pt-ink)]">{REPORT_TIER_NAMES[tier]}</p>
-                      <p className="text-xl font-semibold text-[var(--pt-ink)]">{REPORT_TIER_PRICES[tier]}</p>
-                    </div>
-                    <p className="mt-1 text-sm leading-5 text-[var(--pt-muted)]">{REPORT_TIER_DESCRIPTIONS[tier]}</p>
-                    <ul className="mt-3 flex-1 space-y-1 text-xs text-[var(--pt-muted)]">
-                      {TIER_FEATURES[tier].map((item) => (
-                        <li key={`${tier}-${item}`}>• {item}</li>
-                      ))}
-                    </ul>
-                    <button
-                      type="button"
-                      onClick={() => startCheckout(tier)}
-                      className={`mt-3 w-full rounded-lg px-4 py-2.5 text-sm font-semibold ${
-                        tier === "report_69" ? "pt-btn-primary" : "pt-btn-secondary"
-                      }`}
-                    >
-                      Continue with {REPORT_TIER_NAMES[tier]}
-                    </button>
-                  </article>
-                ))}
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setModalFeature({
+                  title: "Unlock your full report",
+                  description: "Choose the level of review that fits what you need to see.",
+                });
+                setError(null);
+                setProcessing(null);
+                setModalOpen(true);
+              }}
+              className="pt-btn-primary mt-4 inline-flex items-center px-5 py-2.5 text-sm font-semibold"
+            >
+              Unlock full report
+            </button>
 
             {canceled && !error ? (
               <p className="mt-3 rounded-md border border-[#ead3a1] bg-white px-3 py-2 text-xs text-[#6e4f1e]">

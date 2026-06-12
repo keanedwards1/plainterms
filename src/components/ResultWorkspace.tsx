@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { PtResult as PtResultSchema, SECTION_TITLES, type PtResult } from "@/lib/plainterms-schema";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
+import ReportSidebar from "@/components/result/ReportSidebar";
+import { type RiskTone } from "@/lib/reportStyles";
 import {
   REPORT_TIER_NAMES,
   REPORT_TIER_PRICES,
@@ -117,17 +119,20 @@ function annotateLegalTerms(text: string, keyPrefix: string) {
   });
 }
 
-function riskLabelClass(label: "low" | "medium" | "high") {
-  if (label === "high") return "bg-[#ffe8e3] text-[#9e3f2d] border-[#efc1b6]";
-  if (label === "medium") return "bg-[#fff4df] text-[#8c6526] border-[#ead3a1]";
-  return "bg-[#e1f4ef] text-[#1d655f] border-[#b2ddd4]";
+function actionToTone(action: "sign" | "negotiate" | "do_not_sign_yet"): RiskTone {
+  if (action === "do_not_sign_yet") return "high";
+  if (action === "negotiate") return "medium";
+  return "low";
 }
 
-function recommendationClass(action: "sign" | "negotiate" | "do_not_sign_yet") {
-  if (action === "do_not_sign_yet") return "bg-[#ffe8e3] text-[#9e3f2d] border-[#efc1b6]";
-  if (action === "negotiate") return "bg-[#fff4df] text-[#8c6526] border-[#ead3a1]";
-  return "bg-[#e1f4ef] text-[#1d655f] border-[#b2ddd4]";
-}
+const LEGAL_DISCLAIMER_FOOTER = (
+  <div className="mt-5 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2.5 text-xs text-[var(--pt-muted)]">
+    <p className="mb-1 font-semibold uppercase tracking-wide text-[var(--pt-ink)]" style={{ fontSize: "10px" }}>
+      Not legal advice
+    </p>
+    All analysis, risk scores, flags, clause breakdowns, and suggested edits on this page are for informational purposes only and do not constitute legal advice. Review any contract with a qualified attorney before signing.
+  </div>
+);
 
 function clauseStatusClass(status: "present" | "unclear" | "missing") {
   if (status === "missing") return "bg-[#ffe8e3] text-[#9e3f2d]";
@@ -146,11 +151,6 @@ function flagSeverityClass(severity: "low" | "medium" | "high") {
   return "bg-[#e1f4ef] text-[#1d655f]";
 }
 
-function riskMeterClass(label: "low" | "medium" | "high") {
-  if (label === "high") return "bg-[#e7745c]";
-  if (label === "medium") return "bg-[#d8a84b]";
-  return "bg-[#2ba59f]";
-}
 
 type DrilldownPanelProps = {
   title: string;
@@ -1122,116 +1122,51 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
     ) : null}
 
     <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="pt-card p-4">
-        {data.report ? (
-          <>
-            <h2 className="text-xl text-[var(--pt-ink)]">At A Glance</h2>
-            <nav aria-label="Result sections" className="mt-3 space-y-2">
-              {reportTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveReportTab(tab.key)}
-                  className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                    activeReportTab === tab.key
-                      ? "border-[#de8f79] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.15)]"
-                      : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#de8f79] hover:text-[var(--pt-ink)]"
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <Image src={tabIcons[tab.key]} alt="" width={16} height={16} className="h-4 w-4" />
-                    <span>{tab.label}</span>
-                  </span>
-                  {tab.key === "document" && isRevisionProcessing ? (
-                    <span
-                      className="inline-flex h-5 w-8 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface)]"
-                      aria-label="Document revisions are loading"
-                    >
-                      <span className="pt-tab-loader" />
-                    </span>
-                  ) : tab.count !== undefined ? (
-                    <span className="pt-pill !px-2 !py-0.5 !text-[10px]">
-                      {tab.count === "all" ? "All" : tab.count}
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </nav>
-
-            <div className="mt-4 space-y-3">
-              <div className="pt-card-soft p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                  Risk
-                </p>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span
-                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${riskLabelClass(
-                      data.report.risk.label
-                    )}`}
-                  >
-                    {data.report.risk.label.toUpperCase()}
-                  </span>
-                  <span className="text-sm font-semibold text-[var(--pt-ink)]">
-                    {data.report.risk.score}/100
-                  </span>
-                </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e6d8c3]">
-                  <div
-                    className={`h-full rounded-full ${riskMeterClass(data.report.risk.label)}`}
-                    style={{ width: `${Math.max(data.report.risk.score, 6)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="pt-card-soft p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">
-                  Recommendation
-                </p>
-                <span
-                  className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${recommendationClass(
-                    data.report.recommendation.action
-                  )}`}
-                >
-                  {data.report.recommendation.label}
-                </span>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--pt-ink)]/85">
-                  {annotateLegalTerms(data.report.recommendation.reason, "recommendation")}
-                </p>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 className="text-xl text-[var(--pt-ink)]">Result</h2>
-            <p className="mt-2 text-sm text-[var(--pt-muted)]">
-              This result contains a plain-English summary with source-backed contract details.
-            </p>
-            <nav aria-label="Result sections" className="mt-3 space-y-2">
-              {baseTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveBasicTab(tab.key)}
-                  className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                    activeBasicTab === tab.key
-                      ? "border-[#de8f79] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.35)]"
-                      : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#de8f79] hover:text-[var(--pt-ink)]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </>
-        )}
-
-        <div className="mt-5 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2.5 text-xs text-[var(--pt-muted)]">
-          <p className="mb-1 font-semibold uppercase tracking-wide text-[var(--pt-ink)]" style={{ fontSize: "10px" }}>
-            Not legal advice
+      {data.report ? (
+        <ReportSidebar
+          tabs={reportTabs.map((tab) => ({
+            key: tab.key,
+            label: tab.label,
+            icon: tabIcons[tab.key],
+            count: tab.count,
+            loading: tab.key === "document" && isRevisionProcessing,
+          }))}
+          activeKey={activeReportTab}
+          onSelectTab={(key) => setActiveReportTab(key as ReportTab)}
+          risk={data.report.risk}
+          recommendation={{
+            label: data.report.recommendation.label,
+            reason: annotateLegalTerms(data.report.recommendation.reason, "recommendation"),
+            tone: actionToTone(data.report.recommendation.action),
+          }}
+          footer={LEGAL_DISCLAIMER_FOOTER}
+        />
+      ) : (
+        <aside className="pt-card p-4">
+          <h2 className="text-xl text-[var(--pt-ink)]">Result</h2>
+          <p className="mt-2 text-sm text-[var(--pt-muted)]">
+            This result contains a plain-English summary with source-backed contract details.
           </p>
-          All analysis, risk scores, flags, clause breakdowns, and suggested edits on this page are for informational purposes only and do not constitute legal advice. Review any contract with a qualified attorney before signing.
-        </div>
-      </aside>
+          <nav aria-label="Result sections" className="mt-3 space-y-2">
+            {baseTabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveBasicTab(tab.key)}
+                className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
+                  activeBasicTab === tab.key
+                    ? "border-[#de8f79] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.35)]"
+                    : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#de8f79] hover:text-[var(--pt-ink)]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+
+          {LEGAL_DISCLAIMER_FOOTER}
+        </aside>
+      )}
 
       <section className="pt-card p-4">
         {data.report ? (

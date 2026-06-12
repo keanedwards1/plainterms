@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState, type ReactNode } from "react";
 import UpgradeModal, { type CheckoutProcessing } from "@/components/UpgradeModal";
+import ReportSidebar from "@/components/result/ReportSidebar";
 import { type ReportTierOption } from "@/lib/pricingOptions";
 
 type PreviewTabKey =
@@ -325,60 +325,31 @@ export default function SampleReportTabsPreview() {
   return (
     <>
       <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="pt-card p-4">
-          <h2 className="text-xl text-[var(--pt-ink)]">At A Glance</h2>
-
-          <nav aria-label="Sample result sections" className="mt-3 space-y-2">
-            {PREVIEW_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => selectTab(tab)}
-                className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                  activeTab === tab.key
-                    ? "border-[#de8f79] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.15)]"
-                    : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#de8f79] hover:text-[var(--pt-ink)]"
-                }`}
-                aria-label={`Preview ${tab.label} section`}
-              >
-                <span className="flex items-center gap-2">
-                  <Image src={tab.icon} alt="" width={16} height={16} className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </span>
-                {tab.count !== undefined ? (
-                  <span className="pt-pill !px-2 !py-0.5 !text-[10px]">{tab.count === "all" ? "All" : tab.count}</span>
-                ) : null}
-              </button>
-            ))}
-          </nav>
-
-          <div className="mt-4 space-y-3">
-            <div className="pt-card-soft p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Risk</p>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <span className="rounded-full border border-[#efc1b6] bg-[#ffe8e3] px-2.5 py-1 text-[11px] font-semibold text-[#9e3f2d]">HIGH</span>
-                <span className="text-sm font-semibold text-[var(--pt-ink)]">73/100</span>
-              </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e6d8c3]">
-                <div className="h-full rounded-full bg-[#e7745c]" style={{ width: "73%" }} />
-              </div>
+        <ReportSidebar
+          tabs={PREVIEW_TABS.map((tab) => ({
+            key: tab.key,
+            label: tab.label,
+            icon: tab.icon,
+            count: tab.count,
+          }))}
+          activeKey={activeTab}
+          onSelectTab={(key) => {
+            const tab = PREVIEW_TABS.find((t) => t.key === key);
+            if (tab) selectTab(tab);
+          }}
+          risk={{ score: 73, label: "high" }}
+          recommendation={{
+            label: "Negotiate",
+            reason: "Several clauses shift risk toward you. Push on the licensing and payment terms before signing.",
+            tone: "medium",
+          }}
+          tabAriaLabel={(label) => `Preview ${label} section`}
+          footer={
+            <div className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs text-[var(--pt-muted)]">
+              Informational only. Not legal advice.
             </div>
-
-            <div className="pt-card-soft p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Recommendation</p>
-              <span className="mt-2 inline-flex rounded-full border border-[#ead3a1] bg-[#fff4df] px-2.5 py-1 text-[11px] font-semibold text-[#8c6526]">
-                Negotiate
-              </span>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--pt-ink)]/85">
-                Several clauses shift risk toward you. Push on the licensing and payment terms before signing.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs text-[var(--pt-muted)]">
-            Informational only. Not legal advice.
-          </div>
-        </aside>
+          }
+        />
 
         <section className="pt-card p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">

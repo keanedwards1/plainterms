@@ -162,14 +162,6 @@ export const handler = async (event) => {
       }
 
       const selectedTier = selectionCheck.selection.reportTier;
-      const tierRank = { scan_39: 1, report_69: 2, protect_99: 3 };
-      const currentTier = resultCheck.reportTier;
-      if (!tierRank[selectedTier] || tierRank[selectedTier] <= (tierRank[currentTier] ?? 0)) {
-        return jsonResponse(event, 400, {
-          error: "Please choose a higher report tier for this result.",
-          code: "invalid_result_upgrade_tier",
-        }, METHODS);
-      }
 
       const { stripeSecretKey, stripePriceIds } = await getStripeConfig();
       const selectedPriceId = stripePriceIds?.[selectedTier];

@@ -408,9 +408,6 @@ export default function AnalyzePage() {
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-[var(--pt-muted)]">
-              Paid reviews go straight to secure checkout after your file is validated.
-            </p>
           </fieldset>
 
           <div className="mt-5 flex flex-wrap items-center gap-3 3xl:mt-8">
