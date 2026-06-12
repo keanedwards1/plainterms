@@ -18,11 +18,15 @@ PlainTerms is a contract explainer app that turns legal language into plain Engl
 - Frontend and backend are connected via `API_BASE_URL` through Next.js API proxy routes.
 - Local upload -> checkout -> result flow is implemented.
 
-Live backend URL currently in use:
-`https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod`
+The deployed backend base URL is configured via the `API_BASE_URL` environment
+variable (see Environment Variables below). It is not committed to the repo —
+pull the live value from your Vercel project settings or AWS deployment outputs.
+
+The API Gateway base URL has the shape:
+`https://<your-api-id>.execute-api.<region>.amazonaws.com/Prod`
 
 Health/test path:
-`https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod/hello/`
+`https://<your-api-id>.execute-api.<region>.amazonaws.com/Prod/hello/`
 
 ## Repo Structure
 
@@ -46,7 +50,7 @@ Open `http://localhost:3000`.
 Frontend expects:
 
 ```bash
-API_BASE_URL=https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod
+API_BASE_URL=https://<your-api-id>.execute-api.<region>.amazonaws.com/Prod
 NEXT_PUBLIC_RESULT_RETENTION_DAYS=30
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 # Recommended for metrics origin allowlist:
@@ -60,7 +64,7 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 # Optional: webhook endpoint for 5xx API alerts from Next.js routes
 # ALERT_WEBHOOK_URL=https://hooks.slack.com/services/...
 # Optional fallback for legacy code paths:
-# NEXT_PUBLIC_API_BASE_URL=https://kmg693wwdj.execute-api.us-west-2.amazonaws.com/Prod
+# NEXT_PUBLIC_API_BASE_URL=https://<your-api-id>.execute-api.<region>.amazonaws.com/Prod
 ```
 
 Set this in:
