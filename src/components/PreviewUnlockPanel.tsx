@@ -4,7 +4,9 @@ import { useState } from "react";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import UpgradeModal, { type CheckoutProcessing } from "@/components/UpgradeModal";
 import ReportSidebar from "@/components/result/ReportSidebar";
-import { riskLabelClass, riskMeterClass } from "@/lib/reportStyles";
+import QuickReadout from "@/components/result/QuickReadout";
+import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
+import LockedSummarySection from "@/components/result/LockedSummarySection";
 import { type ReportTierOption } from "@/lib/pricingOptions";
 
 type RiskLabel = "low" | "medium" | "high";
@@ -13,13 +15,8 @@ type PreviewUnlockPanelProps = {
   resultId: string;
   previewAccessKey: string;
   canceled?: boolean;
-  fileName: string;
-  createdAtLabel: string;
-  headline: string;
-  overview: string;
   risk: { score: number; label: RiskLabel };
   redFlagCount: number;
-  severityCounts: { high: number; medium: number; low: number };
   clauseCounts: { present: number; unclear: number; missing: number; total: number };
 };
 
@@ -100,13 +97,8 @@ export default function PreviewUnlockPanel({
   resultId,
   previewAccessKey,
   canceled,
-  fileName,
-  createdAtLabel,
-  headline,
-  overview,
   risk,
   redFlagCount,
-  severityCounts,
   clauseCounts,
 }: PreviewUnlockPanelProps) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -117,7 +109,6 @@ export default function PreviewUnlockPanel({
   const [processing, setProcessing] = useState<CheckoutProcessing | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const clauseIssueCount = clauseCounts.unclear + clauseCounts.missing;
   const recommendation = deriveRecommendation(risk.label);
 
   const previewTabs: PreviewTab[] = [
@@ -186,6 +177,13 @@ export default function PreviewUnlockPanel({
     setError(null);
     setProcessing(null);
     setModalFeature({ title: tab.unlockTitle, description: tab.unlockDescription });
+    setModalOpen(true);
+  }
+
+  function openModalGeneric(title: string, description: string) {
+    setError(null);
+    setProcessing(null);
+    setModalFeature({ title, description });
     setModalOpen(true);
   }
 
@@ -273,90 +271,87 @@ export default function PreviewUnlockPanel({
           }
         />
 
-        <section className="pt-card overflow-hidden">
-          <div className="border-b border-[var(--pt-border)] bg-[#fff8f1] p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--pt-muted)]">
-              <span>File: {fileName}</span>
-              <span>Analyzed: {createdAtLabel}</span>
-            </div>
-            <h1 className="mt-4 max-w-4xl text-3xl leading-tight text-[var(--pt-ink)] sm:text-4xl">{headline}</h1>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--pt-muted)]">{overview}</p>
+        <section className="pt-card p-4">
+          <div className="mb-3">
+            <h2 className="text-xl text-[var(--pt-ink)]">Summary</h2>
           </div>
 
-          <div className="p-5">
-            <div className="grid gap-3 md:grid-cols-3">
-              <article className="rounded-lg border border-[#efc1b6] bg-[#ffe8e3] p-4">
-                <p className="text-sm font-semibold text-[#9e3f2d]">Risk score</p>
-                <p className="mt-2 text-5xl font-semibold leading-none text-[#7f2e1f]">{risk.score}</p>
-                <p className="mt-1 text-sm text-[#9e3f2d]">out of 100</p>
-              </article>
-              <article className="rounded-lg border border-[#ead3a1] bg-[#fff4df] p-4">
-                <p className="text-sm font-semibold text-[#8c6526]">Red flags found</p>
-                <p className="mt-2 text-5xl font-semibold leading-none text-[#6e4f1e]">{redFlagCount}</p>
-                <p className="mt-1 text-sm text-[#8c6526]">issue count</p>
-              </article>
-              <article className="rounded-lg border border-[#b2ddd4] bg-[#e1f4ef] p-4">
-                <p className="text-sm font-semibold text-[#1d655f]">Clause issues</p>
-                <p className="mt-2 text-5xl font-semibold leading-none text-[#154f4a]">{clauseIssueCount}</p>
-                <p className="mt-1 text-sm text-[#1d655f]">unclear or missing</p>
-              </article>
-            </div>
+          <div className="space-y-3">
+            <QuickReadout
+              riskScore={risk.score}
+              recommendationLabel={recommendation.text}
+              flagsFound={redFlagCount}
+            />
 
-            <article className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--pt-ink)]">Threat snapshot</p>
-                  <p className="mt-1 text-sm text-[var(--pt-muted)]">
-                    Shareable preview. Specific titles, notes, evidence, rewrites, and email content are locked.
-                  </p>
-                </div>
-                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${riskLabelClass(risk.label)}`}>
-                  {risk.label.toUpperCase()} RISK
-                </span>
-              </div>
-              <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#e8e0d4]">
-                <div className={`h-full rounded-full ${riskMeterClass(risk.label)}`} style={{ width: `${Math.max(risk.score, 5)}%` }} />
-              </div>
-              <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                <div className="rounded-md border border-[#efc1b6] bg-white px-3 py-2">
-                  <p className="text-xs text-[#9e3f2d]">High severity</p>
-                  <p className="text-xl font-semibold text-[#7f2e1f]">{severityCounts.high}</p>
-                </div>
-                <div className="rounded-md border border-[#ead3a1] bg-white px-3 py-2">
-                  <p className="text-xs text-[#8c6526]">Medium severity</p>
-                  <p className="text-xl font-semibold text-[#6e4f1e]">{severityCounts.medium}</p>
-                </div>
-                <div className="rounded-md border border-[#b2ddd4] bg-white px-3 py-2">
-                  <p className="text-xs text-[#1d655f]">Low severity</p>
-                  <p className="text-xl font-semibold text-[#154f4a]">{severityCounts.low}</p>
-                </div>
-              </div>
-            </article>
+            <ContractHealthSnapshot
+              riskScore={risk.score}
+              clearClauseCount={clauseCounts.present}
+              totalClauseCount={clauseCounts.total}
+            />
 
-            <button
-              type="button"
-              onClick={() => {
-                setModalFeature({
-                  title: "Unlock your full report",
-                  description: "Choose the level of review that fits what you need to see.",
-                });
-                setError(null);
-                setProcessing(null);
-                setModalOpen(true);
-              }}
-              className="pt-btn-primary mt-4 inline-flex items-center px-5 py-2.5 text-sm font-semibold"
+            <LockedSummarySection
+              title="Top Next Steps"
+              onUnlock={() =>
+                openModalGeneric(
+                  "Unlock your next steps",
+                  "See the prioritized actions to take before you sign or negotiate this contract."
+                )
+              }
             >
-              Unlock full report
-            </button>
+              <ul className="space-y-2">
+                {[
+                  "Request limits on license duration, scope, and transfer rights.",
+                  "Add reciprocal indemnity tied to each party's own conduct.",
+                  "Define payment timing with late-fee protection.",
+                ].map((item) => (
+                  <li
+                    key={item}
+                    className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-[15px] leading-6 text-[var(--pt-ink)]/90"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </LockedSummarySection>
+
+            <LockedSummarySection
+              title="Top Flags Preview"
+              onUnlock={() =>
+                openModalGeneric(
+                  "Unlock all red flags",
+                  "Open every flag with plain-English notes on what each issue changes for you."
+                )
+              }
+            >
+              <ul className="space-y-2">
+                {[
+                  { title: "Intellectual Property and Usage Rights", severity: "high", cls: "bg-[#ffe8e3] text-[#9e3f2d]" },
+                  { title: "Liability and Indemnity", severity: "high", cls: "bg-[#ffe8e3] text-[#9e3f2d]" },
+                  { title: "Disputes and Governing Law", severity: "medium", cls: "bg-[#fff4df] text-[#8c6526]" },
+                ].map((flag) => (
+                  <li
+                    key={flag.title}
+                    className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-base font-semibold text-[var(--pt-ink)]">{flag.title}</p>
+                      <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${flag.cls}`}>
+                        {flag.severity}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </LockedSummarySection>
 
             {canceled && !error ? (
-              <p className="mt-3 rounded-md border border-[#ead3a1] bg-white px-3 py-2 text-xs text-[#6e4f1e]">
+              <p className="rounded-md border border-[#ead3a1] bg-white px-3 py-2 text-xs text-[#6e4f1e]">
                 Checkout was canceled. The preview is still here.
               </p>
             ) : null}
 
             {error ? (
-              <p className="mt-3 rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">{error}</p>
+              <p className="rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">{error}</p>
             ) : null}
           </div>
         </section>

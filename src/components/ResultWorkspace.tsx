@@ -5,6 +5,8 @@ import Image from "next/image";
 import { PtResult as PtResultSchema, SECTION_TITLES, type PtResult } from "@/lib/plainterms-schema";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import ReportSidebar from "@/components/result/ReportSidebar";
+import QuickReadout from "@/components/result/QuickReadout";
+import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
 import { type RiskTone } from "@/lib/reportStyles";
 import {
   REPORT_TIER_NAMES,
@@ -1186,73 +1188,17 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
             <div className="space-y-3">
               {activeReportTab === "summary" && (
                 <>
-                  <article className="overflow-hidden rounded-lg border border-[var(--pt-border)] bg-gradient-to-r from-[#fff4ef] via-[#fff9f6] to-[#fff2dc] p-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Image
-                        src="/graphics/icon-doc.svg"
-                        alt=""
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-lg border border-[var(--pt-border)] bg-white p-1.5"
-                      />
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--pt-ink)]">Quick Readout</p>
-                        <p className="text-xs text-[var(--pt-muted)]">
-                          Snapshot of outcome before digging into details.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                      <div className="rounded-lg border border-[#efc1b6] bg-[#ffe8e3] px-3 py-2">
-                        <p className="text-xs text-[#9e3f2d]">Risk score</p>
-                        <p className="text-xl font-semibold text-[#7f2e1f]">{data.report.risk.score}</p>
-                      </div>
-                      <div className="rounded-lg border border-[#ead3a1] bg-[#fff4df] px-3 py-2">
-                        <p className="text-xs text-[#8c6526]">Recommendation</p>
-                        <p className="text-sm font-semibold text-[#6e4f1e]">{data.report.recommendation.label}</p>
-                      </div>
-                      <div className="rounded-lg border border-[#b2ddd4] bg-[#e1f4ef] px-3 py-2">
-                        <p className="text-xs text-[#1d655f]">Flags found</p>
-                        <p className="text-xl font-semibold text-[#154f4a]">{redFlags.length}</p>
-                      </div>
-                    </div>
-                  </article>
+                  <QuickReadout
+                    riskScore={data.report.risk.score}
+                    recommendationLabel={data.report.recommendation.label}
+                    flagsFound={redFlags.length}
+                  />
 
-                  <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
-                    <p className="text-sm font-semibold text-[var(--pt-ink)]">Contract Health Snapshot</p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-lg border border-[var(--pt-border)] bg-white p-3">
-                        <div className="flex items-center justify-between text-xs text-[var(--pt-muted)]">
-                          <span>Contract strength</span>
-                          <span>{Math.max(100 - data.report.risk.score, 0)}%</span>
-                        </div>
-                        <div className="mt-2 h-2 rounded-full bg-[#f1ddd5]">
-                          <div
-                            className="h-2 rounded-full bg-[#2ba59f]"
-                            style={{ width: `${Math.max(100 - data.report.risk.score, 0)}%` }}
-                          />
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-[var(--pt-ink)]/85">
-                          Lower risk score means stronger current contract posture.
-                        </p>
-                      </div>
-                      <div className="rounded-lg border border-[var(--pt-border)] bg-white p-3">
-                        <div className="flex items-center justify-between text-xs text-[var(--pt-muted)]">
-                          <span>Clause clarity</span>
-                          <span>{clauseCoveragePct}%</span>
-                        </div>
-                        <div className="mt-2 h-2 rounded-full bg-[#e7effc]">
-                          <div
-                            className="h-2 rounded-full bg-[#5d73c8]"
-                            style={{ width: `${Math.max(clauseCoveragePct, clauseBreakdown.length ? 8 : 0)}%` }}
-                          />
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-[var(--pt-ink)]/85">
-                          {presentClauseCount} of {clauseBreakdown.length || 0} core clauses are currently clear.
-                        </p>
-                      </div>
-                    </div>
-                  </article>
+                  <ContractHealthSnapshot
+                    riskScore={data.report.risk.score}
+                    clearClauseCount={presentClauseCount}
+                    totalClauseCount={clauseBreakdown.length}
+                  />
 
                   <article className="pt-card-soft p-3">
                     <h3 className="text-lg font-semibold text-[var(--pt-ink)]">Top Next Steps</h3>
