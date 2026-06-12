@@ -2,6 +2,7 @@
 
 const rawBaseUrl = process.env.SMOKE_BASE_URL ?? process.env.APP_BASE_URL ?? "";
 const baseUrl = rawBaseUrl.trim().replace(/\/+$/, "");
+const bypassSecret = process.env.VERCEL_BYPASS_SECRET ?? "";
 
 function fail(message) {
   throw new Error(message);
@@ -33,6 +34,7 @@ async function request(path, init = {}) {
   const url = `${baseUrl}${path}`;
   const headers = {
     "user-agent": "plainterms-smoke-funnel/1.0",
+    ...(bypassSecret ? { "x-vercel-protection-bypass": bypassSecret } : {}),
     ...(init.headers ?? {}),
   };
   return fetch(url, {

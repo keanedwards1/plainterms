@@ -30,6 +30,7 @@ jobs:
         env:
           SMOKE_BASE_URL_INPUT: ${{ github.event.inputs.smoke_base_url }}
           SMOKE_BASE_URL_VAR: ${{ vars.SMOKE_BASE_URL }}
+          VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
         run: |
           SMOKE_BASE_URL="${SMOKE_BASE_URL_INPUT:-$SMOKE_BASE_URL_VAR}"
           if [ -z "$SMOKE_BASE_URL" ]; then
