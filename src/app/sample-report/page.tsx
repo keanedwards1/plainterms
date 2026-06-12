@@ -63,61 +63,7 @@ export default function SampleReportPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="pt-card p-4">
-            <h2 className="text-xl text-[var(--pt-ink)]">At A Glance</h2>
-            <SampleReportTabsPreview tabs={tabs} />
-
-            <div className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs text-[var(--pt-muted)]">
-              Informational only. Not legal advice.
-            </div>
-          </aside>
-
-          <section className="pt-card p-4">
-            <h2 className="text-xl text-[var(--pt-ink)]">Summary</h2>
-            <div className="mt-3 space-y-3">
-              <article className="overflow-hidden rounded-lg border border-[var(--pt-border)] bg-gradient-to-r from-[#fff4ef] via-[#fff9f6] to-[#fff2dc] p-4">
-                <p className="text-sm font-semibold text-[var(--pt-ink)]">Top Next Steps</p>
-                <ul className="mt-2 space-y-2 text-sm text-[var(--pt-ink)]/90">
-                  <li className="rounded-md border border-[var(--pt-border)] bg-white px-3 py-2">
-                    Cap usage to 90 days and require written renewal.
-                  </li>
-                  <li className="rounded-md border border-[var(--pt-border)] bg-white px-3 py-2">
-                    Add net-15 payment terms plus late-fee language.
-                  </li>
-                </ul>
-              </article>
-
-              <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
-                <p className="text-sm font-semibold text-[var(--pt-ink)]">Top Flags Preview</p>
-                <div className="mt-2 space-y-2">
-                  <div className="rounded-md border border-[var(--pt-border)] bg-white px-3 py-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-[var(--pt-ink)]">Perpetual content license</p>
-                      <span className="rounded-full bg-[#ffe8e3] px-2 py-1 text-[11px] font-semibold text-[#9e3f2d]">
-                        high
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--pt-muted)]">
-                      Why it matters: it can block future exclusivity deals.
-                    </p>
-                  </div>
-                  <div className="rounded-md border border-[var(--pt-border)] bg-white px-3 py-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-[var(--pt-ink)]">Late payment protection missing</p>
-                      <span className="rounded-full bg-[#fff4df] px-2 py-1 text-[11px] font-semibold text-[#8c6526]">
-                        medium
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--pt-muted)]">
-                      Why it matters: slower collections and weaker enforcement.
-                    </p>
-                  </div>
-                </div>
-              </article>
-            </div>
-          </section>
-        </section>
+        <SampleReportTabsPreview />
 
         <section className="pt-card p-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
