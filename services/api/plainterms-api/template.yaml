@@ -115,7 +115,7 @@ Parameters:
     Description: Stage-level API Gateway throttle burst limit.
   PreviewMaxConcurrency:
     Type: Number
-    Default: 25
+    Default: 3
     Description: Reserved concurrency cap for the free preview analysis function, bounding abuse blast radius and protecting other functions' concurrency.
   ApiRequestCountAlarmThreshold:
     Type: Number
