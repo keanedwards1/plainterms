@@ -90,10 +90,10 @@ function statusClass(s: "present" | "unclear" | "missing") {
 function LockedTease({ children, onUnlock }: { children: React.ReactNode; onUnlock: () => void }) {
   return (
     <div className="relative">
-      <div className="pointer-events-none select-none blur-[2px] [mask-image:linear-gradient(to_bottom,black_40%,transparent_94%)]">
+      <div className="pointer-events-none select-none blur-[2px] [mask-image:linear-gradient(to_top,black_40%,transparent_94%)]">
         {children}
       </div>
-      <div className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-2">
+      <div className="absolute inset-x-0 top-0 flex items-start justify-center pt-3">
         <button
           type="button"
           onClick={onUnlock}
