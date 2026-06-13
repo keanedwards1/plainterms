@@ -191,6 +191,13 @@ Stripe checkout configuration (SAM parameters -> Lambda env):
   - `ApiDefaultRateLimit` / `ApiDefaultBurstLimit` for stage-level throttling
   - `EnableApiWaf` (`false` by default to reduce cost, set `true` to re-enable WAF)
   - `WafGlobalIpLimitPer5Min` for WAF IP-based blocks (used when WAF is enabled)
+
+  > **TODO — enable WAF once the site gets real/steady traffic.** WAF is off by
+  > default to avoid its monthly cost. The current defenses (stage throttling,
+  > reserved concurrency, and `ANALYSIS_MODE=rules` so no LLM spend on free traffic)
+  > protect against cost-exhaustion and single-source floods, but per-IP blocking of a
+  > distributed (botnet) attack needs WAF. When traffic grows, redeploy with
+  > `EnableApiWaf=true` (see the WAF example under Manual SAM commands).
   - `ApiRequestCountAlarmThreshold`, `Api4xxAlarmThreshold`, `Api5xxAlarmThreshold`
   - `ApiAlarmPeriodSeconds`, `ApiAlarmEvaluationPeriods`
   - `ApiAlarmSnsTopicArn` (optional SNS alerts target; leave empty to disable notifications)
