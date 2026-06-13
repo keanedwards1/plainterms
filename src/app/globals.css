@@ -107,6 +107,7 @@ a {
 }
 
 .pt-btn-primary {
+  cursor: pointer;
   border: 1px solid #d9654f;
   border-radius: 999px;
   background: var(--pt-accent);
@@ -122,6 +123,7 @@ a {
 }
 
 .pt-btn-secondary {
+  cursor: pointer;
   border: 1px solid #80c5bd;
   border-radius: 999px;
   background: #dbf2ee;
