@@ -117,11 +117,13 @@ export default function HomePage() {
                 <div className="pointer-events-none absolute right-5 top-5 z-20 hidden rounded-full border border-[var(--pt-border)] bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--pt-muted)] backdrop-blur lg:block">
                   Identify Red-flags
                 </div>
-                <div className="pointer-events-none absolute bottom-5 left-5 z-20 hidden rounded-xl border border-[var(--pt-border)] bg-white/90 px-3 py-2 text-xs font-semibold text-[var(--pt-ink)] shadow-[0_10px_20px_-16px_rgba(31,43,61,0.6)] backdrop-blur lg:block">
-                  Secure upload
-                </div>
-                <div className="pointer-events-none absolute bottom-5 right-5 z-20 hidden rounded-xl border border-[var(--pt-border)] bg-white/90 px-3 py-2 text-xs font-semibold text-[var(--pt-ink)] shadow-[0_10px_20px_-16px_rgba(31,43,61,0.6)] backdrop-blur lg:block">
-                  Plain-English summary
+                <div className="pointer-events-none absolute bottom-5 left-0 right-0 z-20 hidden items-center justify-between gap-2 px-5 xl:flex">
+                  <div className="rounded-xl border border-[var(--pt-border)] bg-white/90 px-3 py-2 text-xs font-semibold text-[var(--pt-ink)] shadow-[0_10px_20px_-16px_rgba(31,43,61,0.6)] backdrop-blur whitespace-nowrap">
+                    Secure upload
+                  </div>
+                  <div className="rounded-xl border border-[var(--pt-border)] bg-white/90 px-3 py-2 text-xs font-semibold text-[var(--pt-ink)] shadow-[0_10px_20px_-16px_rgba(31,43,61,0.6)] backdrop-blur whitespace-nowrap">
+                    Plain-English summary
+                  </div>
                 </div>
                 <Image
                   src="/graphics/creator-studio-1.png"
