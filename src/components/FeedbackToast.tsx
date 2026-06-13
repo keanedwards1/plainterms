@@ -4,15 +4,17 @@ import { useState, useEffect, useRef } from "react";
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
 
 type Stage = "prompt" | "testimonial" | "done";
+type Variant = "banner" | "modal";
 
 interface Props {
   resultId: string;
-  /** When this flips true, open the modal immediately (e.g. first Full Report tab visit). */
+  /** When this flips true, open the centered modal immediately (e.g. first Full Report tab visit). */
   externalTrigger?: boolean;
 }
 
 export default function FeedbackToast({ resultId, externalTrigger = false }: Props) {
   const [open, setOpen] = useState(false);
+  const [variant, setVariant] = useState<Variant>("banner");
   const [stage, setStage] = useState<Stage>("prompt");
   const [rating, setRating] = useState<0 | 1 | null>(null);
   const [text, setText] = useState("");
@@ -22,40 +24,52 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
   const dismissed = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Show after 18 seconds, unless already shown/dismissed.
+  // Timer trigger → non-intrusive bottom banner after 45 seconds.
   useEffect(() => {
     const id = setTimeout(() => {
-      if (!dismissed.current) setOpen(true);
-    }, 18_000);
+      if (!dismissed.current) {
+        setVariant("banner");
+        setOpen(true);
+      }
+    }, 45_000);
     return () => clearTimeout(id);
   }, []);
 
-  // Show immediately when the parent signals (e.g. first Full Report tab click).
+  // External trigger (e.g. first Full Report tab click) → centered modal.
   useEffect(() => {
-    if (externalTrigger && !dismissed.current) setOpen(true);
+    if (externalTrigger && !dismissed.current) {
+      setVariant("modal");
+      setOpen(true);
+    }
   }, [externalTrigger]);
 
-  // Lock body scroll + Escape to close while open.
+  // Modal variant locks body scroll. Escape closes either variant.
   useEffect(() => {
     if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") closeModal();
+      if (event.key === "Escape") closeFeedback();
     }
     window.addEventListener("keydown", onKeyDown);
+
+    let restore: (() => void) | undefined;
+    if (variant === "modal") {
+      const previous = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      restore = () => { document.body.style.overflow = previous; };
+    }
+
     return () => {
-      document.body.style.overflow = previous;
       window.removeEventListener("keydown", onKeyDown);
+      restore?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, variant]);
 
   useEffect(() => {
     if (stage === "testimonial") inputRef.current?.focus();
   }, [stage]);
 
-  function closeModal() {
+  function closeFeedback() {
     dismissed.current = true;
     setOpen(false);
   }
@@ -100,6 +114,128 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
 
   if (!open) return null;
 
+  // ── Shared stage bodies ───────────────────────────────────────────────────
+  const testimonialFields = (
+    <>
+      <textarea
+        ref={inputRef}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        maxLength={1000}
+        rows={3}
+        placeholder="&ldquo;PlainTerms saved me from signing a bad deal…&rdquo;"
+        className="w-full resize-none rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
+      />
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <input
+          type="text"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          maxLength={60}
+          placeholder="First name (optional)"
+          className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
+        />
+        <input
+          type="text"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          maxLength={60}
+          placeholder="Last name (optional)"
+          className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
+        />
+      </div>
+      <div className="mt-3 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={skipTestimonial}
+          className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+        >
+          Skip
+        </button>
+        <button
+          type="button"
+          onClick={submitTestimonial}
+          disabled={submitting || !text.trim()}
+          className="pt-btn-primary rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50"
+        >
+          {submitting ? "Sending…" : "Submit"}
+        </button>
+      </div>
+    </>
+  );
+
+  // ── Banner variant (timer) ────────────────────────────────────────────────
+  if (variant === "banner") {
+    return (
+      <div
+        role="dialog"
+        aria-label="Experience feedback"
+        className="fixed bottom-5 left-1/2 z-[200] w-[min(92vw,440px)] -translate-x-1/2 rounded-lg border border-[var(--pt-border)] bg-white p-4 shadow-[0_18px_40px_-24px_rgba(31,43,61,0.55)]"
+      >
+        {stage === "prompt" && (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-[var(--pt-ink)]">How was your experience?</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => submitRating(1)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
+                aria-label="Good experience"
+              >
+                😊
+              </button>
+              <button
+                type="button"
+                onClick={() => submitRating(0)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-red-300 hover:bg-red-50"
+                aria-label="Poor experience"
+              >
+                😞
+              </button>
+              <button
+                type="button"
+                onClick={closeFeedback}
+                className="rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {stage === "testimonial" && (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[var(--pt-ink)]">
+                  {rating === 1 ? "Glad to hear it! 🎉" : "Thanks for letting us know."}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
+                  Want to leave a quick quote? We may feature it on the site.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeFeedback}
+                className="shrink-0 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-3">{testimonialFields}</div>
+          </>
+        )}
+
+        {stage === "done" && (
+          <p className="text-sm text-[var(--pt-muted)]">
+            Thanks for the feedback — it helps us improve. ✨
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // ── Modal variant (Full Report first click) ───────────────────────────────
   const header = (() => {
     if (stage === "done") {
       return {
@@ -127,7 +263,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
       <button
         type="button"
         aria-label="Close feedback dialog"
-        onClick={closeModal}
+        onClick={closeFeedback}
         className="fixed inset-0 bg-[#1f2b3d]/55 backdrop-blur-sm"
       />
 
@@ -164,7 +300,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
             </div>
             <button
               type="button"
-              onClick={closeModal}
+              onClick={closeFeedback}
               aria-label="Close"
               className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--pt-ink)]/8 text-[var(--pt-muted)] transition-colors hover:bg-[var(--pt-ink)]/14"
             >
@@ -198,54 +334,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
             </div>
           )}
 
-          {stage === "testimonial" && (
-            <>
-              <textarea
-                ref={inputRef}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                maxLength={1000}
-                rows={3}
-                placeholder="&ldquo;PlainTerms saved me from signing a bad deal…&rdquo;"
-                className="w-full resize-none rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
-              />
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  maxLength={60}
-                  placeholder="First name (optional)"
-                  className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
-                />
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  maxLength={60}
-                  placeholder="Last name (optional)"
-                  className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
-                />
-              </div>
-              <div className="mt-3 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={skipTestimonial}
-                  className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
-                >
-                  Skip
-                </button>
-                <button
-                  type="button"
-                  onClick={submitTestimonial}
-                  disabled={submitting || !text.trim()}
-                  className="pt-btn-primary rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50"
-                >
-                  {submitting ? "Sending…" : "Submit"}
-                </button>
-              </div>
-            </>
-          )}
+          {stage === "testimonial" && testimonialFields}
 
           {stage === "done" && (
             <p className="py-2 text-center text-sm text-[var(--pt-muted)]">
