@@ -4,9 +4,6 @@ import { useState } from "react";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import UpgradeModal, { type CheckoutProcessing } from "@/components/UpgradeModal";
 import ReportSidebar from "@/components/result/ReportSidebar";
-import QuickReadout from "@/components/result/QuickReadout";
-import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
-import LockedSummarySection from "@/components/result/LockedSummarySection";
 import { type ReportTierOption } from "@/lib/pricingOptions";
 
 type RiskLabel = "low" | "medium" | "high";
@@ -34,13 +31,24 @@ type PreviewTabKey =
   | "document"
   | "full";
 
-type PreviewTab = {
-  key: PreviewTabKey;
-  label: string;
-  icon: string;
-  count?: number | "all";
-  unlockTitle: string;
-  unlockDescription: string;
+const TABS: { key: PreviewTabKey; label: string; icon: string }[] = [
+  { key: "summary",   label: "Summary",     icon: "/window.svg" },
+  { key: "insights",  label: "Insights",    icon: "/graphics/icon-search.svg" },
+  { key: "flags",     label: "Red Flags",   icon: "/graphics/icon-shield.svg" },
+  { key: "terms",     label: "Key Terms",   icon: "/file.svg" },
+  { key: "questions", label: "Questions",   icon: "/globe.svg" },
+  { key: "document",  label: "Document",    icon: "/graphics/icon-doc.svg" },
+  { key: "full",      label: "Full Report", icon: "/graphics/icon-doc.svg" },
+];
+
+const TAB_UNLOCK: Record<PreviewTabKey, { title: string; description: string }> = {
+  summary:   { title: "Unlock the full summary",         description: "See the complete risk readout, recommendation rationale, and every prioritized next step." },
+  insights:  { title: "Unlock cross-tab insights",       description: "Connect risk posture, clause clarity, and evidence coverage to spot hidden leverage fast." },
+  flags:     { title: "Unlock all red flags",            description: "Every high, medium, and low severity flag with plain-English notes on what each one means for you." },
+  terms:     { title: "Unlock the full clause breakdown",description: "Clause-by-clause status for present, unclear, and missing terms before you sign." },
+  questions: { title: "Unlock negotiation questions",    description: "Practical, ready-to-send questions to move your next email or call forward." },
+  document:  { title: "Unlock document review",         description: "Source text with inline callouts, tracked changes, and revised wording where available." },
+  full:      { title: "Unlock the full evidence-backed report", description: "Complete context with supporting details and source notes for stronger negotiation." },
 };
 
 const CHECKOUT_STEPS = ["Securing your session", "Preparing your full report", "Opening secure checkout"];
@@ -50,28 +58,8 @@ const CHECKOUT_STEP_DESCRIPTIONS = [
   "Redirecting to encrypted Stripe checkout.",
 ];
 
-function deriveRecommendation(label: RiskLabel): { text: string; reason: string } {
-  if (label === "high") {
-    return {
-      text: "Negotiate before signing",
-      reason: "Several terms shift risk toward you. Push on the highest-severity issues first.",
-    };
-  }
-  if (label === "medium") {
-    return {
-      text: "Review key terms",
-      reason: "A few clauses need clarification before you commit.",
-    };
-  }
-  return {
-    text: "Looks broadly balanced",
-    reason: "No major risk drivers stood out, but confirm the details that matter to you.",
-  };
-}
-
 async function readErrorResponse(res: Response): Promise<string> {
   const contentType = res.headers.get("content-type") ?? "";
-
   try {
     if (contentType.includes("application/json")) {
       const json = (await res.json()) as { error?: unknown; message?: unknown };
@@ -79,13 +67,9 @@ async function readErrorResponse(res: Response): Promise<string> {
       if (typeof json.message === "string" && json.message.trim()) return json.message;
       return JSON.stringify(json).slice(0, 500);
     }
-
     const text = await res.text();
     if (text.trim()) return text.slice(0, 500);
-  } catch {
-    // Fall back below.
-  }
-
+  } catch { /* fall through */ }
   return res.statusText || "Unknown error";
 }
 
@@ -93,97 +77,256 @@ function delay(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+// ─── Placeholder shapes (no real data) ────────────────────────────────────────
+
+function PlaceholderTiles() {
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {["Risk score", "Recommendation", "Flags found"].map((label) => (
+        <div key={label} className="rounded-xl border border-[var(--pt-border)] bg-white p-3">
+          <p className="text-xs text-[var(--pt-muted)]">{label}</p>
+          <div className="mt-2 h-6 w-16 rounded bg-[#e6d8c3]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PlaceholderBars() {
+  return (
+    <div className="space-y-3">
+      {["Contract strength", "Clause clarity"].map((label) => (
+        <div key={label}>
+          <div className="mb-1 flex justify-between">
+            <span className="text-xs text-[var(--pt-muted)]">{label}</span>
+            <div className="h-3 w-8 rounded bg-[#e6d8c3]" />
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-[#e6d8c3]">
+            <div className="h-full w-3/5 rounded-full bg-[#c8d9d7]" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PlaceholderList({ rows = 3 }: { rows?: number }) {
+  return (
+    <ul className="space-y-2">
+      {Array.from({ length: rows }).map((_, i) => (
+        <li key={i} className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5">
+          <div className="h-3 w-full rounded bg-[#e6d8c3]" />
+          <div className="mt-1.5 h-3 w-3/4 rounded bg-[#ede6db]" />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PlaceholderFlagList({ rows = 4 }: { rows?: number }) {
+  return (
+    <ul className="space-y-2">
+      {Array.from({ length: rows }).map((_, i) => (
+        <li key={i} className="flex items-center justify-between rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5">
+          <div className="h-3 w-2/3 rounded bg-[#e6d8c3]" />
+          <div className="h-5 w-14 rounded-full bg-[#fde8e3]" />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PlaceholderTermList({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5">
+          <div className="h-4 w-4 shrink-0 rounded-full bg-[#d4ece9]" />
+          <div className="flex-1">
+            <div className="h-3 w-2/3 rounded bg-[#e6d8c3]" />
+          </div>
+          <div className="h-4 w-16 rounded-full bg-[#ede6db]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PlaceholderQA({ rows = 4 }: { rows?: number }) {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-3">
+          <div className="h-3 w-3/4 rounded bg-[#e6d8c3]" />
+          <div className="mt-1.5 h-3 w-full rounded bg-[#ede6db]" />
+          <div className="mt-1 h-3 w-1/2 rounded bg-[#ede6db]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PlaceholderText({ lines = 6 }: { lines?: number }) {
+  const widths = ["w-full", "w-11/12", "w-full", "w-4/5", "w-full", "w-10/12", "w-3/4", "w-full"];
+  return (
+    <div className="space-y-2 rounded-lg border border-[var(--pt-border)] bg-white px-4 py-4">
+      {Array.from({ length: lines }).map((_, i) => (
+        <div key={i} className={`h-3 rounded bg-[#e6d8c3] ${widths[i % widths.length]}`} />
+      ))}
+    </div>
+  );
+}
+
+// ─── Per-tab locked layouts ────────────────────────────────────────────────────
+
+function LockedTabContent({
+  title,
+  children,
+  onUnlock,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onUnlock: () => void;
+}) {
+  return (
+    <article className="pt-card-soft p-3">
+      <h3 className="text-lg font-semibold text-[var(--pt-ink)]">{title}</h3>
+      <button
+        type="button"
+        onClick={onUnlock}
+        aria-label={`Unlock ${title}`}
+        className="relative mt-2 block w-full cursor-pointer text-left"
+      >
+        <div className="pointer-events-none select-none blur-[3px] [mask-image:linear-gradient(to_bottom,black_40%,transparent_96%)]">
+          {children}
+        </div>
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--pt-border)] bg-white/95 px-3.5 py-1.5 text-sm font-semibold text-[var(--pt-ink)] shadow-sm transition-colors hover:border-[var(--pt-accent)] hover:text-[var(--pt-accent)]">
+            <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+              <path d="M5 7V5.2a3 3 0 0 1 6 0V7m-7 0h8v6H4z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Unlock to view
+          </span>
+        </span>
+      </button>
+    </article>
+  );
+}
+
+function SummaryTabContent({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <div className="space-y-3">
+      <LockedTabContent title="Quick Readout" onUnlock={onUnlock}>
+        <PlaceholderTiles />
+      </LockedTabContent>
+      <LockedTabContent title="Contract Health" onUnlock={onUnlock}>
+        <PlaceholderBars />
+      </LockedTabContent>
+      <LockedTabContent title="Top Next Steps" onUnlock={onUnlock}>
+        <PlaceholderList rows={3} />
+      </LockedTabContent>
+      <LockedTabContent title="Top Flags Preview" onUnlock={onUnlock}>
+        <PlaceholderFlagList rows={3} />
+      </LockedTabContent>
+    </div>
+  );
+}
+
+function InsightsTabContent({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <div className="space-y-3">
+      <LockedTabContent title="Risk Overview" onUnlock={onUnlock}>
+        <PlaceholderBars />
+      </LockedTabContent>
+      <LockedTabContent title="Coverage Gaps" onUnlock={onUnlock}>
+        <PlaceholderList rows={4} />
+      </LockedTabContent>
+    </div>
+  );
+}
+
+function FlagsTabContent({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <div className="space-y-3">
+      <LockedTabContent title="High Severity" onUnlock={onUnlock}>
+        <PlaceholderFlagList rows={3} />
+      </LockedTabContent>
+      <LockedTabContent title="Medium & Low Severity" onUnlock={onUnlock}>
+        <PlaceholderFlagList rows={4} />
+      </LockedTabContent>
+    </div>
+  );
+}
+
+function TermsTabContent({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <div className="space-y-3">
+      <LockedTabContent title="Clause Breakdown" onUnlock={onUnlock}>
+        <PlaceholderBars />
+      </LockedTabContent>
+      <LockedTabContent title="All Terms" onUnlock={onUnlock}>
+        <PlaceholderTermList rows={6} />
+      </LockedTabContent>
+    </div>
+  );
+}
+
+function QuestionsTabContent({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <div className="space-y-3">
+      <LockedTabContent title="Negotiation Questions" onUnlock={onUnlock}>
+        <PlaceholderQA rows={5} />
+      </LockedTabContent>
+    </div>
+  );
+}
+
+function DocumentTabContent({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <div className="space-y-3">
+      <LockedTabContent title="Source Document" onUnlock={onUnlock}>
+        <PlaceholderText lines={8} />
+      </LockedTabContent>
+      <LockedTabContent title="Inline Annotations" onUnlock={onUnlock}>
+        <PlaceholderText lines={5} />
+      </LockedTabContent>
+    </div>
+  );
+}
+
+function FullReportTabContent({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <div className="space-y-3">
+      <LockedTabContent title="Executive Summary" onUnlock={onUnlock}>
+        <PlaceholderText lines={5} />
+      </LockedTabContent>
+      <LockedTabContent title="Detailed Findings" onUnlock={onUnlock}>
+        <PlaceholderFlagList rows={5} />
+      </LockedTabContent>
+      <LockedTabContent title="Supporting Evidence" onUnlock={onUnlock}>
+        <PlaceholderText lines={6} />
+      </LockedTabContent>
+    </div>
+  );
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
+
 export default function PreviewUnlockPanel({
   resultId,
   previewAccessKey,
   canceled,
-  risk,
-  redFlagCount,
-  clauseCounts,
 }: PreviewUnlockPanelProps) {
+  const [activeTab, setActiveTab] = useState<PreviewTabKey>("summary");
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalFeature, setModalFeature] = useState<{ title: string; description: string }>({
-    title: "Unlock your full report",
-    description: "Choose the level of review that fits what you need to see.",
-  });
   const [processing, setProcessing] = useState<CheckoutProcessing | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const recommendation = deriveRecommendation(risk.label);
+  const activeUnlock = TAB_UNLOCK[activeTab];
 
-  const previewTabs: PreviewTab[] = [
-    {
-      key: "summary",
-      label: "Summary",
-      icon: "/window.svg",
-      unlockTitle: "Unlock the full summary",
-      unlockDescription:
-        "See the complete risk readout, recommendation rationale, and every prioritized next step for this contract.",
-    },
-    {
-      key: "insights",
-      label: "Insights",
-      icon: "/graphics/icon-search.svg",
-      unlockTitle: "Unlock cross-tab insights",
-      unlockDescription:
-        "Connect risk posture, clause clarity, and evidence coverage to spot hidden leverage fast.",
-    },
-    {
-      key: "flags",
-      label: "Red Flags",
-      icon: "/graphics/icon-shield.svg",
-      count: redFlagCount,
-      unlockTitle: "Unlock all red flags",
-      unlockDescription:
-        "Open every high, medium, and low severity flag with plain-English notes on what each one changes for you.",
-    },
-    {
-      key: "terms",
-      label: "Key Terms",
-      icon: "/file.svg",
-      count: clauseCounts.total,
-      unlockTitle: "Unlock the full clause breakdown",
-      unlockDescription:
-        "See clause-by-clause status for present, unclear, and missing terms before you sign.",
-    },
-    {
-      key: "questions",
-      label: "Questions",
-      icon: "/globe.svg",
-      unlockTitle: "Unlock negotiation questions",
-      unlockDescription:
-        "Get practical, ready-to-send questions to move your next email or call forward with concrete asks.",
-    },
-    {
-      key: "document",
-      label: "Document",
-      icon: "/graphics/icon-doc.svg",
-      unlockTitle: "Unlock document review",
-      unlockDescription:
-        "Read the source text with inline callouts, tracked changes, and revised wording where available.",
-    },
-    {
-      key: "full",
-      label: "Full Report",
-      icon: "/graphics/icon-doc.svg",
-      count: "all",
-      unlockTitle: "Unlock the full evidence-backed report",
-      unlockDescription:
-        "Get complete context with supporting details and source notes for stronger negotiation.",
-    },
-  ];
-
-  function openModalForTab(tab: PreviewTab) {
+  function openModal() {
     setError(null);
     setProcessing(null);
-    setModalFeature({ title: tab.unlockTitle, description: tab.unlockDescription });
-    setModalOpen(true);
-  }
-
-  function openModalGeneric(title: string, description: string) {
-    setError(null);
-    setProcessing(null);
-    setModalFeature({ title, description });
     setModalOpen(true);
   }
 
@@ -246,24 +389,9 @@ export default function PreviewUnlockPanel({
     <>
       <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         <ReportSidebar
-          tabs={previewTabs.map((tab) => ({
-            key: tab.key,
-            label: tab.label,
-            icon: tab.icon,
-            count: tab.count,
-          }))}
-          activeKey="summary"
-          onSelectTab={(key) => {
-            const tab = previewTabs.find((t) => t.key === key);
-            if (tab) openModalForTab(tab);
-          }}
-          risk={risk}
-          recommendation={{
-            label: recommendation.text,
-            reason: recommendation.reason,
-            tone: risk.label,
-          }}
-          tabAriaLabel={(label) => `Unlock ${label} section`}
+          tabs={TABS}
+          activeKey={activeTab}
+          onSelectTab={(key) => setActiveTab(key as PreviewTabKey)}
           footer={
             <div className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs text-[var(--pt-muted)]">
               Informational only. Not legal advice.
@@ -272,95 +400,43 @@ export default function PreviewUnlockPanel({
         />
 
         <section className="pt-card p-4">
-          <div className="mb-3">
-            <h2 className="text-xl text-[var(--pt-ink)]">Summary</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xl text-[var(--pt-ink)]">
+              {TABS.find((t) => t.key === activeTab)?.label ?? "Summary"}
+            </h2>
+            <button
+              type="button"
+              onClick={openModal}
+              className="pt-btn-primary px-4 py-2 text-sm font-semibold"
+            >
+              Unlock full report
+            </button>
           </div>
 
-          <div className="space-y-3">
-            <QuickReadout
-              riskScore={risk.score}
-              recommendationLabel={recommendation.text}
-              flagsFound={redFlagCount}
-            />
+          {activeTab === "summary"   && <SummaryTabContent   onUnlock={openModal} />}
+          {activeTab === "insights"  && <InsightsTabContent  onUnlock={openModal} />}
+          {activeTab === "flags"     && <FlagsTabContent     onUnlock={openModal} />}
+          {activeTab === "terms"     && <TermsTabContent     onUnlock={openModal} />}
+          {activeTab === "questions" && <QuestionsTabContent onUnlock={openModal} />}
+          {activeTab === "document"  && <DocumentTabContent  onUnlock={openModal} />}
+          {activeTab === "full"      && <FullReportTabContent onUnlock={openModal} />}
 
-            <ContractHealthSnapshot
-              riskScore={risk.score}
-              clearClauseCount={clauseCounts.present}
-              totalClauseCount={clauseCounts.total}
-            />
+          {canceled && !error ? (
+            <p className="mt-3 rounded-md border border-[#ead3a1] bg-white px-3 py-2 text-xs text-[#6e4f1e]">
+              Checkout was canceled. The preview is still here.
+            </p>
+          ) : null}
 
-            <LockedSummarySection
-              title="Top Next Steps"
-              onUnlock={() =>
-                openModalGeneric(
-                  "Unlock your next steps",
-                  "See the prioritized actions to take before you sign or negotiate this contract."
-                )
-              }
-            >
-              <ul className="space-y-2">
-                {[
-                  "Request limits on license duration, scope, and transfer rights.",
-                  "Add reciprocal indemnity tied to each party's own conduct.",
-                  "Define payment timing with late-fee protection.",
-                ].map((item) => (
-                  <li
-                    key={item}
-                    className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-[15px] leading-6 text-[var(--pt-ink)]/90"
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </LockedSummarySection>
-
-            <LockedSummarySection
-              title="Top Flags Preview"
-              onUnlock={() =>
-                openModalGeneric(
-                  "Unlock all red flags",
-                  "Open every flag with plain-English notes on what each issue changes for you."
-                )
-              }
-            >
-              <ul className="space-y-2">
-                {[
-                  { title: "Intellectual Property and Usage Rights", severity: "high", cls: "bg-[#ffe8e3] text-[#9e3f2d]" },
-                  { title: "Liability and Indemnity", severity: "high", cls: "bg-[#ffe8e3] text-[#9e3f2d]" },
-                  { title: "Disputes and Governing Law", severity: "medium", cls: "bg-[#fff4df] text-[#8c6526]" },
-                ].map((flag) => (
-                  <li
-                    key={flag.title}
-                    className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-base font-semibold text-[var(--pt-ink)]">{flag.title}</p>
-                      <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${flag.cls}`}>
-                        {flag.severity}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </LockedSummarySection>
-
-            {canceled && !error ? (
-              <p className="rounded-md border border-[#ead3a1] bg-white px-3 py-2 text-xs text-[#6e4f1e]">
-                Checkout was canceled. The preview is still here.
-              </p>
-            ) : null}
-
-            {error ? (
-              <p className="rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">{error}</p>
-            ) : null}
-          </div>
+          {error ? (
+            <p className="mt-3 rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">{error}</p>
+          ) : null}
         </section>
       </section>
 
       <UpgradeModal
         open={modalOpen}
-        featureTitle={modalFeature.title}
-        featureDescription={modalFeature.description}
+        featureTitle={activeUnlock.title}
+        featureDescription={activeUnlock.description}
         ctaPrefix="Continue with"
         processing={processing}
         error={error}
