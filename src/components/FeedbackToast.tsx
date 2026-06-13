@@ -7,12 +7,12 @@ type Stage = "prompt" | "testimonial" | "done";
 
 interface Props {
   resultId: string;
-  /** When this flips true, open the toast immediately (e.g. first Full Report tab visit). */
+  /** When this flips true, open the modal immediately (e.g. first Full Report tab visit). */
   externalTrigger?: boolean;
 }
 
 export default function FeedbackToast({ resultId, externalTrigger = false }: Props) {
-  const [visible, setVisible] = useState(false);
+  const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<Stage>("prompt");
   const [rating, setRating] = useState<0 | 1 | null>(null);
   const [text, setText] = useState("");
@@ -23,23 +23,39 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
   // Show after 18 seconds, unless already shown/dismissed.
   useEffect(() => {
     const id = setTimeout(() => {
-      if (!dismissed.current) setVisible(true);
+      if (!dismissed.current) setOpen(true);
     }, 18_000);
     return () => clearTimeout(id);
   }, []);
 
   // Show immediately when the parent signals (e.g. first Full Report tab click).
   useEffect(() => {
-    if (externalTrigger && !dismissed.current) setVisible(true);
+    if (externalTrigger && !dismissed.current) setOpen(true);
   }, [externalTrigger]);
+
+  // Lock body scroll + Escape to close while open.
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") closeModal();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
     if (stage === "testimonial") inputRef.current?.focus();
   }, [stage]);
 
-  function closeToast() {
+  function closeModal() {
     dismissed.current = true;
-    setVisible(false);
+    setOpen(false);
   }
 
   async function submitRating(r: 0 | 1) {
@@ -66,101 +82,152 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
     }
     setStage("done");
     setSubmitting(false);
-    setTimeout(() => setVisible(false), 2500);
+    setTimeout(() => setOpen(false), 2500);
   }
 
-  if (!visible) return null;
+  function skipTestimonial() {
+    setStage("done");
+    setTimeout(() => setOpen(false), 2500);
+  }
+
+  if (!open) return null;
+
+  const header = (() => {
+    if (stage === "done") {
+      return {
+        eyebrow: "All set",
+        title: "Thanks for the feedback",
+        description: "It helps us make PlainTerms better.",
+      };
+    }
+    if (stage === "testimonial") {
+      return {
+        eyebrow: "Thank you",
+        title: rating === 1 ? "Glad to hear it!" : "Thanks for the honesty.",
+        description: "Want to leave a quick quote? We may feature it on the site.",
+      };
+    }
+    return {
+      eyebrow: "Your feedback",
+      title: "How was your experience?",
+      description: "It takes one tap — and helps us improve PlainTerms.",
+    };
+  })();
 
   return (
-    <div
-      role="dialog"
-      aria-label="Experience feedback"
-      className="fixed bottom-5 left-1/2 z-[200] w-[min(92vw,440px)] -translate-x-1/2 rounded-lg border border-[var(--pt-border)] bg-white p-4 shadow-[0_18px_40px_-24px_rgba(31,43,61,0.55)]"
-    >
-      {stage === "prompt" && (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-[var(--pt-ink)]">How was your experience?</p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => submitRating(1)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
-              aria-label="Good experience"
-            >
-              😊
-            </button>
-            <button
-              type="button"
-              onClick={() => submitRating(0)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-red-300 hover:bg-red-50"
-              aria-label="Poor experience"
-            >
-              😞
-            </button>
-            <button
-              type="button"
-              onClick={closeToast}
-              className="rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="Close feedback dialog"
+        onClick={closeModal}
+        className="fixed inset-0 bg-[#1f2b3d]/55 backdrop-blur-sm"
+      />
 
-      {stage === "testimonial" && (
-        <>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-[var(--pt-ink)]">
-                {rating === 1 ? "Glad to hear it! 🎉" : "Thanks for letting us know."}
-              </p>
-              <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
-                Want to leave a quick quote? We may feature it on the site.
-              </p>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={header.title}
+        className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(31,43,61,0.6)]"
+      >
+        {/* Header band */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#fff8f4] via-[#fef3ec] to-[#fdeae0] px-6 py-5 sm:px-8">
+          <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[var(--pt-accent)]/10 blur-2xl" />
+          <div className="absolute -bottom-16 right-16 h-40 w-40 rounded-full bg-[#ffd4c2]/40 blur-2xl" />
+          <div className="relative flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--pt-accent)]/12 ring-1 ring-[var(--pt-accent)]/20">
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 text-[var(--pt-accent)]">
+                  <path
+                    d="M4 5h16v11H8l-4 3z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--pt-accent)]">
+                  {header.eyebrow}
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold leading-tight text-[var(--pt-ink)]">{header.title}</h2>
+                <p className="mt-1 max-w-xl text-sm leading-6 text-[var(--pt-muted)]">{header.description}</p>
+              </div>
             </div>
             <button
               type="button"
-              onClick={closeToast}
-              className="shrink-0 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+              onClick={closeModal}
+              aria-label="Close"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--pt-ink)]/8 text-[var(--pt-muted)] transition-colors hover:bg-[var(--pt-ink)]/14"
             >
-              Close
+              <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4">
+                <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
             </button>
           </div>
-          <textarea
-            ref={inputRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            maxLength={1000}
-            rows={3}
-            placeholder="&ldquo;PlainTerms saved me from signing a bad deal…&rdquo;"
-            className="mt-3 w-full resize-none rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
-          />
-          <div className="mt-2 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => { setStage("done"); setTimeout(() => setVisible(false), 2500); }}
-              className="rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
-            >
-              Skip
-            </button>
-            <button
-              type="button"
-              onClick={submitTestimonial}
-              disabled={submitting || !text.trim()}
-              className="rounded-md border border-[#d9654f] bg-[var(--pt-accent)] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-            >
-              {submitting ? "Sending…" : "Submit"}
-            </button>
-          </div>
-        </>
-      )}
+        </div>
 
-      {stage === "done" && (
-        <p className="text-sm text-[var(--pt-muted)]">
-          Thanks for the feedback — it helps us improve. ✨
-        </p>
-      )}
+        {/* Body */}
+        <div className="p-5 sm:p-6">
+          {stage === "prompt" && (
+            <div className="flex items-center justify-center gap-4 py-2">
+              <button
+                type="button"
+                onClick={() => submitRating(1)}
+                className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-white text-3xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
+                aria-label="Good experience"
+              >
+                😊
+              </button>
+              <button
+                type="button"
+                onClick={() => submitRating(0)}
+                className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-white text-3xl transition-colors hover:border-red-300 hover:bg-red-50"
+                aria-label="Poor experience"
+              >
+                😞
+              </button>
+            </div>
+          )}
+
+          {stage === "testimonial" && (
+            <>
+              <textarea
+                ref={inputRef}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                maxLength={1000}
+                rows={3}
+                placeholder="&ldquo;PlainTerms saved me from signing a bad deal…&rdquo;"
+                className="w-full resize-none rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
+              />
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={skipTestimonial}
+                  className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+                >
+                  Skip
+                </button>
+                <button
+                  type="button"
+                  onClick={submitTestimonial}
+                  disabled={submitting || !text.trim()}
+                  className="pt-btn-primary rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                >
+                  {submitting ? "Sending…" : "Submit"}
+                </button>
+              </div>
+            </>
+          )}
+
+          {stage === "done" && (
+            <p className="py-2 text-center text-sm text-[var(--pt-muted)]">
+              Thanks for the feedback — it helps us improve. ✨
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
