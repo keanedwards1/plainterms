@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import SampleReportTabsPreview from "@/components/SampleReportTabsPreview";
 
 export const metadata: Metadata = {
@@ -65,22 +64,6 @@ export default function SampleReportPage() {
 
         <SampleReportTabsPreview />
 
-        <section className="pt-card p-6">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--pt-muted)]">
-                Ready to run your own contract?
-              </p>
-              <h2 className="mt-2 text-3xl text-[var(--pt-ink)]">Get the full report in minutes.</h2>
-              <p className="mt-2 text-sm text-[var(--pt-muted)]">
-                Upload once. Get clear risk visibility and negotiation-ready guidance.
-              </p>
-            </div>
-            <Link href="/analyze" className="pt-btn-primary inline-flex items-center px-6 py-3 text-sm font-semibold">
-              Start My Review
-            </Link>
-          </div>
-        </section>
       </div>
     </main>
   );
