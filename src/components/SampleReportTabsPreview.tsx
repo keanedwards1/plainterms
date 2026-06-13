@@ -87,25 +87,31 @@ function statusClass(s: "present" | "unclear" | "missing") {
   return "bg-[#ffe8e3] text-[#9e3f2d]";
 }
 
-function LockedTease({ children }: { children: React.ReactNode }) {
+function LockedTease({ children, onUnlock }: { children: React.ReactNode; onUnlock: () => void }) {
   return (
     <div className="relative">
       <div className="pointer-events-none select-none blur-[2px] [mask-image:linear-gradient(to_bottom,black_40%,transparent_94%)]">
         {children}
       </div>
       <div className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--pt-border)] bg-white/95 px-3 py-1 text-xs font-semibold text-[var(--pt-ink)] shadow-sm">
+        <button
+          type="button"
+          onClick={onUnlock}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--pt-border)] bg-white/95 px-3 py-1 text-xs font-semibold text-[var(--pt-ink)] shadow-sm transition-colors hover:border-[var(--pt-accent)] hover:text-[var(--pt-accent)]"
+        >
           <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
             <path d="M5 7V5.2a3 3 0 0 1 6 0V7m-7 0h8v6H4z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Locked — choose a plan to unlock
-        </span>
+        </button>
       </div>
     </div>
   );
 }
 
 // ─── Tab content — each mirrors the corresponding ResultWorkspace tab layout ──
+
+type TabProps = { onUnlock: () => void };
 
 function SummaryTab() {
   return (
@@ -137,9 +143,9 @@ function SummaryTab() {
   );
 }
 
-function InsightsTab() {
+function InsightsTab({ onUnlock }: TabProps) {
   return (
-    <LockedTease>
+    <LockedTease onUnlock={onUnlock}>
       <div className="space-y-3">
         <article className="rounded-lg border border-[#e9d3b0] bg-gradient-to-r from-[#fff6ea] via-[#fff9f2] to-[#ffeed8] p-4">
           <div className="flex items-center gap-2">
@@ -210,9 +216,9 @@ function InsightsTab() {
   );
 }
 
-function FlagsTab() {
+function FlagsTab({ onUnlock }: TabProps) {
   return (
-    <LockedTease>
+    <LockedTease onUnlock={onUnlock}>
       <div className="space-y-3">
         <article className="rounded-lg border border-[#efc1b6] bg-gradient-to-r from-[#fff3ef] via-[#fff8f5] to-[#fffdfc] p-3">
           <div className="flex items-center gap-2">
@@ -252,9 +258,9 @@ function FlagsTab() {
   );
 }
 
-function TermsTab() {
+function TermsTab({ onUnlock }: TabProps) {
   return (
-    <LockedTease>
+    <LockedTease onUnlock={onUnlock}>
       <div className="space-y-3">
         <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
           <p className="text-sm font-semibold text-[var(--pt-ink)]">Term Coverage Snapshot</p>
@@ -301,9 +307,9 @@ function TermsTab() {
   );
 }
 
-function QuestionsTab() {
+function QuestionsTab({ onUnlock }: TabProps) {
   return (
-    <LockedTease>
+    <LockedTease onUnlock={onUnlock}>
       <div className="space-y-3">
         <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-4 py-3">
           <p className="text-sm font-semibold text-[var(--pt-ink)]">Questions to raise with the other party</p>
@@ -341,9 +347,9 @@ function QuestionsTab() {
   );
 }
 
-function DocumentTab() {
+function DocumentTab({ onUnlock }: TabProps) {
   return (
-    <LockedTease>
+    <LockedTease onUnlock={onUnlock}>
       <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -378,9 +384,9 @@ function DocumentTab() {
   );
 }
 
-function FullTab() {
+function FullTab({ onUnlock }: TabProps) {
   return (
-    <LockedTease>
+    <LockedTease onUnlock={onUnlock}>
       <div className="space-y-3">
         <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
           <div className="flex items-center gap-2">
@@ -444,7 +450,7 @@ export default function SampleReportTabsPreview() {
         <ReportSidebar
           tabs={TABS}
           activeKey={activeTab}
-          onSelectTab={(key) => { setActiveTab(key as TabKey); setModalOpen(true); }}
+          onSelectTab={(key) => setActiveTab(key as TabKey)}
           risk={SAMPLE.risk}
           recommendation={{ label: SAMPLE.recommendation.label, reason: SAMPLE.recommendation.reason, tone: "high" }}
           tabAriaLabel={(label) => `Preview ${label} section`}
@@ -463,12 +469,12 @@ export default function SampleReportTabsPreview() {
           <p className="mt-1 text-xs text-[var(--pt-muted)]">Sample data. Upload your contract to get a real analysis.</p>
           <div className="mt-3">
             {activeTab === "summary"   && <SummaryTab />}
-            {activeTab === "insights"  && <InsightsTab />}
-            {activeTab === "flags"     && <FlagsTab />}
-            {activeTab === "terms"     && <TermsTab />}
-            {activeTab === "questions" && <QuestionsTab />}
-            {activeTab === "document"  && <DocumentTab />}
-            {activeTab === "full"      && <FullTab />}
+            {activeTab === "insights"  && <InsightsTab onUnlock={() => setModalOpen(true)} />}
+            {activeTab === "flags"     && <FlagsTab onUnlock={() => setModalOpen(true)} />}
+            {activeTab === "terms"     && <TermsTab onUnlock={() => setModalOpen(true)} />}
+            {activeTab === "questions" && <QuestionsTab onUnlock={() => setModalOpen(true)} />}
+            {activeTab === "document"  && <DocumentTab onUnlock={() => setModalOpen(true)} />}
+            {activeTab === "full"      && <FullTab onUnlock={() => setModalOpen(true)} />}
           </div>
         </section>
       </section>

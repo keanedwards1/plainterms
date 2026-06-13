@@ -77,7 +77,7 @@ export default function UpgradeModal({
         onClick={() => {
           if (!isProcessing) onClose();
         }}
-        className="absolute inset-0 bg-[#1f2b3d]/55 backdrop-blur-sm"
+        className="fixed inset-0 bg-[#1f2b3d]/55 backdrop-blur-sm"
       />
 
       <div
