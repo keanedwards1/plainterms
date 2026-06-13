@@ -13,6 +13,7 @@ import {
   REPORT_TIER_PRICES,
   type ReportTierOption,
 } from "@/lib/pricingOptions";
+import FeedbackToast from "@/components/FeedbackToast";
 
 type ResultWorkspaceProps = {
   data: PtResult;
@@ -567,19 +568,6 @@ async function readCheckoutError(res: Response): Promise<string> {
 }
 
 export default function ResultWorkspace({ data, retentionDays, accessKey, abVariant }: ResultWorkspaceProps) {
-  const [surveyRating, setSurveyRating] = useState<"positive" | "negative" | null>(null);
-
-  function submitSurveyRating(rating: "positive" | "negative") {
-    setSurveyRating(rating);
-    void trackFunnelMetric({
-      event: "survey_rating",
-      funnelId: getOrCreateFunnelId(),
-      resultId: data.result_id,
-      rating,
-      abVariant,
-    });
-  }
-
   const [activeReportTab, setActiveReportTab] = useState<ReportTab>("summary");
   const [activeBasicTab, setActiveBasicTab] = useState<BasicTab>("summary");
   const [addonNotice, setAddonNotice] = useState<string | null>(null);
@@ -1082,6 +1070,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
 
   return (
     <>
+    <FeedbackToast resultId={data.result_id} />
     {upgradePrompt ? (
       <div className="fixed bottom-5 left-1/2 z-[200] w-[min(92vw,560px)] -translate-x-1/2 rounded-lg border border-[var(--pt-border)] bg-white p-4 shadow-[0_18px_40px_-24px_rgba(31,43,61,0.55)]">
         <div className="flex items-start justify-between gap-3">
@@ -2151,35 +2140,6 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
         )}
       </section>
 
-      <div className="pt-card-soft mt-4 flex flex-wrap items-center justify-between gap-4 px-5 py-4">
-        {surveyRating === null ? (
-          <>
-            <p className="text-sm font-semibold text-[var(--pt-ink)]">How was your experience?</p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => submitSurveyRating("positive")}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
-                aria-label="Good experience"
-              >
-                😊
-              </button>
-              <button
-                type="button"
-                onClick={() => submitSurveyRating("negative")}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-red-300 hover:bg-red-50"
-                aria-label="Poor experience"
-              >
-                😞
-              </button>
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-[var(--pt-muted)]">
-            Thanks for the feedback — it helps us improve.
-          </p>
-        )}
-      </div>
     </section>
     </>
   );

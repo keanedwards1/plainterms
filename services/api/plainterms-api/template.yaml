@@ -226,6 +226,34 @@ Resources:
               Bool:
                 aws:SecureTransport: false
 
+  FeedbackTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PlainTermsFeedback
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: result_id
+          AttributeType: S
+        - AttributeName: ts
+          AttributeType: N
+      KeySchema:
+        - AttributeName: result_id
+          KeyType: HASH
+        - AttributeName: ts
+          KeyType: RANGE
+
+  TestimonialsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PlainTermsTestimonials
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: testimonial_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: testimonial_id
+          KeyType: HASH
+
   ResultsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -636,6 +664,34 @@ Resources:
           Properties:
             RestApiId: !Ref PlainTermsApi
             Path: /result/{id}
+            Method: OPTIONS
+
+  SubmitFeedbackFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: submitFeedback.handler
+      Environment:
+        Variables:
+          FEEDBACK_TABLE:     !Ref FeedbackTable
+          TESTIMONIALS_TABLE: !Ref TestimonialsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FeedbackTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TestimonialsTable
+      Events:
+        SubmitFeedbackPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /feedback
+            Method: POST
+        SubmitFeedbackOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /feedback
             Method: OPTIONS
 
 Outputs:
