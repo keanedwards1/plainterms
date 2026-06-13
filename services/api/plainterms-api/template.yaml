@@ -113,6 +113,14 @@ Parameters:
     Type: Number
     Default: 10
     Description: Stage-level API Gateway throttle burst limit.
+  FeedbackRateLimit:
+    Type: Number
+    Default: 2
+    Description: Dedicated throttle rate (requests/sec) for POST /feedback. Its own token bucket, so feedback spam can't drain the shared API budget.
+  FeedbackBurstLimit:
+    Type: Number
+    Default: 5
+    Description: Dedicated throttle burst limit for POST /feedback.
   PreviewMaxConcurrency:
     Type: Number
     Default: 0
@@ -174,6 +182,11 @@ Resources:
           HttpMethod: "*"
           ThrottlingRateLimit: !Ref ApiDefaultRateLimit
           ThrottlingBurstLimit: !Ref ApiDefaultBurstLimit
+        # More-specific override: POST /feedback gets its own tighter bucket.
+        - ResourcePath: "/feedback"
+          HttpMethod: "POST"
+          ThrottlingRateLimit: !Ref FeedbackRateLimit
+          ThrottlingBurstLimit: !Ref FeedbackBurstLimit
 
   UploadBucket:
     Type: AWS::S3::Bucket
@@ -232,6 +245,9 @@ Resources:
     Properties:
       TableName: PlainTermsFeedback
       BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
       AttributeDefinitions:
         - AttributeName: result_id
           AttributeType: S
@@ -248,6 +264,9 @@ Resources:
     Properties:
       TableName: PlainTermsTestimonials
       BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
       AttributeDefinitions:
         - AttributeName: testimonial_id
           AttributeType: S
@@ -676,11 +695,14 @@ Resources:
         Variables:
           FEEDBACK_TABLE:     !Ref FeedbackTable
           TESTIMONIALS_TABLE: !Ref TestimonialsTable
+          RESULTS_TABLE:      !Ref ResultsTable
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FeedbackTable
         - DynamoDBCrudPolicy:
             TableName: !Ref TestimonialsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref ResultsTable
       Events:
         SubmitFeedbackPost:
           Type: Api
