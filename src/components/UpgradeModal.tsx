@@ -86,14 +86,14 @@ export default function UpgradeModal({
         aria-label={featureTitle}
         className="relative z-10 w-full max-w-[860px] overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(31,43,61,0.6)]"
       >
-        {/* Premium header band */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#1f2b3d] via-[#3a3144] to-[#6e3f43] px-6 py-5 text-white sm:px-8">
-          <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -bottom-16 right-16 h-40 w-40 rounded-full bg-[var(--pt-accent)]/35 blur-2xl" />
+        {/* Header band */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#fff8f4] via-[#fef3ec] to-[#fdeae0] px-6 py-5 sm:px-8">
+          <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[var(--pt-accent)]/10 blur-2xl" />
+          <div className="absolute -bottom-16 right-16 h-40 w-40 rounded-full bg-[#ffd4c2]/40 blur-2xl" />
           <div className="relative flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25">
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+              <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--pt-accent)]/12 ring-1 ring-[var(--pt-accent)]/20">
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 text-[var(--pt-accent)]">
                   <path
                     d="M4 9l3.5 2.5L12 5l4.5 6.5L20 9l-1.5 9h-13z"
                     fill="none"
@@ -104,11 +104,11 @@ export default function UpgradeModal({
                 </svg>
               </span>
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--pt-accent)]">
                   Unlock with a plan
                 </p>
-                <h2 className="mt-1 text-2xl font-semibold leading-tight">{featureTitle}</h2>
-                <p className="mt-1 max-w-xl text-sm leading-6 text-white/80">{featureDescription}</p>
+                <h2 className="mt-1 text-2xl font-semibold leading-tight text-[var(--pt-ink)]">{featureTitle}</h2>
+                <p className="mt-1 max-w-xl text-sm leading-6 text-[var(--pt-muted)]">{featureDescription}</p>
               </div>
             </div>
             <button
@@ -118,7 +118,7 @@ export default function UpgradeModal({
               }}
               disabled={isProcessing}
               aria-label="Close"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/80 transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--pt-ink)]/8 text-[var(--pt-muted)] transition-colors hover:bg-[var(--pt-ink)]/14 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4">
                 <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
