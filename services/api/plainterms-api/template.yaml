@@ -115,8 +115,8 @@ Parameters:
     Description: Stage-level API Gateway throttle burst limit.
   PreviewMaxConcurrency:
     Type: Number
-    Default: 3
-    Description: Reserved concurrency cap for the free preview analysis function, bounding abuse blast radius and protecting other functions' concurrency.
+    Default: 0
+    Description: Reserved concurrency cap for the free preview analysis function. Set to 0 to disable reservation (required when the account concurrency limit is 10, since AWS requires 10 unreserved). Raise only after requesting a Lambda concurrency limit increase.
   ApiRequestCountAlarmThreshold:
     Type: Number
     Default: 900
@@ -144,6 +144,7 @@ Parameters:
 
 Conditions:
   EnableApiWafCondition: !Equals [!Ref EnableApiWaf, "true"]
+  EnablePreviewReservedConcurrencyCondition: !Not [!Equals [!Ref PreviewMaxConcurrency, 0]]
   HasApiAlarmSnsTopic: !Not [!Equals [!Ref ApiAlarmSnsTopicArn, ""]]
 
 Globals:
@@ -509,7 +510,7 @@ Resources:
       Handler: previewAnalysis.handler
       Timeout: 330
       MemorySize: 512
-      ReservedConcurrentExecutions: !Ref PreviewMaxConcurrency
+      ReservedConcurrentExecutions: !If [EnablePreviewReservedConcurrencyCondition, !Ref PreviewMaxConcurrency, !Ref "AWS::NoValue"]
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
