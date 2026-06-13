@@ -8,6 +8,7 @@ import QuickReadout from "@/components/result/QuickReadout";
 import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
 import LockedSummarySection from "@/components/result/LockedSummarySection";
 import { type ReportTierOption } from "@/lib/pricingOptions";
+import { TAB_CLICK_OPENS_MODAL } from "@/lib/previewConfig";
 
 type RiskLabel = "low" | "medium" | "high";
 
@@ -465,7 +466,10 @@ export default function PreviewUnlockPanel({
         <ReportSidebar
           tabs={TABS}
           activeKey={activeTab}
-          onSelectTab={(key) => setActiveTab(key as PreviewTabKey)}
+          onSelectTab={(key) => {
+            setActiveTab(key as PreviewTabKey);
+            if (TAB_CLICK_OPENS_MODAL && key !== "summary") setModalOpen(true);
+          }}
           risk={risk}
           recommendation={{ label: recommendation.text, reason: recommendation.reason, tone: risk.label }}
           footer={

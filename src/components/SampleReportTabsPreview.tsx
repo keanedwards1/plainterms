@@ -7,6 +7,7 @@ import ReportSidebar from "@/components/result/ReportSidebar";
 import QuickReadout from "@/components/result/QuickReadout";
 import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
 import { type ReportTierOption } from "@/lib/pricingOptions";
+import { TAB_CLICK_OPENS_MODAL } from "@/lib/previewConfig";
 
 // ─── Static sample data ────────────────────────────────────────────────────────
 
@@ -450,7 +451,10 @@ export default function SampleReportTabsPreview() {
         <ReportSidebar
           tabs={TABS}
           activeKey={activeTab}
-          onSelectTab={(key) => setActiveTab(key as TabKey)}
+          onSelectTab={(key) => {
+            setActiveTab(key as TabKey);
+            if (TAB_CLICK_OPENS_MODAL && key !== "summary") setModalOpen(true);
+          }}
           risk={SAMPLE.risk}
           recommendation={{ label: SAMPLE.recommendation.label, reason: SAMPLE.recommendation.reason, tone: "high" }}
           tabAriaLabel={(label) => `Preview ${label} section`}

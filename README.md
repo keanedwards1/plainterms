@@ -308,3 +308,20 @@ Backend retention behavior:
   - Include `variant` in funnel metrics events (`pricing_view`, `checkout_start`, `checkout_success`)
   - Pass `variant` through checkout request and Stripe metadata
   - Compare variants by revenue per visitor, conversion rate, and refunds before choosing winner
+
+## Preview tab behaviour toggle
+
+**File:** `src/lib/previewConfig.ts`
+
+```ts
+export const TAB_CLICK_OPENS_MODAL = true;
+```
+
+Controls whether clicking a non-summary tab on `/preview/[id]` and `/sample-report` immediately opens the upgrade modal.
+
+| Value | Behaviour |
+|-------|-----------|
+| `true` | Clicking any non-summary tab opens the upgrade modal (current default) |
+| `false` | Tab click only switches content; modal only opens from the "Locked — choose a plan" pill |
+
+Change the constant in `src/lib/previewConfig.ts` — both pages pick it up automatically.
