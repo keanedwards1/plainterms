@@ -378,9 +378,6 @@ export default function AnalyzePage() {
                 <p className="mt-1 text-xs leading-5 text-[var(--pt-muted)]">
                   Risk score and red-flag counts. Decide what to unlock after you see it.
                 </p>
-                <span className="mt-2 inline-flex rounded-full border border-[#b2ddd4] bg-[#e1f4ef] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">
-                  Default
-                </span>
               </button>
 
               {TIER_ORDER.map((tier) => (
@@ -487,10 +484,6 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          <p className="mt-5 text-xs text-[var(--pt-muted)] 3xl:text-sm 3xl:mt-7">
-            The free preview shows only the risk score and flag counts. Specific clauses, source text,
-            rewrites, and email drafts stay locked until payment.
-          </p>
         </form>
       </div>
 
