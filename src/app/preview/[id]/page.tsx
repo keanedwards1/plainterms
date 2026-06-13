@@ -172,9 +172,6 @@ export default async function PreviewPage({ params, searchParams }: Props) {
           clauseCounts={data.clause_counts}
         />
 
-        <p className="text-xs leading-5 text-[var(--pt-muted)]">
-          PlainTerms is informational only and is not legal advice.
-        </p>
       </div>
     </main>
   );
