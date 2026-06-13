@@ -309,6 +309,11 @@ Backend retention behavior:
   - Pass `variant` through checkout request and Stripe metadata
   - Compare variants by revenue per visitor, conversion rate, and refunds before choosing winner
 
+- Feedback/testimonials — remaining security hardening:
+  - **Manual testimonial review (operational rule):** never auto-publish a testimonial. Always review before featuring a quote on the site — this single control neutralizes stored XSS, prompt injection, and offensive-content risk on the display path.
+  - **WAF per-IP rate limit:** enable the API WAF (`EnableApiWaf=true`) for per-IP throttling on `/feedback` and other routes. Deferred because it adds monthly cost (~$5/mo ACL + ~$1/rule + ~$0.60/M requests).
+  - **XSS guard on the testimonial display page:** when building the page that renders testimonials, rely on React's default text escaping and never use `dangerouslySetInnerHTML` for testimonial text/names.
+
 ## Preview tab behaviour toggle
 
 **File:** `src/lib/previewConfig.ts`
