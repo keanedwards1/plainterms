@@ -569,6 +569,7 @@ async function readCheckoutError(res: Response): Promise<string> {
 
 export default function ResultWorkspace({ data, retentionDays, accessKey, abVariant }: ResultWorkspaceProps) {
   const [activeReportTab, setActiveReportTab] = useState<ReportTab>("summary");
+  const [fullReportVisited, setFullReportVisited] = useState(false);
   const [activeBasicTab, setActiveBasicTab] = useState<BasicTab>("summary");
   const [addonNotice, setAddonNotice] = useState<string | null>(null);
   const [addonDraft, setAddonDraft] = useState<AddonDraft | null>(null);
@@ -1070,7 +1071,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
 
   return (
     <>
-    <FeedbackToast resultId={data.result_id} />
+    <FeedbackToast resultId={data.result_id} externalTrigger={fullReportVisited} />
     {upgradePrompt ? (
       <div className="fixed bottom-5 left-1/2 z-[200] w-[min(92vw,560px)] -translate-x-1/2 rounded-lg border border-[var(--pt-border)] bg-white p-4 shadow-[0_18px_40px_-24px_rgba(31,43,61,0.55)]">
         <div className="flex items-start justify-between gap-3">
@@ -1123,7 +1124,10 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
             loading: tab.key === "document" && isRevisionProcessing,
           }))}
           activeKey={activeReportTab}
-          onSelectTab={(key) => setActiveReportTab(key as ReportTab)}
+          onSelectTab={(key) => {
+            setActiveReportTab(key as ReportTab);
+            if (key === "full") setFullReportVisited(true);
+          }}
           risk={data.report.risk}
           recommendation={{
             label: data.report.recommendation.label,

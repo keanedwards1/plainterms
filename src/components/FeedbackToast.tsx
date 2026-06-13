@@ -7,27 +7,43 @@ type Stage = "prompt" | "testimonial" | "done";
 
 interface Props {
   resultId: string;
+  /** When this flips true, open the toast immediately (e.g. first Full Report tab visit). */
+  externalTrigger?: boolean;
 }
 
-export default function FeedbackToast({ resultId }: Props) {
+export default function FeedbackToast({ resultId, externalTrigger = false }: Props) {
   const [visible, setVisible] = useState(false);
   const [stage, setStage] = useState<Stage>("prompt");
   const [rating, setRating] = useState<0 | 1 | null>(null);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const dismissed = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Show after 18 seconds
+  // Show after 18 seconds, unless already shown/dismissed.
   useEffect(() => {
-    const id = setTimeout(() => setVisible(true), 18_000);
+    const id = setTimeout(() => {
+      if (!dismissed.current) setVisible(true);
+    }, 18_000);
     return () => clearTimeout(id);
   }, []);
+
+  // Show immediately when the parent signals (e.g. first Full Report tab click).
+  useEffect(() => {
+    if (externalTrigger && !dismissed.current) setVisible(true);
+  }, [externalTrigger]);
 
   useEffect(() => {
     if (stage === "testimonial") inputRef.current?.focus();
   }, [stage]);
 
+  function closeToast() {
+    dismissed.current = true;
+    setVisible(false);
+  }
+
   async function submitRating(r: 0 | 1) {
+    dismissed.current = true;
     setRating(r);
     setStage("testimonial");
     // fire-and-forget the rating; testimonial submission happens on next step
@@ -83,7 +99,7 @@ export default function FeedbackToast({ resultId }: Props) {
             </button>
             <button
               type="button"
-              onClick={() => setVisible(false)}
+              onClick={closeToast}
               className="rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
             >
               Close
@@ -105,7 +121,7 @@ export default function FeedbackToast({ resultId }: Props) {
             </div>
             <button
               type="button"
-              onClick={() => setVisible(false)}
+              onClick={closeToast}
               className="shrink-0 rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
             >
               Close
