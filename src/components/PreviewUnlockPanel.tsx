@@ -276,7 +276,7 @@ function TermsTab({ clauseCounts, onUnlock }: TabProps) {
   );
 }
 
-function QuestionsTab({ redFlagCount, onUnlock }: TabProps) {
+function QuestionsTab({ redFlagCount, clauseCounts, onUnlock }: TabProps) {
   const questionCount = Math.max(redFlagCount + 2, 4);
   return (
     <div className="space-y-3">
@@ -285,28 +285,44 @@ function QuestionsTab({ redFlagCount, onUnlock }: TabProps) {
         <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
           Each question is specific to your contract&apos;s risk areas — copy and send directly to the other party.
         </p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <StatPill label="Questions" value={questionCount} color="teal" />
+          <StatPill label="Based on flags" value={redFlagCount} color="amber" />
+          <StatPill label="Unclear clauses" value={clauseCounts.unclear} color="red" />
+        </div>
       </TeaserBanner>
-      <LockedSummarySection title="Negotiation Questions" onUnlock={onUnlock}>
-        <PlaceholderQA rows={5} />
+      <LockedSummarySection title="Questions for the other party" onUnlock={onUnlock}>
+        <PlaceholderQA rows={3} />
+      </LockedSummarySection>
+      <LockedSummarySection title="Clarification requests" onUnlock={onUnlock}>
+        <PlaceholderQA rows={2} />
       </LockedSummarySection>
     </div>
   );
 }
 
-function DocumentTab({ clauseCounts, onUnlock }: TabProps) {
+function DocumentTab({ clauseCounts, redFlagCount, onUnlock }: TabProps) {
   return (
     <div className="space-y-3">
       <TeaserBanner>
         <p className="text-sm font-semibold text-[var(--pt-ink)]">Source document with inline annotations</p>
         <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
-          {clauseCounts.total} clauses highlighted with risk callouts and suggested rewrites inline.
+          {clauseCounts.total} clauses highlighted with risk callouts. {redFlagCount} flagged passages marked with plain-English notes and suggested rewrites.
         </p>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <StatPill label="Annotated clauses" value={clauseCounts.total} color="teal" />
+          <StatPill label="Flagged passages" value={redFlagCount} color="red" />
+          <StatPill label="Rewrite suggestions" value={clauseCounts.unclear} color="amber" />
+        </div>
       </TeaserBanner>
       <LockedSummarySection title="Annotated Document" onUnlock={onUnlock}>
         <PlaceholderText lines={8} />
       </LockedSummarySection>
-      <LockedSummarySection title="Tracked Revisions" onUnlock={onUnlock}>
-        <PlaceholderText lines={5} />
+      <LockedSummarySection title="Suggested Rewrites" onUnlock={onUnlock}>
+        <PlaceholderList rows={3} />
+      </LockedSummarySection>
+      <LockedSummarySection title="Tracked Changes" onUnlock={onUnlock}>
+        <PlaceholderText lines={4} />
       </LockedSummarySection>
     </div>
   );
