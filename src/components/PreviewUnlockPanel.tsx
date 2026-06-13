@@ -276,26 +276,52 @@ function TermsTab({ clauseCounts, onUnlock }: TabProps) {
   );
 }
 
-function QuestionsTab({ redFlagCount, clauseCounts, onUnlock }: TabProps) {
+const PLACEHOLDER_QUESTIONS = [
+  "What specific deliverables are included in the scope of work, and how are revisions handled?",
+  "Under what circumstances can either party terminate this agreement early?",
+  "How is intellectual property ownership assigned for work created during the engagement?",
+  "What are the payment terms if a milestone is delayed on your end?",
+];
+
+function QuestionsTab({ redFlagCount, onUnlock }: TabProps) {
   const questionCount = Math.max(redFlagCount + 2, 4);
   return (
     <div className="space-y-3">
-      <TeaserBanner>
-        <p className="text-sm font-semibold text-[var(--pt-ink)]">{questionCount} negotiation questions ready</p>
-        <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
-          Each question is specific to your contract&apos;s risk areas — copy and send directly to the other party.
+      <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-4 py-3">
+        <p className="text-sm font-semibold text-[var(--pt-ink)]">Questions to raise with the other party</p>
+        <p className="mt-1 text-sm text-[var(--pt-muted)]">
+          {questionCount} questions generated from your contract&apos;s risk areas. Unlock to see them in full — copy and send directly, or use the negotiation email draft.
         </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <StatPill label="Questions" value={questionCount} color="teal" />
-          <StatPill label="Based on flags" value={redFlagCount} color="amber" />
-          <StatPill label="Unclear clauses" value={clauseCounts.unclear} color="red" />
+      </article>
+
+      <LockedSummarySection title={`${questionCount} negotiation questions`} onUnlock={onUnlock}>
+        <div className="space-y-2">
+          {PLACEHOLDER_QUESTIONS.map((q, idx) => (
+            <div key={idx} className="flex items-start gap-3 rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-4 py-3">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] text-[11px] font-bold text-[var(--pt-muted)]">
+                {idx + 1}
+              </span>
+              <span className="flex-1 text-[15px] leading-6 text-[var(--pt-ink)]">{q}</span>
+              <svg className="mt-1 h-4 w-4 shrink-0 text-[var(--pt-muted)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          ))}
         </div>
-      </TeaserBanner>
-      <LockedSummarySection title="Questions for the other party" onUnlock={onUnlock}>
-        <PlaceholderQA rows={3} />
       </LockedSummarySection>
-      <LockedSummarySection title="Clarification requests" onUnlock={onUnlock}>
-        <PlaceholderQA rows={2} />
+
+      <LockedSummarySection title="Negotiation email draft" onUnlock={onUnlock}>
+        <div className="rounded-lg border border-[var(--pt-border)] bg-white">
+          <div className="border-b border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Subject</p>
+            <div className="mt-1 h-4 w-2/3 rounded bg-[#e6d8c3]" />
+          </div>
+          <div className="space-y-2 p-3">
+            <div className="h-3 w-full rounded bg-[#e6d8c3]" />
+            <div className="h-3 w-11/12 rounded bg-[#ede6db]" />
+            <div className="h-3 w-4/5 rounded bg-[#ede6db]" />
+          </div>
+        </div>
       </LockedSummarySection>
     </div>
   );
@@ -304,25 +330,28 @@ function QuestionsTab({ redFlagCount, clauseCounts, onUnlock }: TabProps) {
 function DocumentTab({ clauseCounts, redFlagCount, onUnlock }: TabProps) {
   return (
     <div className="space-y-3">
-      <TeaserBanner>
-        <p className="text-sm font-semibold text-[var(--pt-ink)]">Source document with inline annotations</p>
-        <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
-          {clauseCounts.total} clauses highlighted with risk callouts. {redFlagCount} flagged passages marked with plain-English notes and suggested rewrites.
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <StatPill label="Annotated clauses" value={clauseCounts.total} color="teal" />
-          <StatPill label="Flagged passages" value={redFlagCount} color="red" />
-          <StatPill label="Rewrite suggestions" value={clauseCounts.unclear} color="amber" />
+      <LockedSummarySection title="Document review" onUnlock={onUnlock}>
+        {/* Mirrors the real document tab: file toolbar + segmented control + document text */}
+        <div className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="h-4 w-48 rounded bg-[#e6d8c3]" />
+              <p className="mt-1 text-xs text-[var(--pt-muted)]">
+                {redFlagCount} flagged passages · {clauseCounts.total} clauses reviewed
+              </p>
+            </div>
+            <div className="flex items-center rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-[3px]">
+              {["Original", "Track Changes", "Revised"].map((label) => (
+                <span key={label} className="rounded-md px-3 py-1.5 text-xs font-semibold text-[var(--pt-muted)] first:bg-white first:text-[var(--pt-ink)] first:shadow-sm">
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            <PlaceholderText lines={7} />
+          </div>
         </div>
-      </TeaserBanner>
-      <LockedSummarySection title="Annotated Document" onUnlock={onUnlock}>
-        <PlaceholderText lines={8} />
-      </LockedSummarySection>
-      <LockedSummarySection title="Suggested Rewrites" onUnlock={onUnlock}>
-        <PlaceholderList rows={3} />
-      </LockedSummarySection>
-      <LockedSummarySection title="Tracked Changes" onUnlock={onUnlock}>
-        <PlaceholderText lines={4} />
       </LockedSummarySection>
     </div>
   );
