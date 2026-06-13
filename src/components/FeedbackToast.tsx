@@ -16,6 +16,8 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
   const [stage, setStage] = useState<Stage>("prompt");
   const [rating, setRating] = useState<0 | 1 | null>(null);
   const [text, setText] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const dismissed = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -77,7 +79,13 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
       await fetch(`${getApiBaseUrl()}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ result_id: resultId, rating, testimonial: text.trim() }),
+        body: JSON.stringify({
+          result_id: resultId,
+          rating,
+          testimonial: text.trim(),
+          first_name: firstName.trim() || undefined,
+          last_name: lastName.trim() || undefined,
+        }),
       }).catch(() => {/* best-effort */});
     }
     setStage("done");
@@ -201,6 +209,24 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
                 placeholder="&ldquo;PlainTerms saved me from signing a bad deal…&rdquo;"
                 className="w-full resize-none rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
               />
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  maxLength={60}
+                  placeholder="First name (optional)"
+                  className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
+                />
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  maxLength={60}
+                  placeholder="Last name (optional)"
+                  className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-sm text-[var(--pt-ink)] placeholder:text-[var(--pt-muted)]/60 focus:border-[var(--pt-accent)] focus:outline-none"
+                />
+              </div>
               <div className="mt-3 flex justify-end gap-2">
                 <button
                   type="button"

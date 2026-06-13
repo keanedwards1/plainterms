@@ -15,7 +15,7 @@ export async function handler(event) {
   const { ok, payload, response } = parseJsonBody(event, METHODS);
   if (!ok) return response;
 
-  const { result_id, rating, testimonial } = payload;
+  const { result_id, rating, testimonial, first_name, last_name } = payload;
 
   // rating must be 0 (negative) or 1 (positive)
   if (typeof result_id !== "string" || !result_id.trim()) {
@@ -38,15 +38,24 @@ export async function handler(event) {
 
   if (typeof testimonial === "string" && testimonial.trim().length > 0) {
     const text = testimonial.trim().slice(0, 1000);
+    const item = {
+      testimonial_id: { S: randomUUID() },
+      result_id:      { S: result_id },
+      rating:         { N: String(rating) },
+      text:           { S: text },
+      ts:             { N: String(ts) },
+    };
+
+    if (typeof first_name === "string" && first_name.trim().length > 0) {
+      item.first_name = { S: first_name.trim().slice(0, 60) };
+    }
+    if (typeof last_name === "string" && last_name.trim().length > 0) {
+      item.last_name = { S: last_name.trim().slice(0, 60) };
+    }
+
     await db.send(new PutItemCommand({
       TableName: TESTIMONIALS_TABLE,
-      Item: {
-        testimonial_id: { S: randomUUID() },
-        result_id:      { S: result_id },
-        rating:         { N: String(rating) },
-        text:           { S: text },
-        ts:             { N: String(ts) },
-      },
+      Item: item,
     }));
   }
 
