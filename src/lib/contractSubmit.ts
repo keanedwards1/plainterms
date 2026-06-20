@@ -7,6 +7,10 @@ import { type ReportTierOption } from "@/lib/pricingOptions";
 
 export type ReviewChoice = "free" | ReportTierOption;
 
+// Tier chosen at checkout, stashed so the post-payment page can report the
+// purchase value to analytics after returning from Stripe.
+export const PURCHASE_TIER_KEY = "pt.purchaseTier";
+
 type UploadUrlResponse = {
   uploadUrl: string;
   objectKey: string;
@@ -203,6 +207,13 @@ export async function submitContract(opts: {
       currentStep = "starting-checkout";
       onStep(currentStep);
       void trackFunnelMetric({ event: "checkout_start", funnelId });
+      // Remember the tier so the post-payment page can report the purchase
+      // value to analytics (the Stripe-return page has no other way to know it).
+      try {
+        window.localStorage.setItem(PURCHASE_TIER_KEY, reviewChoice);
+      } catch {
+        /* ignore storage failures */
+      }
 
       const checkoutRes = await fetch("/api/checkout", {
         method: "POST",

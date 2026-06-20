@@ -8,7 +8,8 @@
 - [x] **Confirm `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set in Vercel production** so analytics actually fire.
 
 ### High (measure your ad spend)
-- [ ] **Add conversion tracking** — fire a GA4 `purchase` event (with value + currency) on `/analyze/complete` success. Without it you can't measure ROAS.
+- [x] **Add conversion tracking** — GA4 `purchase` event (value + currency + items) fires on `/analyze/complete` success, deduped per Stripe session.
+  - [ ] **GA UI (one click, requires sign-in):** GA4 → Admin → Events (or Key events) → mark `purchase` as a **key event** so it counts as a conversion. The event will show up here within ~24h of the first live purchase.
   - [ ] (Optional / deferred) Add Google Ads and/or Meta Pixel conversion tags + retargeting audiences — decide later if going harder on paid.
 - [ ] **Add a social/OG share image** (1200×630 `opengraph-image`) — metadata declares `summary_large_image` but no image exists, so link previews render blank.
 

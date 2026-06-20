@@ -5,6 +5,49 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import Image from "next/image";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
+import { PURCHASE_TIER_KEY } from "@/lib/contractSubmit";
+import {
+  REPORT_TIER_NAMES,
+  REPORT_TIER_PRICES,
+  REPORT_TIER_OPTIONS,
+  type ReportTierOption,
+} from "@/lib/pricingOptions";
+
+// Fire a GA4 `purchase` event so paid conversions are measurable for ads.
+// Idempotent per Stripe session via transaction_id; value comes from the tier
+// stashed at checkout (parsed from the displayed price).
+function reportPurchase(sessionId: string) {
+  let tier: ReportTierOption | null = null;
+  try {
+    const stored = window.localStorage.getItem(PURCHASE_TIER_KEY);
+    if (stored && (REPORT_TIER_OPTIONS as readonly string[]).includes(stored)) {
+      tier = stored as ReportTierOption;
+    }
+    window.localStorage.removeItem(PURCHASE_TIER_KEY);
+  } catch {
+    /* ignore storage failures */
+  }
+
+  const value = tier ? Number(REPORT_TIER_PRICES[tier].replace(/[^0-9.]/g, "")) : undefined;
+
+  window.gtag?.("event", "purchase", {
+    transaction_id: sessionId,
+    currency: "USD",
+    ...(value !== undefined && Number.isFinite(value) ? { value } : {}),
+    ...(tier
+      ? {
+          items: [
+            {
+              item_id: tier,
+              item_name: REPORT_TIER_NAMES[tier],
+              price: value,
+              quantity: 1,
+            },
+          ],
+        }
+      : {}),
+  });
+}
 
 type VerifyResponse = {
   resultId: string;
@@ -96,6 +139,11 @@ export default function AnalyzeCompletePage() {
         resultId: data.resultId,
         sessionId,
       });
+      // Only count a purchase the first time this session is finalized, so a
+      // page refresh (which returns reused=true) doesn't double-count.
+      if (!data.reused) {
+        reportPurchase(sessionId);
+      }
       setDone(true);
       setProgress(100);
       setTimeout(() => {
