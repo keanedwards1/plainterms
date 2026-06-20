@@ -5,11 +5,7 @@ export const alt = "PlainTerms — plain-English contract analysis for creators"
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default async function OgImage() {
-  const fraunces = await fetch(
-    "https://fonts.gstatic.com/s/fraunces/v31/6NUu8FyLNQOQZAnv9bYEvDiIdE9Eqcbbu4KIBkHkWqRfMQ.woff2"
-  ).then((r) => r.arrayBuffer());
-
+export default function OgImage() {
   return new ImageResponse(
     (
       <div
@@ -97,6 +93,7 @@ export default async function OgImage() {
               color: "#ffffff",
               lineHeight: 1.05,
               letterSpacing: -1.5,
+              fontFamily: "Georgia, serif",
             }}
           >
             Know what you're signing.
@@ -148,9 +145,6 @@ export default async function OgImage() {
         </div>
       </div>
     ),
-    {
-      ...size,
-      fonts: [{ name: "Fraunces", data: fraunces, weight: 700 }],
-    }
+    size
   );
 }
