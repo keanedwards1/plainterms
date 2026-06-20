@@ -7,9 +7,59 @@ import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
 import { parseSelectedAddonsCsv } from "./lib/addonSelection.mjs";
 import { jsonResponse, methodGuard, parseJsonBody } from "./lib/http.mjs";
 import { createResultAccessKey, hashResultAccessKey } from "./lib/resultAccessKey.mjs";
+import { maybeReadParameter } from "./lib/ssm.mjs";
 
 const db = new DynamoDBClient({});
 const METHODS = "POST,OPTIONS";
+const APP_BASE_URL = process.env.APP_BASE_URL ?? "https://www.plainterms.us";
+
+let cachedResendKey = null;
+async function getResendApiKey() {
+  if (cachedResendKey !== null) return cachedResendKey;
+  const param = process.env.RESEND_API_KEY_PARAM;
+  if (!param) { cachedResendKey = ""; return ""; }
+  try {
+    cachedResendKey = (await maybeReadParameter(param, true)) ?? "";
+  } catch {
+    cachedResendKey = "";
+  }
+  return cachedResendKey;
+}
+
+async function sendReceiptEmail({ toEmail, toName, resultId, accessKey, reportTierName }) {
+  const resendKey = await getResendApiKey();
+  if (!resendKey) return;
+  const reportUrl = `${APP_BASE_URL}/result/${encodeURIComponent(resultId)}?k=${encodeURIComponent(accessKey)}`;
+  const firstName = toName ? toName.split(" ")[0] : null;
+  const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "PlainTerms <hello@plainterms.us>",
+        to: [toEmail],
+        subject: "Your PlainTerms report is ready",
+        html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1f2b3d">
+  <h2 style="font-size:24px;margin-bottom:8px">Your report is ready</h2>
+  <p style="color:#536378">${greeting}</p>
+  <p style="color:#536378">Your <strong>${reportTierName}</strong> contract analysis is complete. Use the link below to access your report — bookmark it, as this is the only way to retrieve it.</p>
+  <p style="margin:28px 0">
+    <a href="${reportUrl}" style="background:#f1765d;color:#fff8f2;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px">View my report →</a>
+  </p>
+  <p style="color:#536378;font-size:13px">If the button doesn't work, paste this into your browser:<br><a href="${reportUrl}" style="color:#f1765d;word-break:break-all">${reportUrl}</a></p>
+  <hr style="border:none;border-top:1px solid #e8ecf0;margin:28px 0">
+  <p style="color:#8fa3b8;font-size:12px">Questions? Reply to this email or contact us at plaintermsinfo@gmail.com.<br>PlainTerms provides informational analysis only — not legal advice.</p>
+</div>`,
+      }),
+    });
+  } catch {
+    // Best effort — never block the response for an email failure.
+  }
+}
 
 function logServerError(eventName, message, fields = {}) {
   console.error(
@@ -555,6 +605,20 @@ export const handler = async (event) => {
         analysisCompletedAt: new Date().toISOString(),
       },
     });
+
+    const toEmail = session?.customer_details?.email;
+    const toName = session?.customer_details?.name;
+    const tierName = analysisSelection?.reportTier ?? "report_69";
+    const TIER_NAMES = { scan_39: "Core", report_69: "Report", protect_99: "Protect" };
+    if (toEmail) {
+      void sendReceiptEmail({
+        toEmail,
+        toName,
+        resultId,
+        accessKey: resultAccessKey,
+        reportTierName: TIER_NAMES[tierName] ?? "Report",
+      });
+    }
 
     return jsonResponse(event, 200, {
       resultId,

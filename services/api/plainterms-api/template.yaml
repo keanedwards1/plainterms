@@ -148,7 +148,15 @@ Parameters:
   ApiAlarmSnsTopicArn:
     Type: String
     Default: ""
-    Description: Optional SNS topic ARN for alarm notifications. Leave empty to disable alarm actions.
+    Description: Optional SNS topic ARN for alarm notifications. Leave empty to use the built-in alerts topic.
+  AlertsEmail:
+    Type: String
+    Default: "plaintermsinfo@gmail.com"
+    Description: Email address to receive CloudWatch alarm notifications.
+  ResendApiKeyParamName:
+    Type: String
+    Default: /plainterms/resend/api-key
+    Description: SSM parameter name containing Resend API key for transactional email (SecureString). Leave unset to disable receipt emails.
 
 Conditions:
   EnableApiWafCondition: !Equals [!Ref EnableApiWaf, "true"]
@@ -187,6 +195,14 @@ Resources:
           HttpMethod: "POST"
           ThrottlingRateLimit: !Ref FeedbackRateLimit
           ThrottlingBurstLimit: !Ref FeedbackBurstLimit
+
+  PlainTermsAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-alerts"
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlertsEmail
 
   UploadBucket:
     Type: AWS::S3::Bucket
@@ -339,14 +355,10 @@ Resources:
           Value: !Sub "${AWS::StackName}-plainterms-api"
         - Name: Stage
           Value: Prod
-      AlarmActions: !If
-        - HasApiAlarmSnsTopic
-        - - !Ref ApiAlarmSnsTopicArn
-        - !Ref AWS::NoValue
-      OKActions: !If
-        - HasApiAlarmSnsTopic
-        - - !Ref ApiAlarmSnsTopicArn
-        - !Ref AWS::NoValue
+      AlarmActions:
+        - !If [HasApiAlarmSnsTopic, !Ref ApiAlarmSnsTopicArn, !Ref PlainTermsAlertsTopic]
+      OKActions:
+        - !If [HasApiAlarmSnsTopic, !Ref ApiAlarmSnsTopicArn, !Ref PlainTermsAlertsTopic]
 
   PlainTermsApi4xxAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -365,14 +377,10 @@ Resources:
           Value: !Sub "${AWS::StackName}-plainterms-api"
         - Name: Stage
           Value: Prod
-      AlarmActions: !If
-        - HasApiAlarmSnsTopic
-        - - !Ref ApiAlarmSnsTopicArn
-        - !Ref AWS::NoValue
-      OKActions: !If
-        - HasApiAlarmSnsTopic
-        - - !Ref ApiAlarmSnsTopicArn
-        - !Ref AWS::NoValue
+      AlarmActions:
+        - !If [HasApiAlarmSnsTopic, !Ref ApiAlarmSnsTopicArn, !Ref PlainTermsAlertsTopic]
+      OKActions:
+        - !If [HasApiAlarmSnsTopic, !Ref ApiAlarmSnsTopicArn, !Ref PlainTermsAlertsTopic]
 
   PlainTermsApi5xxAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -391,14 +399,10 @@ Resources:
           Value: !Sub "${AWS::StackName}-plainterms-api"
         - Name: Stage
           Value: Prod
-      AlarmActions: !If
-        - HasApiAlarmSnsTopic
-        - - !Ref ApiAlarmSnsTopicArn
-        - !Ref AWS::NoValue
-      OKActions: !If
-        - HasApiAlarmSnsTopic
-        - - !Ref ApiAlarmSnsTopicArn
-        - !Ref AWS::NoValue
+      AlarmActions:
+        - !If [HasApiAlarmSnsTopic, !Ref ApiAlarmSnsTopicArn, !Ref PlainTermsAlertsTopic]
+      OKActions:
+        - !If [HasApiAlarmSnsTopic, !Ref ApiAlarmSnsTopicArn, !Ref PlainTermsAlertsTopic]
 
   UploadUrlFunction:
     Type: AWS::Serverless::Function
@@ -597,6 +601,8 @@ Resources:
           LLM_MODEL: !Ref LlmModel
           LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
           DOCUMENT_REVISION_FUNCTION_NAME: !Ref GenerateRevisionFunction
+          APP_BASE_URL: !Ref AppBaseUrl
+          RESEND_API_KEY_PARAM: !Ref ResendApiKeyParamName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable
@@ -610,6 +616,7 @@ Resources:
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestSecretKeyParamName}
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ResendApiKeyParamName}
         - Statement:
             Effect: Allow
             Action:
