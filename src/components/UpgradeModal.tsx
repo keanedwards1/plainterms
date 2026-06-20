@@ -93,7 +93,7 @@ export default function UpgradeModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] overflow-y-auto overscroll-contain">
       <button
         type="button"
         aria-label="Close upgrade dialog"
@@ -103,14 +103,15 @@ export default function UpgradeModal({
         className="fixed inset-0 bg-[#1f2b3d]/55 backdrop-blur-sm"
       />
 
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={featureTitle}
-        className="relative z-10 w-full max-w-[860px] overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(31,43,61,0.6)]"
-      >
+      <div className="pointer-events-none relative flex min-h-full items-center justify-center p-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={featureTitle}
+          className="pointer-events-auto relative z-10 my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[860px] flex-col overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(31,43,61,0.6)]"
+        >
         {/* Header band */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#fff8f4] via-[#fef3ec] to-[#fdeae0] px-6 py-5 sm:px-8">
+        <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-[#fff8f4] via-[#fef3ec] to-[#fdeae0] px-6 py-5 sm:px-8">
           <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[var(--pt-accent)]/10 blur-2xl" />
           <div className="absolute -bottom-16 right-16 h-40 w-40 rounded-full bg-[#ffd4c2]/40 blur-2xl" />
           <div className="relative flex items-start justify-between gap-3">
@@ -151,7 +152,7 @@ export default function UpgradeModal({
         </div>
 
         {/* Body */}
-        <div className="p-5 sm:p-6">
+        <div className="overflow-y-auto p-5 sm:p-6">
           {isProcessing && processing ? (
             <div className="mx-auto max-w-md py-6">
               <div className="flex items-center gap-3">
@@ -332,6 +333,7 @@ export default function UpgradeModal({
               </p>
             </>
           )}
+        </div>
         </div>
       </div>
     </div>
