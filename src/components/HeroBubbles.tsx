@@ -11,6 +11,10 @@ const ELASTICITY = 0.001;
 const FRICTION = 0.0085;
 // How hard each cursor stroke pokes the surface (1 = original, lower = gentler).
 const POKE = 0.65;
+// Gentle continuous idle motion so the blobs keep jiggling without a cursor
+// (this is what keeps them alive on touch devices, where we disable the poke).
+const AMBIENT = 0.3;
+const AMBIENT_INTERVAL = 34; // frames between ambient nudges
 
 // Uneven placement, kept clear of the centred headline. Fractions of the canvas.
 const POSITIONS: { x: number; y: number }[] = [
@@ -105,6 +109,7 @@ export default function HeroBubbles() {
     let W = 0;
     let H = 0;
     let raf = 0;
+    let frame = 0;
     const oldMouse = { x: 0, y: 0 };
 
     const resize = () => {
@@ -154,6 +159,16 @@ export default function HeroBubbles() {
     };
 
     const render = () => {
+      // Ambient idle jiggle: nudge a random vertex on each blob now and then so
+      // the surface keeps undulating on its own (no cursor needed).
+      frame += 1;
+      if (frame % AMBIENT_INTERVAL === 0) {
+        for (const b of blobs) {
+          const p = b.points[(Math.random() * b.points.length) | 0];
+          p.applyAcceleration((Math.random() - 0.5) * AMBIENT);
+        }
+      }
+
       ctx.clearRect(0, 0, W, H);
       ctx.lineWidth = 2;
       ctx.strokeStyle = orange;
@@ -201,8 +216,8 @@ export default function HeroBubbles() {
 
     resize();
 
-    if (reduce.matches || coarse.matches) {
-      // Single static frame, no animation, no pointer interaction.
+    if (reduce.matches) {
+      // Respect reduced-motion: single static frame, no animation.
       for (const b of blobs) {
         for (const p of b.points) {
           p.acceleration = 0;
@@ -218,10 +233,14 @@ export default function HeroBubbles() {
       return;
     }
 
+    // The blobs animate (and ambient-jiggle) on every device. Pointer
+    // interaction is desktop-only — on touch it caused scroll lag.
     raf = requestAnimationFrame(render);
-    window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("resize", resize);
     window.addEventListener("scroll", resize, { passive: true });
+    if (!coarse.matches) {
+      window.addEventListener("pointermove", onMove, { passive: true });
+    }
 
     return () => {
       cancelAnimationFrame(raf);
