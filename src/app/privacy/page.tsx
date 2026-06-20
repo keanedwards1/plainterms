@@ -27,7 +27,7 @@ const sections = [
   },
   {
     title: "Information we collect",
-    body: "When you use PlainTerms we may collect: the document you upload for analysis; your email address if you create an account or contact us; payment information processed by Stripe (we never see or store your card details); usage data such as pages visited, report views, and upload events; and technical data like IP address, browser type, and device type collected automatically.",
+    body: "When you use PlainTerms we may collect: the document you upload for analysis; your email address if you contact us; payment information processed by Stripe (we never see or store your card details); usage data such as pages visited, report views, and upload events; and technical data like IP address, browser type, and device type collected automatically.",
   },
   {
     title: "Document processing and storage",
@@ -43,11 +43,11 @@ const sections = [
   },
   {
     title: "Cookies and tracking",
-    body: "We use cookies and similar technologies to keep you signed in, remember your preferences, and collect aggregate analytics data. You can disable cookies in your browser settings, though some features of the service may not work correctly without them. We do not use third-party advertising cookies.",
+    body: "We use cookies and similar technologies to remember your preferences and collect aggregate analytics data. You can disable cookies in your browser settings, though some features of the service may not work correctly without them. We do not use third-party advertising cookies.",
   },
   {
     title: "Data retention",
-    body: "Uploaded documents are deleted after analysis is complete or within a short retention window. Report results are stored to allow retrieval within a reasonable period after purchase. Account data is retained for as long as your account is active. You may request deletion of your data at any time by contacting us.",
+    body: "Uploaded documents are deleted after analysis is complete or within a short retention window. Report results are stored to allow retrieval within a reasonable period after purchase. You may request deletion of your data at any time by contacting us.",
   },
   {
     title: "Security",

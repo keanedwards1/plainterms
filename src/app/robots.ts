@@ -4,8 +4,8 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/analyze", "/privacy", "/terms"],
-      disallow: ["/result/", "/api/"],
+      allow: ["/", "/analyze", "/sample-report", "/privacy", "/terms"],
+      disallow: ["/result/", "/preview/", "/construction", "/api/"],
     },
     sitemap: "https://www.plainterms.us/sitemap.xml",
   };

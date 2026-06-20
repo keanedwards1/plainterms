@@ -5,7 +5,7 @@
 ### Blockers (must do before any ad spend)
 - [ ] **Take the site out of "under construction"** — remove the `CONSTRUCTION_PASSWORD` env var from Vercel and redeploy. Right now `https://www.plainterms.us/` 307-redirects all traffic to `/construction`, so every ad click hits a password wall.
 - [ ] **Confirm Stripe is in LIVE mode in production** (see Stripe Verification section below) — real customers can't pay on test keys.
-- [ ] **Confirm `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set in Vercel production** so analytics actually fire.
+- [x] **Confirm `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set in Vercel production** so analytics actually fire.
 
 ### High (measure your ad spend)
 - [ ] **Add conversion tracking** — fire a GA4 `purchase` event (with value + currency) on `/analyze/complete` success. Without it you can't measure ROAS.
@@ -13,10 +13,10 @@
 - [ ] **Add a social/OG share image** (1200×630 `opengraph-image`) — metadata declares `summary_large_image` but no image exists, so link previews render blank.
 
 ### Medium (polish & trust)
-- [ ] **Add branded 404 + error pages** — no `not-found.tsx` / `error.tsx` / `global-error.tsx` today; bad URLs show the default Next error screen.
-- [ ] **Add `/sample-report` to `sitemap.ts` and the `robots.ts` allow-list** — it's the strongest ad landing page and should be indexable.
-- [ ] **Reconcile privacy policy** — `privacy/page.tsx` says "We do not use third-party advertising cookies" (must change if pixels are added) and references accounts/sign-in that don't exist yet.
-- [ ] **Decide on a cookie-consent banner** based on ad geo-targeting (needed for EU/UK/California; usually fine to skip for US-only).
+- [x] **Add branded 404 + error pages** — `not-found.tsx`, `error.tsx`, and `global-error.tsx` added.
+- [x] **Add `/sample-report` to `sitemap.ts` and the `robots.ts` allow-list** — also disallowed `/preview/` and `/construction`.
+- [x] **Reconcile privacy policy** — removed account/sign-in language. NOTE: "We do not use third-party advertising cookies" line is still accurate; **must be revisited if ad pixels are added.**
+- [ ] **Cookie-consent banner** — DECISION: skip for now (US-targeted, first-party GA only, no ad cookies). Add a consent banner + Google Consent Mode **before** targeting EU/UK/California or adding any ad pixel.
 
 ### Low / nice-to-have
 - [ ] Bump smoke workflow Node 20 → 22 (`.github/workflows/smoke-funnel.yml`).
