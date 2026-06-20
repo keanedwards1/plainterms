@@ -42,8 +42,12 @@ const sections = [
     body: "You may not use PlainTerms to upload documents containing illegal content; attempt to reverse-engineer, scrape, or exploit the service; impersonate another person or entity; circumvent payment or access controls; or use the service in any way that violates applicable law.",
   },
   {
+    title: "Eligibility",
+    body: "You must be at least 18 years old to use PlainTerms. By using the service you represent that you are of legal age and have the right to enter into these terms on your own behalf or on behalf of an organisation you represent.",
+  },
+  {
     title: "Payments and refunds",
-    body: "PlainTerms charges a one-time fee per analysis. Payments are processed securely by Stripe. Because analysis is delivered immediately upon purchase, all sales are final and we do not offer refunds once a report has been generated. If you experience a technical failure that prevented delivery of your report, contact us and we will investigate.",
+    body: "PlainTerms charges a one-time fee per analysis. Fees are displayed before checkout and processed securely by Stripe. Because AI analysis begins immediately after payment is confirmed, all sales are final and we do not offer refunds once a report has been generated. If you experience a technical failure that prevented delivery of your report, contact us at plaintermsinfo@gmail.com within 7 days and we will investigate and resolve the issue, including reprocessing your document or issuing a credit at our discretion.",
   },
   {
     title: "Uploaded content",
@@ -60,6 +64,10 @@ const sections = [
   {
     title: "Limitation of liability",
     body: "To the fullest extent permitted by law, PlainTerms and its operators shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the service, including any decisions made in reliance on analysis output. Our total liability to you for any claim shall not exceed the amount you paid for the relevant analysis.",
+  },
+  {
+    title: "Governing law",
+    body: "These terms are governed by the laws of the United States. Any dispute arising from these terms or your use of PlainTerms shall first be attempted to be resolved by contacting us at plaintermsinfo@gmail.com. If unresolved, disputes shall be subject to binding arbitration or the courts of competent jurisdiction.",
   },
   {
     title: "Changes to these terms",
@@ -80,7 +88,7 @@ export default function TermsPage() {
         </Link>
 
       <h1 className="mt-5 text-4xl text-[var(--pt-ink)]">Terms of Use</h1>
-      <p className="mt-1 text-xs text-[var(--pt-muted)]">Effective April 17, 2026</p>
+      <p className="mt-1 text-xs text-[var(--pt-muted)]">Effective June 20, 2026</p>
       <p className="mt-4 text-sm text-[var(--pt-muted)]">
         PlainTerms is an informational tool, not a law firm. Please read these terms before using the service.
       </p>
