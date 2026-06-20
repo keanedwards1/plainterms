@@ -1,5 +1,28 @@
 # Security Audit TODO
 
+## Pre-Launch — Before Running Ads
+
+### Blockers (must do before any ad spend)
+- [ ] **Take the site out of "under construction"** — remove the `CONSTRUCTION_PASSWORD` env var from Vercel and redeploy. Right now `https://www.plainterms.us/` 307-redirects all traffic to `/construction`, so every ad click hits a password wall.
+- [ ] **Confirm Stripe is in LIVE mode in production** (see Stripe Verification section below) — real customers can't pay on test keys.
+- [ ] **Confirm `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set in Vercel production** so analytics actually fire.
+
+### High (measure your ad spend)
+- [ ] **Add conversion tracking** — fire a GA4 `purchase` event (with value + currency) on `/analyze/complete` success. Without it you can't measure ROAS.
+  - [ ] (Optional / deferred) Add Google Ads and/or Meta Pixel conversion tags + retargeting audiences — decide later if going harder on paid.
+- [ ] **Add a social/OG share image** (1200×630 `opengraph-image`) — metadata declares `summary_large_image` but no image exists, so link previews render blank.
+
+### Medium (polish & trust)
+- [ ] **Add branded 404 + error pages** — no `not-found.tsx` / `error.tsx` / `global-error.tsx` today; bad URLs show the default Next error screen.
+- [ ] **Add `/sample-report` to `sitemap.ts` and the `robots.ts` allow-list** — it's the strongest ad landing page and should be indexable.
+- [ ] **Reconcile privacy policy** — `privacy/page.tsx` says "We do not use third-party advertising cookies" (must change if pixels are added) and references accounts/sign-in that don't exist yet.
+- [ ] **Decide on a cookie-consent banner** based on ad geo-targeting (needed for EU/UK/California; usually fine to skip for US-only).
+
+### Low / nice-to-have
+- [ ] Bump smoke workflow Node 20 → 22 (`.github/workflows/smoke-funnel.yml`).
+- [ ] Run `npm run build` as a final pre-launch sanity check.
+- [ ] (Cosmetic) Internal tier keys `scan_39` / `report_69` / `protect_99` no longer match displayed prices ($29 / $79 / $149).
+
 ## Tomorrow Morning — Stripe Verification (Priority)
 
 - [ ] Confirm backend mode is sandbox first:
