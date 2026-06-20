@@ -6,8 +6,17 @@ import UpgradeModal, { type CheckoutProcessing } from "@/components/UpgradeModal
 import ReportSidebar from "@/components/result/ReportSidebar";
 import QuickReadout from "@/components/result/QuickReadout";
 import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
-import { type ReportTierOption } from "@/lib/pricingOptions";
+import { REPORT_TIER_NAMES, type ReportTierOption } from "@/lib/pricingOptions";
 import { TAB_CLICK_OPENS_MODAL } from "@/lib/previewConfig";
+import { getOrCreateFunnelId } from "@/lib/funnelMetrics";
+import {
+  ContractSubmitError,
+  PAID_STEP_ORDER,
+  stepLabel,
+  submitContract,
+  SUBMIT_STEP_DESCRIPTIONS,
+  type SubmitStep,
+} from "@/lib/contractSubmit";
 
 // ─── Static sample data ────────────────────────────────────────────────────────
 
@@ -74,7 +83,16 @@ const TAB_UNLOCK: Record<TabKey, { title: string; description: string }> = {
 };
 
 const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
-const REDIRECT_STEPS = ["Saving your selection", "Opening secure upload"];
+
+function toProcessing(tier: ReportTierOption, step: SubmitStep): CheckoutProcessing {
+  return {
+    tier,
+    stepNames: PAID_STEP_ORDER.map(stepLabel),
+    stepIndex: PAID_STEP_ORDER.indexOf(step),
+    stepLabel: stepLabel(step),
+    stepDescription: SUBMIT_STEP_DESCRIPTIONS[step],
+  };
+}
 
 function severityClass(s: "high" | "medium" | "low") {
   if (s === "high")   return "bg-[#ffe8e3] text-[#9e3f2d]";
@@ -433,14 +451,49 @@ export default function SampleReportTabsPreview() {
   const [activeTab, setActiveTab] = useState<TabKey>("summary");
   const [modalOpen, setModalOpen] = useState(false);
   const [processing, setProcessing] = useState<CheckoutProcessing | null>(null);
+  const [pendingTier, setPendingTier] = useState<ReportTierOption | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Selecting a tier moves the modal into the inline upload step (instead of
+  // bouncing to /analyze). The localStorage write keeps the /analyze fallback
+  // pre-selected if the user prefers the full upload page.
   function chooseTier(tier: ReportTierOption) {
     try { window.localStorage.setItem(LOCAL_STORAGE_REPORT_TIER_KEY, tier); } catch { /* ignore */ }
-    setProcessing({ tier, stepNames: REDIRECT_STEPS, stepIndex: 0, stepLabel: REDIRECT_STEPS[0], stepDescription: "Carrying your plan choice to the secure upload page." });
-    window.setTimeout(() => {
-      setProcessing({ tier, stepNames: REDIRECT_STEPS, stepIndex: 1, stepLabel: REDIRECT_STEPS[1], stepDescription: "Upload your contract to generate a real, private analysis." });
-      window.setTimeout(() => { window.location.assign("/analyze"); }, 450);
-    }, 500);
+    setUploadError(null);
+    setUploadFile(null);
+    setPendingTier(tier);
+  }
+
+  async function startUpload() {
+    if (!pendingTier || !uploadFile) return;
+    setUploadError(null);
+    try {
+      const outcome = await submitContract({
+        file: uploadFile,
+        reviewChoice: pendingTier,
+        funnelId: getOrCreateFunnelId(),
+        onStep: (step) => setProcessing(toProcessing(pendingTier, step)),
+      });
+      window.location.assign(outcome.url);
+    } catch (err) {
+      setProcessing(null);
+      setUploadError(
+        err instanceof ContractSubmitError
+          ? `${stepLabel(err.step)}: ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : "Unknown error",
+      );
+    }
+  }
+
+  function closeModal() {
+    if (processing) return;
+    setModalOpen(false);
+    setPendingTier(null);
+    setUploadFile(null);
+    setUploadError(null);
   }
 
   const unlock = TAB_UNLOCK[activeTab];
@@ -485,12 +538,32 @@ export default function SampleReportTabsPreview() {
 
       <UpgradeModal
         open={modalOpen}
-        featureTitle={unlock.title}
-        featureDescription={unlock.description}
+        featureTitle={pendingTier ? "Upload your contract" : unlock.title}
+        featureDescription={
+          pendingTier
+            ? "Upload a PDF or DOCX to generate your real, private analysis."
+            : unlock.description
+        }
         ctaPrefix="Get started with"
         processing={processing}
+        error={uploadError}
+        uploadStage={
+          pendingTier && !processing
+            ? {
+                tierName: REPORT_TIER_NAMES[pendingTier],
+                file: uploadFile,
+                onFileChange: setUploadFile,
+                onStart: startUpload,
+                onBack: () => {
+                  setPendingTier(null);
+                  setUploadError(null);
+                },
+                fallbackHref: "/analyze",
+              }
+            : null
+        }
         onSelectTier={chooseTier}
-        onClose={() => setModalOpen(false)}
+        onClose={closeModal}
       />
     </>
   );

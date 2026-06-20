@@ -7,6 +7,19 @@ import {
   REPORT_TIER_PRICES,
   type ReportTierOption,
 } from "@/lib/pricingOptions";
+import { prettyFileSize } from "@/lib/contractSubmit";
+
+// Optional inline upload step shown after a tier is chosen, so the user can
+// upload their contract without leaving the page. When omitted, the modal
+// behaves as a plain tier selector.
+export type UploadStage = {
+  tierName: string;
+  file: File | null;
+  onFileChange: (file: File | null) => void;
+  onStart: () => void;
+  onBack: () => void;
+  fallbackHref?: string;
+};
 
 const TIER_ORDER: ReportTierOption[] = ["scan_39", "report_69", "protect_99"];
 
@@ -32,6 +45,7 @@ type UpgradeModalProps = {
   ctaPrefix?: string;
   processing?: CheckoutProcessing | null;
   error?: string | null;
+  uploadStage?: UploadStage | null;
   onSelectTier: (tier: ReportTierOption) => void;
   onClose: () => void;
 };
@@ -44,10 +58,12 @@ export default function UpgradeModal({
   ctaPrefix = "Unlock with",
   processing = null,
   error = null,
+  uploadStage = null,
   onSelectTier,
   onClose,
 }: UpgradeModalProps) {
   const isProcessing = Boolean(processing);
+  const showUpload = !isProcessing && Boolean(uploadStage);
 
   useEffect(() => {
     if (!open) return;
@@ -177,6 +193,69 @@ export default function UpgradeModal({
                   <path d="M5 7V5.2a3 3 0 0 1 6 0V7m-7 0h8v6H4z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Encrypted, secure checkout via Stripe.
+              </p>
+            </div>
+          ) : showUpload && uploadStage ? (
+            <div className="mx-auto max-w-lg py-2">
+              <button
+                type="button"
+                onClick={uploadStage.onBack}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--pt-muted)] transition-colors hover:text-[var(--pt-ink)]"
+              >
+                <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+                  <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Back to plans
+              </button>
+
+              <p className="mt-3 text-sm text-[var(--pt-muted)]">
+                Selected plan: <span className="font-semibold text-[var(--pt-ink)]">{uploadStage.tierName}</span>
+              </p>
+
+              <label className="mt-3 block text-sm font-semibold text-[var(--pt-ink)]">
+                Contract file (PDF or DOCX)
+              </label>
+              <div className="mt-2 rounded-2xl border-2 border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-5">
+                <input
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={(e) => uploadStage.onFileChange(e.target.files?.[0] ?? null)}
+                  className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--pt-accent)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--pt-accent-ink)] hover:file:brightness-95"
+                />
+                {uploadStage.file ? (
+                  <p className="mt-3 text-sm text-[var(--pt-muted)]">
+                    Selected:{" "}
+                    <span className="font-semibold text-[var(--pt-ink)]">{uploadStage.file.name}</span>{" "}
+                    ({prettyFileSize(uploadStage.file.size)})
+                  </p>
+                ) : null}
+              </div>
+
+              {error ? (
+                <p className="mt-3 rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">
+                  {error}
+                </p>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={uploadStage.onStart}
+                disabled={!uploadStage.file}
+                className="pt-btn-primary mt-4 w-full rounded-lg px-4 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Start secure analysis
+              </button>
+
+              <p className="mt-4 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-xs text-[var(--pt-muted)]">
+                <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+                  <path d="M5 7V5.2a3 3 0 0 1 6 0V7m-7 0h8v6H4z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Private upload · secure Stripe checkout · not legal advice.
+                {uploadStage.fallbackHref ? (
+                  <a href={uploadStage.fallbackHref} className="font-semibold text-[var(--pt-ink)] underline">
+                    Use the full upload page
+                  </a>
+                ) : null}
               </p>
             </div>
           ) : (

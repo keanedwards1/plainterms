@@ -3,117 +3,27 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
+import { getOrCreateFunnelId } from "@/lib/funnelMetrics";
 import {
   REPORT_TIER_DESCRIPTIONS,
   REPORT_TIER_NAMES,
   REPORT_TIER_PRICES,
   type ReportTierOption,
 } from "@/lib/pricingOptions";
-
-type UploadUrlResponse = {
-  uploadUrl: string;
-  objectKey: string;
-};
-
-type PrecheckResponse = {
-  precheckPassed: boolean;
-  precheckToken: string;
-};
-
-type PreviewResponse = {
-  resultId: string;
-  previewAccessKey: string;
-};
-
-type CheckoutResponse = {
-  checkoutSessionId: string;
-  checkoutUrl: string;
-};
-
-type ReviewChoice = "free" | ReportTierOption;
+import {
+  ContractSubmitError,
+  FREE_STEP_ORDER,
+  PAID_STEP_ORDER,
+  prettyFileSize,
+  stepLabel,
+  submitContract,
+  SUBMIT_STEP_DESCRIPTIONS,
+  type ReviewChoice,
+  type SubmitStep,
+} from "@/lib/contractSubmit";
 
 const TIER_ORDER: ReportTierOption[] = ["scan_39", "report_69", "protect_99"];
 const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
-
-type SubmitStep =
-  | "requesting-upload-url"
-  | "uploading-file"
-  | "validating-file"
-  | "running-analysis"
-  | "opening-preview"
-  | "starting-checkout"
-  | "redirecting-to-checkout";
-
-const FREE_STEP_ORDER: SubmitStep[] = [
-  "requesting-upload-url",
-  "uploading-file",
-  "validating-file",
-  "running-analysis",
-  "opening-preview",
-];
-
-const PAID_STEP_ORDER: SubmitStep[] = [
-  "requesting-upload-url",
-  "uploading-file",
-  "validating-file",
-  "starting-checkout",
-  "redirecting-to-checkout",
-];
-
-const SUBMIT_STEP_DESCRIPTIONS: Record<SubmitStep, string> = {
-  "requesting-upload-url": "Setting up a secure upload session.",
-  "uploading-file": "Uploading your contract to encrypted storage.",
-  "validating-file": "Running malware scan, validating file type, and extracting readable text.",
-  "running-analysis": "Reading the file and preparing your risk preview.",
-  "opening-preview": "Opening your free risk preview.",
-  "starting-checkout": "Preparing secure checkout with your validated file.",
-  "redirecting-to-checkout": "Redirecting you to encrypted Stripe payment.",
-};
-
-async function readErrorResponse(res: Response): Promise<string> {
-  const contentType = res.headers.get("content-type") ?? "";
-
-  try {
-    if (contentType.includes("application/json")) {
-      const json = (await res.json()) as { error?: unknown; message?: unknown };
-      if (typeof json.error === "string" && json.error.trim()) return json.error;
-      if (typeof json.message === "string" && json.message.trim()) return json.message;
-      return JSON.stringify(json).slice(0, 500);
-    }
-
-    const text = await res.text();
-    if (text.trim()) return text.slice(0, 500);
-  } catch {
-    // Fall back below.
-  }
-
-  return res.statusText || "Unknown error";
-}
-
-function stepLabel(step: SubmitStep): string {
-  switch (step) {
-    case "requesting-upload-url":
-      return "Requesting upload URL";
-    case "uploading-file":
-      return "Uploading file";
-    case "validating-file":
-      return "Validating file";
-    case "running-analysis":
-      return "Preparing risk preview";
-    case "opening-preview":
-      return "Opening preview";
-    case "starting-checkout":
-      return "Starting checkout";
-    case "redirecting-to-checkout":
-      return "Redirecting to payment";
-  }
-}
-
-function prettyFileSize(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-}
 
 export default function AnalyzePage() {
   const [file, setFile] = React.useState<File | null>(null);
@@ -152,143 +62,23 @@ export default function AnalyzePage() {
       return;
     }
 
-    const funnelId = getOrCreateFunnelId();
-    void trackFunnelMetric({
-      event: "upload_start",
-      funnelId,
-      fileSizeBytes: file.size,
-      fileType: file.type || "application/octet-stream",
-    });
-
     setIsSubmitting(true);
-    let currentStep: SubmitStep = "requesting-upload-url";
-    setStep(currentStep);
+    setStep("requesting-upload-url");
 
     try {
-      const uploadUrlRes = await fetch("/api/upload-url", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type || "application/octet-stream",
-        }),
+      const outcome = await submitContract({
+        file,
+        reviewChoice,
+        funnelId: getOrCreateFunnelId(),
+        onStep: setStep,
       });
-
-      if (!uploadUrlRes.ok) {
-        const detail = await readErrorResponse(uploadUrlRes);
-        throw new Error(`Upload URL failed (${uploadUrlRes.status}): ${detail}`);
-      }
-
-      const uploadJson = (await uploadUrlRes.json()) as UploadUrlResponse;
-      if (!uploadJson.uploadUrl || !uploadJson.objectKey) {
-        throw new Error("Upload URL response missing uploadUrl/objectKey.");
-      }
-
-      currentStep = "uploading-file";
-      setStep(currentStep);
-      const s3PutRes = await fetch(uploadJson.uploadUrl, {
-        method: "PUT",
-        headers: {
-          "content-type": file.type || "application/octet-stream",
-        },
-        body: file,
-      });
-
-      if (!s3PutRes.ok) {
-        const detail = await readErrorResponse(s3PutRes);
-        throw new Error(`S3 upload failed (${s3PutRes.status}): ${detail}`);
-      }
-
-      currentStep = "validating-file";
-      setStep(currentStep);
-      const precheckRes = await fetch("/api/precheck", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          objectKey: uploadJson.objectKey,
-          filename: file.name,
-          contentType: file.type || "application/octet-stream",
-          size: file.size,
-        }),
-      });
-
-      if (!precheckRes.ok) {
-        const detail = await readErrorResponse(precheckRes);
-        throw new Error(`File validation failed (${precheckRes.status}): ${detail}`);
-      }
-
-      const precheckJson = (await precheckRes.json()) as PrecheckResponse;
-      if (!precheckJson.precheckPassed || !precheckJson.precheckToken) {
-        throw new Error("File validation did not pass. Please upload another file.");
-      }
-
-      if (reviewChoice !== "free") {
-        currentStep = "starting-checkout";
-        setStep(currentStep);
-        void trackFunnelMetric({ event: "checkout_start", funnelId });
-
-        const checkoutRes = await fetch("/api/checkout", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            objectKey: uploadJson.objectKey,
-            filename: file.name,
-            contentType: file.type || "application/octet-stream",
-            size: file.size,
-            precheckToken: precheckJson.precheckToken,
-            reportTier: reviewChoice,
-          }),
-        });
-
-        if (!checkoutRes.ok) {
-          const detail = await readErrorResponse(checkoutRes);
-          throw new Error(`Checkout failed (${checkoutRes.status}): ${detail}`);
-        }
-
-        const checkoutData = (await checkoutRes.json()) as CheckoutResponse;
-        if (!checkoutData.checkoutUrl) {
-          throw new Error("Checkout succeeded but no checkout URL was returned.");
-        }
-
-        currentStep = "redirecting-to-checkout";
-        setStep(currentStep);
-        window.location.assign(checkoutData.checkoutUrl);
-        return;
-      }
-
-      currentStep = "running-analysis";
-      setStep(currentStep);
-      const previewRes = await fetch("/api/preview", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          objectKey: uploadJson.objectKey,
-          filename: file.name,
-          contentType: file.type || "application/octet-stream",
-          size: file.size,
-          precheckToken: precheckJson.precheckToken,
-        }),
-      });
-
-      if (!previewRes.ok) {
-        const detail = await readErrorResponse(previewRes);
-        throw new Error(`Preview failed (${previewRes.status}): ${detail}`);
-      }
-
-      const data = (await previewRes.json()) as PreviewResponse;
-      if (!data.resultId || !data.previewAccessKey) {
-        throw new Error("Preview succeeded but no secure preview link was returned.");
-      }
-
-      void trackFunnelMetric({ event: "preview_ready", funnelId, resultId: data.resultId });
-      currentStep = "opening-preview";
-      setStep(currentStep);
-      window.location.assign(
-        `/preview/${encodeURIComponent(data.resultId)}?p=${encodeURIComponent(data.previewAccessKey)}`
-      );
+      window.location.assign(outcome.url);
     } catch (err) {
-      const detail = err instanceof Error ? err.message : "Unknown error";
-      setError(`${stepLabel(currentStep)}: ${detail}`);
+      if (err instanceof ContractSubmitError) {
+        setError(`${stepLabel(err.step)}: ${err.message}`);
+      } else {
+        setError(err instanceof Error ? err.message : "Unknown error");
+      }
     } finally {
       setIsSubmitting(false);
       setStep(null);
