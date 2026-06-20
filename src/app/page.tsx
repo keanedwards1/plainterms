@@ -60,22 +60,31 @@ const SOCIAL_PLATFORMS = [
 export const metadata: Metadata = {
   title: "PlainTerms - Contract Analysis for Creators",
   description:
-    "Upload any creator agreement and get plain-English contract guidance in minutes.",
+    "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "PlainTerms - Contract Analysis for Creators",
+    title: "PlainTerms - Know What You're Signing",
     description:
-      "Upload any creator agreement and get plain-English contract guidance in minutes.",
+      "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
     url: "/",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "PlainTerms — plain-English contract analysis for creators",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "PlainTerms - Contract Analysis for Creators",
+    title: "PlainTerms - Know What You're Signing",
     description:
-      "Upload any creator agreement and get plain-English contract guidance in minutes.",
+      "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
+    images: ["/og-image.png"],
   },
 };
 
