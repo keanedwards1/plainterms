@@ -98,6 +98,9 @@ export default function HeroBubbles() {
 
     const blobs = POSITIONS.map((p) => new Blob(p.x, p.y));
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // Touch / coarse-pointer devices: skip interaction and the animation loop
+    // entirely so the canvas can't lag the phone (esp. during scroll).
+    const coarse = window.matchMedia("(hover: none), (pointer: coarse)");
 
     let W = 0;
     let H = 0;
@@ -198,8 +201,15 @@ export default function HeroBubbles() {
 
     resize();
 
-    if (reduce.matches) {
-      // Single static frame, no animation.
+    if (reduce.matches || coarse.matches) {
+      // Single static frame, no animation, no pointer interaction.
+      for (const b of blobs) {
+        for (const p of b.points) {
+          p.acceleration = 0;
+          p.speed = 0;
+          p.radialEffect = 0;
+        }
+      }
       ctx.clearRect(0, 0, W, H);
       ctx.lineWidth = 2;
       ctx.strokeStyle = orange;
