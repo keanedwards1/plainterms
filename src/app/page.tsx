@@ -70,21 +70,12 @@ export const metadata: Metadata = {
       "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
     url: "/",
     type: "website",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "PlainTerms — plain-English contract analysis for creators",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "PlainTerms - Know What You're Signing",
     description:
       "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
-    images: ["/og-image.png"],
   },
 };
 
