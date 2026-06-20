@@ -85,12 +85,13 @@ export default async function HomePage({
   searchParams: Promise<{ hero?: string }>;
 }) {
   const { hero } = await searchParams;
-  const useFocusedHero = hero === "focused";
+  // Focused hero is the default; ?hero=classic switches back to the original.
+  const useClassicHero = hero === "classic";
 
   return (
     <main className="pt-page-pad pb-12 pt-8 3xl:pb-20 3xl:pt-14">
       <div className="pt-container-wide space-y-10 3xl:space-y-16">
-        {useFocusedHero ? <FocusedHero /> : <ClassicHero />}
+        {useClassicHero ? <ClassicHero /> : <FocusedHero />}
 
         <section className="pt-card p-7 3xl:p-12">
           <h2 className="text-center text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Built for creators across a multitude of platforms</h2>
