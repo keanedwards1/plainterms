@@ -42,6 +42,8 @@ type UpgradeModalProps = {
   featureTitle: string;
   featureDescription: string;
   recommendedTier?: ReportTierOption;
+  /** Which tiers to show. Defaults to all three; pass a subset for upgrades. */
+  tiers?: ReportTierOption[];
   ctaPrefix?: string;
   processing?: CheckoutProcessing | null;
   error?: string | null;
@@ -55,6 +57,7 @@ export default function UpgradeModal({
   featureTitle,
   featureDescription,
   recommendedTier = "report_69",
+  tiers,
   ctaPrefix = "Unlock with",
   processing = null,
   error = null,
@@ -64,6 +67,7 @@ export default function UpgradeModal({
 }: UpgradeModalProps) {
   const isProcessing = Boolean(processing);
   const showUpload = !isProcessing && Boolean(uploadStage);
+  const shownTiers = tiers && tiers.length > 0 ? tiers : TIER_ORDER;
 
   useEffect(() => {
     if (!open) return;
@@ -260,8 +264,11 @@ export default function UpgradeModal({
             </div>
           ) : (
             <>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {TIER_ORDER.map((tier) => {
+              <div
+                className="grid gap-3 sm:grid-cols-[repeat(var(--tier-cols),minmax(0,1fr))]"
+                style={{ ["--tier-cols" as string]: String(shownTiers.length) }}
+              >
+                {shownTiers.map((tier) => {
                   const recommended = tier === recommendedTier;
                   return (
                     <article

@@ -10,10 +10,10 @@ import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
 import { type RiskTone } from "@/lib/reportStyles";
 import {
   REPORT_TIER_NAMES,
-  REPORT_TIER_PRICES,
   type ReportTierOption,
 } from "@/lib/pricingOptions";
 import FeedbackToast from "@/components/FeedbackToast";
+import UpgradeModal from "@/components/UpgradeModal";
 
 type ResultWorkspaceProps = {
   data: PtResult;
@@ -1107,46 +1107,31 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   return (
     <>
     <FeedbackToast resultId={data.result_id} externalTrigger={fullReportVisited} />
-    {upgradePrompt ? (
-      <div className="fixed bottom-5 left-1/2 z-[200] w-[min(92vw,560px)] -translate-x-1/2 rounded-lg border border-[var(--pt-border)] bg-white p-4 shadow-[0_18px_40px_-24px_rgba(31,43,61,0.55)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-[var(--pt-ink)]">{upgradePrompt.title}</p>
-            <p className="mt-1 text-sm leading-6 text-[var(--pt-muted)]">{upgradePrompt.description}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setUpgradePrompt(null);
-              setUpgradeError(null);
-            }}
-            className="rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-2 py-1 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
-          >
-            Close
-          </button>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {upgradePrompt.tiers.map((tier) => (
-            <button
-              key={`upgrade-${tier}`}
-              type="button"
-              onClick={() => startResultUpgrade(tier)}
-              disabled={upgradeTier !== null}
-              className="rounded-md border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {upgradeTier === tier
-                ? "Opening..."
-                : `${REPORT_TIER_NAMES[tier]} ${REPORT_TIER_PRICES[tier]}`}
-            </button>
-          ))}
-        </div>
-        {upgradeError ? (
-          <p className="mt-3 rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">
-            {upgradeError}
-          </p>
-        ) : null}
-      </div>
-    ) : null}
+    <UpgradeModal
+      open={upgradePrompt !== null}
+      featureTitle={upgradePrompt?.title ?? ""}
+      featureDescription={upgradePrompt?.description ?? ""}
+      tiers={upgradePrompt?.tiers}
+      recommendedTier={upgradePrompt?.tiers[0]}
+      ctaPrefix="Upgrade to"
+      processing={
+        upgradeTier
+          ? {
+              tier: upgradeTier,
+              stepNames: ["Opening secure checkout"],
+              stepIndex: 0,
+              stepLabel: "Opening secure checkout",
+              stepDescription: "Redirecting you to encrypted Stripe payment.",
+            }
+          : null
+      }
+      error={upgradeError}
+      onSelectTier={startResultUpgrade}
+      onClose={() => {
+        setUpgradePrompt(null);
+        setUpgradeError(null);
+      }}
+    />
 
     <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
       {data.report ? (
