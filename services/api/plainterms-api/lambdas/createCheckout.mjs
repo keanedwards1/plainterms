@@ -7,6 +7,7 @@ import { parseAnalysisSelection } from "./lib/analysisSelection.mjs";
 import { formatSelectedAddonsCsv, parseAddonSelection } from "./lib/addonSelection.mjs";
 import { jsonResponse, methodGuard, parseJsonBody } from "./lib/http.mjs";
 import { hashResultAccessKey, secureEqualStrings } from "./lib/resultAccessKey.mjs";
+import { TIER_LABELS, computeUpgradeAmount, isTierUpgrade } from "./lib/upgradePricing.mjs";
 const METHODS = "POST,OPTIONS";
 const db = new DynamoDBClient({});
 
@@ -229,13 +230,7 @@ export const handler = async (event) => {
       // Upgrades must move to a strictly higher tier, and the customer is only
       // charged the price difference (computed from the live Stripe amounts, so
       // no separate "upgrade" products/prices are needed).
-      const tierRank = { scan_39: 1, report_69: 2, protect_99: 3 };
-      const tierLabels = { scan_39: "Core", report_69: "Report", protect_99: "Protect" };
-      if (
-        !tierRank[selectedTier] ||
-        !tierRank[currentTier] ||
-        tierRank[selectedTier] <= tierRank[currentTier]
-      ) {
+      if (!isTierUpgrade(currentTier, selectedTier)) {
         return jsonResponse(event, 400, {
           error: "Selected plan is not an upgrade from your current plan.",
           code: "not_an_upgrade",
@@ -262,9 +257,8 @@ export const handler = async (event) => {
         stripe.prices.retrieve(selectedPriceId),
       ]);
       const currency = selectedPrice.currency || currentPrice.currency || "usd";
-      const upgradeAmount =
-        Number(selectedPrice.unit_amount ?? 0) - Number(currentPrice.unit_amount ?? 0);
-      if (!Number.isFinite(upgradeAmount) || upgradeAmount <= 0) {
+      const upgradeAmount = computeUpgradeAmount(currentPrice.unit_amount, selectedPrice.unit_amount);
+      if (upgradeAmount === null) {
         return jsonResponse(event, 400, {
           error: "Selected plan is not an upgrade from your current plan.",
           code: "not_an_upgrade",
@@ -280,8 +274,8 @@ export const handler = async (event) => {
               currency,
               unit_amount: upgradeAmount,
               product_data: {
-                name: `Upgrade to ${tierLabels[selectedTier]}`,
-                description: `Upgrade from ${tierLabels[currentTier]} — you only pay the price difference.`,
+                name: `Upgrade to ${TIER_LABELS[selectedTier]}`,
+                description: `Upgrade from ${TIER_LABELS[currentTier]} — you only pay the price difference.`,
               },
             },
           },
