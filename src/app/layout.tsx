@@ -3,6 +3,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import CookieConsent from "@/components/CookieConsent";
 import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
 
@@ -83,6 +84,13 @@ export default function RootLayout({
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){window.dataLayer.push(arguments);}
                 window.gtag = gtag;
+                gtag('consent', 'default', {
+                  analytics_storage: 'denied',
+                  ad_storage: 'denied',
+                  ad_user_data: 'denied',
+                  ad_personalization: 'denied',
+                  wait_for_update: 500,
+                });
                 gtag('js', new Date());
                 gtag('config', '${gaMeasurementId}', { send_page_view: false });
               `}
@@ -94,6 +102,7 @@ export default function RootLayout({
         ) : null}
         <SiteHeader />
         {children}
+        <CookieConsent />
       </body>
     </html>
   );
