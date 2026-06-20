@@ -44,6 +44,8 @@ type UpgradeModalProps = {
   recommendedTier?: ReportTierOption;
   /** Which tiers to show. Defaults to all three; pass a subset for upgrades. */
   tiers?: ReportTierOption[];
+  /** Override the displayed price per tier (e.g. show the upgrade difference). */
+  priceForTier?: (tier: ReportTierOption) => string;
   ctaPrefix?: string;
   processing?: CheckoutProcessing | null;
   error?: string | null;
@@ -58,6 +60,7 @@ export default function UpgradeModal({
   featureDescription,
   recommendedTier = "report_69",
   tiers,
+  priceForTier,
   ctaPrefix = "Unlock with",
   processing = null,
   error = null,
@@ -286,7 +289,7 @@ export default function UpgradeModal({
                       ) : null}
                       <div className="flex items-baseline justify-between gap-2">
                         <p className="text-base font-semibold text-[var(--pt-ink)]">{REPORT_TIER_NAMES[tier]}</p>
-                        <p className="text-xl font-semibold text-[var(--pt-ink)]">{REPORT_TIER_PRICES[tier]}</p>
+                        <p className="text-xl font-semibold text-[var(--pt-ink)]">{priceForTier ? priceForTier(tier) : REPORT_TIER_PRICES[tier]}</p>
                       </div>
                       <p className="mt-1 text-xs leading-5 text-[var(--pt-muted)]">
                         {REPORT_TIER_DESCRIPTIONS[tier]}

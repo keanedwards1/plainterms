@@ -10,6 +10,7 @@ import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
 import { type RiskTone } from "@/lib/reportStyles";
 import {
   REPORT_TIER_NAMES,
+  REPORT_TIER_PRICES,
   type ReportTierOption,
 } from "@/lib/pricingOptions";
 import FeedbackToast from "@/components/FeedbackToast";
@@ -662,6 +663,13 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   const isLowRiskNoFlags = data.report?.risk.label === "low" && redFlags.length === 0;
   const reportTier = data.report?.tier ?? "report_69";
   const isCoreTier = reportTier === "scan_39";
+  // Upgrades only charge the difference, so show that (not the full tier price).
+  const tierAmount = (tier: ReportTierOption) =>
+    Number(REPORT_TIER_PRICES[tier].replace(/[^0-9.]/g, ""));
+  const upgradePriceLabel = (tier: ReportTierOption) => {
+    const diff = tierAmount(tier) - tierAmount(reportTier);
+    return diff > 0 ? `$${diff}` : REPORT_TIER_PRICES[tier];
+  };
   const isProtectTier = reportTier === "protect_99";
   const protectExtras = data.report?.protect_extras;
   const protectUpsell = data.report?.protect_upsell;
@@ -1113,6 +1121,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
       featureDescription={upgradePrompt?.description ?? ""}
       tiers={upgradePrompt?.tiers}
       recommendedTier={upgradePrompt?.tiers[0]}
+      priceForTier={upgradePriceLabel}
       ctaPrefix="Upgrade to"
       processing={
         upgradeTier

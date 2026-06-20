@@ -224,11 +224,30 @@ export const handler = async (event) => {
       }
 
       const selectedTier = selectionCheck.selection.reportTier;
+      const currentTier = resultCheck.reportTier;
+
+      // Upgrades must move to a strictly higher tier, and the customer is only
+      // charged the price difference (computed from the live Stripe amounts, so
+      // no separate "upgrade" products/prices are needed).
+      const tierRank = { scan_39: 1, report_69: 2, protect_99: 3 };
+      const tierLabels = { scan_39: "Core", report_69: "Report", protect_99: "Protect" };
+      if (
+        !tierRank[selectedTier] ||
+        !tierRank[currentTier] ||
+        tierRank[selectedTier] <= tierRank[currentTier]
+      ) {
+        return jsonResponse(event, 400, {
+          error: "Selected plan is not an upgrade from your current plan.",
+          code: "not_an_upgrade",
+        }, METHODS);
+      }
+
       const { stripeSecretKey, stripePriceIds } = await getStripeConfig();
+      const currentPriceId = stripePriceIds?.[currentTier];
       const selectedPriceId = stripePriceIds?.[selectedTier];
-      if (!selectedPriceId) {
+      if (!currentPriceId || !selectedPriceId) {
         return jsonResponse(event, 500, {
-          error: `Missing Stripe price configuration for tier: ${selectedTier}`,
+          error: "Missing Stripe price configuration for upgrade.",
         }, METHODS);
       }
 
@@ -238,9 +257,35 @@ export const handler = async (event) => {
       }
 
       const stripe = new Stripe(stripeSecretKey);
+      const [currentPrice, selectedPrice] = await Promise.all([
+        stripe.prices.retrieve(currentPriceId),
+        stripe.prices.retrieve(selectedPriceId),
+      ]);
+      const currency = selectedPrice.currency || currentPrice.currency || "usd";
+      const upgradeAmount =
+        Number(selectedPrice.unit_amount ?? 0) - Number(currentPrice.unit_amount ?? 0);
+      if (!Number.isFinite(upgradeAmount) || upgradeAmount <= 0) {
+        return jsonResponse(event, 400, {
+          error: "Selected plan is not an upgrade from your current plan.",
+          code: "not_an_upgrade",
+        }, METHODS);
+      }
+
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
-        line_items: [{ price: selectedPriceId, quantity: 1 }],
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency,
+              unit_amount: upgradeAmount,
+              product_data: {
+                name: `Upgrade to ${tierLabels[selectedTier]}`,
+                description: `Upgrade from ${tierLabels[currentTier]} — you only pay the price difference.`,
+              },
+            },
+          },
+        ],
         success_url: `${appBaseUrl}/analyze/complete?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${appBaseUrl}/result/${encodeURIComponent(resultCheck.resultId)}?k=${encodeURIComponent(
           String(accessKey).trim()
@@ -249,6 +294,7 @@ export const handler = async (event) => {
           resultUpgrade: "true",
           resultId: resultCheck.resultId,
           reportTier: selectedTier,
+          upgradeFromTier: currentTier,
           selectedAddons: "",
         },
       });
