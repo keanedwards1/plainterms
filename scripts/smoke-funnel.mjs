@@ -1,8 +1,22 @@
 #!/usr/bin/env node
 
+import crypto from "node:crypto";
+
 const rawBaseUrl = process.env.SMOKE_BASE_URL ?? process.env.APP_BASE_URL ?? "";
 const baseUrl = rawBaseUrl.trim().replace(/\/+$/, "");
 const bypassSecret = process.env.VERCEL_BYPASS_SECRET ?? "";
+
+// When the site is behind the "under construction" gate (src/proxy.ts), every
+// path 307-redirects to /construction unless the request carries the access
+// cookie. Compute that cookie from the shared password so the smoke test can
+// pass the gate. Mirrors constructionToken() in the login route / proxy.
+const constructionPassword = (process.env.CONSTRUCTION_PASSWORD ?? "").trim();
+const constructionCookie = constructionPassword
+  ? `pt_construction_access=${crypto
+      .createHash("sha256")
+      .update(`plainterms-construction:${constructionPassword}`)
+      .digest("base64url")}`
+  : "";
 
 function fail(message) {
   throw new Error(message);
@@ -35,6 +49,7 @@ async function request(path, init = {}) {
   const headers = {
     "user-agent": "plainterms-smoke-funnel/1.0",
     ...(bypassSecret ? { "x-vercel-protection-bypass": bypassSecret } : {}),
+    ...(constructionCookie ? { cookie: constructionCookie } : {}),
     ...(init.headers ?? {}),
   };
   return fetch(url, {
@@ -49,6 +64,9 @@ async function main() {
   assert(/^https?:\/\//.test(baseUrl), `SMOKE_BASE_URL must be absolute. Received: ${baseUrl}`);
 
   logStep(`Smoke target: ${baseUrl}`);
+  if (constructionCookie) {
+    logStep("Construction gate password detected — sending access cookie.");
+  }
 
   logStep("1) GET /analyze");
   const analyzePage = await request("/analyze");
