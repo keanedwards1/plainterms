@@ -30,7 +30,7 @@ function reportPurchase(sessionId: string) {
 
   const value = tier ? Number(REPORT_TIER_PRICES[tier].replace(/[^0-9.]/g, "")) : undefined;
 
-  window.gtag?.("event", "purchase", {
+  const params = {
     transaction_id: sessionId,
     currency: "USD",
     ...(value !== undefined && Number.isFinite(value) ? { value } : {}),
@@ -46,7 +46,13 @@ function reportPurchase(sessionId: string) {
           ],
         }
       : {}),
-  });
+  };
+
+  // Standard GA4 ecommerce event (powers GA4 monetization reports).
+  window.gtag?.("event", "purchase", params);
+  // Matches the GA4-sourced Google Ads conversion action, which listens for an
+  // event named `manual_event_PURCHASE` (created by the "manual code" goal).
+  window.gtag?.("event", "manual_event_PURCHASE", params);
 }
 
 type VerifyResponse = {
