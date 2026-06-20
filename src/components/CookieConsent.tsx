@@ -231,15 +231,8 @@ export default function CookieConsent() {
               </button>
               <button
                 type="button"
-                onClick={rejectAll}
-                className="flex-1 rounded-lg border border-[var(--pt-border)] px-4 py-2 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:border-[var(--pt-ink)]/30 hover:text-[var(--pt-ink)]"
-              >
-                Reject all
-              </button>
-              <button
-                type="button"
                 onClick={() => setShowPrefs(true)}
-                className="w-full text-center text-xs font-semibold text-[var(--pt-muted)] underline transition-colors hover:text-[var(--pt-ink)]"
+                className="flex-1 rounded-lg border border-[var(--pt-border)] px-4 py-2 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:border-[var(--pt-ink)]/30 hover:text-[var(--pt-ink)]"
               >
                 Manage preferences
               </button>
