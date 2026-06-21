@@ -36,7 +36,7 @@ const securityHeaders = [
       "base-uri 'self'",
       "frame-ancestors 'none'",
       "object-src 'none'",
-      `script-src 'self' 'unsafe-inline' ${devScriptSrc}${vercelLiveSrc}https://js.stripe.com https://checkout.stripe.com https://www.googletagmanager.com https://www.clarity.ms https://connect.facebook.net`,
+      `script-src 'self' 'unsafe-inline' ${devScriptSrc}${vercelLiveSrc}https://js.stripe.com https://checkout.stripe.com https://www.googletagmanager.com https://*.clarity.ms https://connect.facebook.net`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https: https://www.google-analytics.com",
       "font-src 'self' data: https://fonts.gstatic.com",
