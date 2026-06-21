@@ -1827,7 +1827,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                       <article className="rounded-lg border border-(--pt-border) bg-(--pt-surface-soft) px-4 py-3">
                         <p className="text-sm font-semibold text-foreground">Questions to raise with the other party</p>
                         <p className="mt-1 text-sm text-(--pt-muted)">
-                          Before you sign, bring these questions to the brand, agency, or company offering this agreement. You can ask them in a call or use the email draft below to send them in writing.
+                          Before you sign, bring these questions to the other party — the contractor, company, or individual offering this agreement. You can ask them in a call or use the email draft below to send them in writing.
                         </p>
                       </article>
 
