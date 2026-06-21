@@ -107,8 +107,8 @@ export default function OgImage() {
               fontWeight: 400,
             }}
           >
-            Plain-English contract analysis for creators — risks, red flags,
-            and negotiation points in minutes.
+            Plain-English renovation contract review for homeowners — liens,
+            deposits, change orders, and what to negotiate.
           </div>
         </div>
 
@@ -122,7 +122,7 @@ export default function OgImage() {
           }}
         >
           <div style={{ display: "flex", gap: 12 }}>
-            {["Core $39", "Report $69", "Protect $99"].map((t) => (
+            {["Core $29", "Report $79", "Protect $149"].map((t) => (
               <div
                 key={t}
                 style={{

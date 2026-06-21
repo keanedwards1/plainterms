@@ -50,24 +50,25 @@ const PRICING = [
   },
 ] as const;
 
-const SOCIAL_PLATFORMS = [
-  { label: "YouTube", icon: "/graphics/social-youtube.svg" },
-  { label: "Twitch", icon: "/graphics/social-twitch.svg" },
-  { label: "TikTok", icon: "/graphics/social-tiktok.svg" },
-  { label: "Instagram", icon: "/graphics/social-instagram.svg" },
+const PROJECT_TYPES = [
+  "Kitchen & bath remodels",
+  "Home additions & ADUs",
+  "General contractor agreements",
+  "Roofing & exterior work",
+  "Owner-builder subcontracts",
 ] as const;
 
 export const metadata: Metadata = {
-  title: "PlainTerms - Contract Analysis for Creators",
+  title: "PlainTerms - Renovation Contract Review for Homeowners",
   description:
-    "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
+    "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "PlainTerms - Know What You're Signing",
     description:
-      "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
+      "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
     url: "/",
     type: "website",
   },
@@ -75,7 +76,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "PlainTerms - Know What You're Signing",
     description:
-      "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
+      "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
   },
 };
 
@@ -94,15 +95,14 @@ export default async function HomePage({
         {useClassicHero ? <ClassicHero /> : <FocusedHero />}
 
         <section className="pt-card p-7 3xl:p-12">
-          <h2 className="text-center text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Built for creators across a multitude of platforms</h2>
+          <h2 className="text-center text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Built for every kind of renovation contract</h2>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-4 3xl:mt-8 3xl:gap-6">
-            {SOCIAL_PLATFORMS.map((item) => (
+            {PROJECT_TYPES.map((label) => (
               <span
-                key={item.label}
+                key={label}
                 className="inline-flex items-center gap-2 rounded-full border border-[var(--pt-border)] bg-white px-3 py-1.5 text-sm font-semibold text-[var(--pt-muted)] 3xl:px-5 3xl:py-2.5 3xl:text-base"
               >
-                <Image src={item.icon} alt={item.label} width={20} height={20} className="h-5 w-5" />
-                {item.label}
+                {label}
               </span>
             ))}
           </div>
@@ -128,7 +128,7 @@ export default async function HomePage({
                 {
                   step: "01",
                   title: "Upload your contract",
-                  body: "Securely upload any brand deal, sponsorship, or creator agreement in PDF or Word format.",
+                  body: "Securely upload any renovation, remodeling, or contractor agreement in PDF or Word format.",
                 },
                 {
                   step: "02",
@@ -252,7 +252,7 @@ function ClassicHero() {
                   Get detailed contract analysis at a fraction of the cost of a lawyer.
                 </h1>
                 <p className="mt-5 max-w-xs text-base text-[#ffe8df] 3xl:text-lg 3xl:max-w-sm 3xl:mt-7">
-                  Contract review built for creators. Understand your rights and protect your work.
+                  Contract review built for homeowners. Understand your renovation agreement and protect your money.
                 </p>
                 <div className="mt-auto flex flex-wrap items-center gap-3 pt-8 3xl:pt-12">
                   <Link
@@ -286,7 +286,7 @@ function ClassicHero() {
                 </div>
                 <Image
                   src="/graphics/creator-studio-1.png"
-                  alt="Creator studio illustration"
+                  alt="Contract review illustration"
                   fill
                   sizes="(min-width: 1024px) 42vw, 100vw"
                   className="relative z-10 object-contain scale-[1.02] sm:scale-[1.12] lg:scale-[1.56]"
@@ -404,7 +404,7 @@ function FocusedHero() {
           Get detailed contract analysis at a fraction of the cost of a lawyer.
         </h1>
         <p className="mt-5 max-w-xl text-lg text-[var(--pt-muted)] 3xl:max-w-2xl 3xl:text-xl">
-          Upload your contract and know exactly what to negotiate before you sign.
+          Upload your renovation or contractor agreement and know exactly what to watch for — liens, deposits, change orders — before you sign.
         </p>
 
         <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:flex-row 3xl:mt-12">
