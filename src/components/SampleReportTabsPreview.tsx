@@ -21,32 +21,32 @@ import {
 // ─── Static sample data ────────────────────────────────────────────────────────
 
 const SAMPLE = {
-  risk: { score: 68, label: "high" as const },
-  recommendation: { label: "Negotiate before signing", reason: "Several clauses shift risk toward you. Push on the licensing and payment terms first." },
+  risk: { score: 73, label: "high" as const },
+  recommendation: { label: "Negotiate before signing", reason: "Several clauses shift risk toward you. Push on the deposit, lien protection, and completion terms first." },
   flags: [
-    { id: "f1", title: "Perpetual content license", severity: "high" as const, plain_note: "Grants the brand indefinite reuse of your content with no end date or renewal gate. This can block future exclusivity deals." },
-    { id: "f2", title: "Unilateral termination right", severity: "high" as const, plain_note: "The brand can end the agreement with 7 days notice; you need 30. This imbalance puts you at risk of abrupt cancellation mid-project." },
-    { id: "f3", title: "Late payment protection missing", severity: "medium" as const, plain_note: "No interest, late fee, or net-term language to enforce on-time payment. Slower collections, weaker enforcement." },
-    { id: "f4", title: "Termination notice imbalance", severity: "low" as const, plain_note: "Counterparty can exit on shorter notice than you can, limiting your ability to plan ahead." },
+    { id: "f1", title: "Oversized 50% upfront deposit", severity: "high" as const, plain_note: "Half the contract price is due before any work begins. Many states discourage deposits this large, and paying well ahead of completed work risks your money if the job stalls or is abandoned." },
+    { id: "f2", title: "No lien waivers required", severity: "high" as const, plain_note: "The contract relies on subcontractors and suppliers but never requires lien waivers. You could pay your contractor in full and still face a lien on your home from someone they failed to pay." },
+    { id: "f3", title: "Change orders lack written approval", severity: "medium" as const, plain_note: "Change-order language does not clearly require your written sign-off on added scope and price before the work proceeds, leaving the budget open-ended." },
+    { id: "f4", title: "No firm completion date", severity: "low" as const, plain_note: "The agreement sets a start date but no substantial-completion deadline, so there is little holding the contractor to a schedule." },
   ],
   clauses: [
-    { key: "payment",       title: "Payment Schedule",            status: "present"  as const, what_it_means: "Sets out when and how you get paid for your work.",                                                      why_it_matters: "Confirm net terms and what triggers payment (delivery vs. acceptance).",                                        evidence: "\"Payment shall be made within 30 days of content delivery and written acceptance.\"" },
-    { key: "ip",            title: "Content Usage Rights",        status: "unclear"  as const, what_it_means: "Defines who can use the content, for how long, and in which channels.",                                  why_it_matters: "Watch for perpetual or irrevocable language — it removes your ability to re-license later.",                    evidence: "\"Brand may use content across all channels now known or later developed.\"" },
-    { key: "termination",   title: "Termination for Convenience", status: "unclear"  as const, what_it_means: "Either party can end the agreement without cause, subject to notice.",                                   why_it_matters: "Notice periods are asymmetric — you have less runway to respond than the brand does.",                          evidence: "\"Brand may terminate with 7 days notice; Creator requires 30 days.\"" },
-    { key: "confidential",  title: "Confidentiality",             status: "present"  as const, what_it_means: "Both parties agree to keep deal terms and sensitive information private.",                                why_it_matters: "Check whether it survives termination and how long the obligation runs.",                                        evidence: null },
-    { key: "indemnity",     title: "Indemnification",             status: "unclear"  as const, what_it_means: "Allocates who covers legal costs if a third-party claim arises.",                                        why_it_matters: "Current language is one-sided — you cover the brand's costs for a wide range of claims.",                       evidence: "\"Creator shall indemnify Brand against all third-party claims arising from the Content.\"" },
-    { key: "liability",     title: "Limitation of Liability",     status: "missing"  as const, what_it_means: "Caps how much either party owes the other if something goes wrong.",                                     why_it_matters: "Without a cap, your exposure is theoretically unlimited. Add a mutual cap tied to contract value.",             evidence: null },
-    { key: "exclusivity",   title: "Exclusivity Clause",          status: "missing"  as const, what_it_means: "Restricts whether you can work with competing brands during or after the contract.",                     why_it_matters: "No explicit clause, but the perpetual license effectively creates hidden exclusivity.",                         evidence: null },
-    { key: "deliverables",  title: "Deliverables & Revisions",    status: "present"  as const, what_it_means: "Specifies what you are creating, in what format, and how many rounds of feedback are included.",         why_it_matters: "Ensure unlimited revision requests are excluded, or a round cap is specified.",                                  evidence: null },
-    { key: "governing",     title: "Governing Law",               status: "present"  as const, what_it_means: "Sets which jurisdiction's laws apply to disputes.",                                                      why_it_matters: "Confirm it is your jurisdiction, or a neutral one — not solely the brand's.",                                   evidence: null },
+    { key: "deposit",       title: "Deposit & Payment Schedule",     status: "present"  as const, what_it_means: "Sets how much you pay upfront and how the remaining payments are released as work progresses.",       why_it_matters: "A 50% deposit is large — tie payments to completed, inspected milestones instead of the calendar.",            evidence: "\"Owner shall pay a deposit of fifty percent (50%) of the contract price upon execution.\"" },
+    { key: "liens",         title: "Mechanics Liens & Lien Waivers", status: "missing"  as const, what_it_means: "Protects you from claims against your home by subcontractors or suppliers the contractor fails to pay.", why_it_matters: "No lien-waiver requirement appears anywhere — add signed waivers as a condition of each payment.",            evidence: null },
+    { key: "change_orders", title: "Change Orders",                  status: "unclear"  as const, what_it_means: "Defines how changes to the work are priced, documented, and approved once the project is underway.",     why_it_matters: "Does not clearly require your written approval before extra work and cost are added.",                          evidence: "\"Contractor may perform additional work as reasonably necessary to complete the project.\"" },
+    { key: "timeline",      title: "Completion Timeline & Delays",   status: "unclear"  as const, what_it_means: "Sets when work starts, when it must finish, and what happens if the project runs late.",                why_it_matters: "A start date is given but no firm completion date or remedy for unexcused delay.",                              evidence: "\"Work shall commence on or about the date set forth above.\"" },
+    { key: "warranty",      title: "Workmanship Warranty",           status: "present"  as const, what_it_means: "Sets how long the contractor stands behind the work and how post-completion defects are fixed.",        why_it_matters: "Confirm the warranty period and a clear punch-list process at substantial completion.",                        evidence: "\"Contractor warrants its workmanship for a period of one (1) year from completion.\"" },
+    { key: "permits",       title: "Permits & Inspections",          status: "unclear"  as const, what_it_means: "Sets who is responsible for pulling permits and passing required inspections.",                       why_it_matters: "Language is ambiguous about whether you or the contractor must obtain permits — clarify it in writing.",        evidence: null },
+    { key: "allowances",    title: "Allowances",                     status: "missing"  as const, what_it_means: "Budget placeholders for items like fixtures, flooring, and finishes selected later.",                  why_it_matters: "No allowance amounts or overage cap, so final costs can exceed the budget without your approval.",             evidence: null },
+    { key: "indemnity",     title: "Indemnification",                status: "unclear"  as const, what_it_means: "Allocates who covers legal costs if a third-party claim arises from the work.",                       why_it_matters: "Current language appears one-sided — you may cover the contractor's costs for a wide range of claims.",         evidence: "\"Owner shall indemnify Contractor against all claims arising from the work.\"" },
+    { key: "disputes",      title: "Disputes & Governing Law",       status: "present"  as const, what_it_means: "Sets which jurisdiction's laws apply and how disputes are resolved.",                                why_it_matters: "Note the mandatory-arbitration clause — it limits how you can pursue a dispute.",                              evidence: "\"Any dispute shall be resolved by binding arbitration.\"" },
   ],
   questions: [
-    "Can we cap the content license to 90 days with an opt-in renewal in writing?",
-    "Will you add net-15 payment terms with a late fee after 30 days?",
-    "Can indemnification be limited to claims arising from each party's own breach?",
+    "Can we lower the deposit to 10% and tie the remaining payments to completed, inspected milestones?",
+    "Will you provide signed lien waivers from every subcontractor and supplier before each payment?",
+    "Can we add a firm substantial-completion date with a fair credit for unexcused delays?",
   ],
-  wordCount: 1840,
-  fileName: "brand-partnership-agreement.pdf",
+  wordCount: 2120,
+  fileName: "home-renovation-contract.pdf",
 };
 
 const PRESENT_COUNT = SAMPLE.clauses.filter((c) => c.status === "present").length;
@@ -140,7 +140,7 @@ function SummaryTab() {
       <article className="pt-card-soft p-3">
         <h3 className="text-lg font-semibold text-[var(--pt-ink)]">Top Next Steps</h3>
         <ul className="mt-2 space-y-2">
-          {["Cap usage license to 90 days with opt-in written renewal.", "Add net-15 payment terms plus late-fee language.", "Request mutual indemnification limited to each party's own breach."].map((item) => (
+          {["Lower the upfront deposit and tie payments to completed milestones.", "Require lien waivers from the contractor and every subcontractor.", "Add a firm completion date with a fair remedy for delays."].map((item) => (
             <li key={item} className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-[15px] leading-6 text-[var(--pt-ink)]/90">{item}</li>
           ))}
         </ul>
@@ -214,10 +214,10 @@ function InsightsTab({ onUnlock }: TabProps) {
           </div>
           <div className="mt-3 space-y-2">
             {[
-              { title: "Summary Insights",    meta: "Top action",            body: "Primary next step: Cap usage license to 90 days with opt-in written renewal." },
-              { title: "Key Terms Insights",  meta: `${UNCLEAR_COUNT + MISSING_COUNT}`, body: "Content Usage Rights · Indemnification · Limitation of Liability" },
+              { title: "Summary Insights",    meta: "Top action",            body: "Primary next step: Lower the deposit and tie payments to completed, inspected milestones." },
+              { title: "Key Terms Insights",  meta: `${UNCLEAR_COUNT + MISSING_COUNT}`, body: "Mechanics Liens · Change Orders · Completion Timeline" },
               { title: "Questions Insights",  meta: `${SAMPLE.questions.length}`,       body: SAMPLE.questions[0] },
-              { title: "Red Flag Insights",   meta: `${HIGH_COUNT}`,                    body: "Perpetual content license · Unilateral termination right" },
+              { title: "Red Flag Insights",   meta: `${HIGH_COUNT}`,                    body: "Oversized 50% deposit · No lien waivers required" },
             ].map((panel) => (
               <details key={panel.title} className="rounded-xl border border-[var(--pt-border)] bg-white">
                 <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2.5 [&::-webkit-details-marker]:hidden">
@@ -332,7 +332,7 @@ function QuestionsTab({ onUnlock }: TabProps) {
       <div className="space-y-3">
         <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-4 py-3">
           <p className="text-sm font-semibold text-[var(--pt-ink)]">Questions to raise with the other party</p>
-          <p className="mt-1 text-sm text-[var(--pt-muted)]">Before you sign, bring these questions to the brand or agency. Ask them in a call or use the email draft below to send in writing.</p>
+          <p className="mt-1 text-sm text-[var(--pt-muted)]">Before you sign, bring these questions to your contractor. Ask them in a call or use the email draft below to send in writing.</p>
         </article>
 
         <div className="space-y-2">
@@ -383,19 +383,19 @@ function DocumentTab({ onUnlock }: TabProps) {
         </div>
         <div className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[#f7f4ef] px-4 py-5 font-serif text-[15px] leading-[1.85] text-[#252830]">
           <p>
-            The Creator hereby grants the Brand a{" "}
-            <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]">perpetual, irrevocable</span>{" "}
-            license to use, reproduce, and modify the Content across all media now known or later developed.
+            Owner shall pay a deposit of{" "}
+            <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]">fifty percent (50%)</span>{" "}
+            of the contract price upon execution, with the balance due upon completion.
           </p>
           <p className="mt-4">
-            Payment shall be made{" "}
-            <span className="rounded-[2px] bg-[#fff4df] px-[1px] text-[#8c6526]">within 30 days</span>{" "}
-            of content delivery and written acceptance by the Brand.
+            Contractor may perform{" "}
+            <span className="rounded-[2px] bg-[#fff4df] px-[1px] text-[#8c6526]">additional work as reasonably necessary</span>{" "}
+            to complete the project, billed at Contractor&apos;s standard rates.
           </p>
           <p className="mt-4">
-            Either party may terminate this agreement upon{" "}
-            <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]">7 days written notice</span>{" "}
-            (Brand) or 30 days written notice (Creator), without cause.
+            Work shall commence on or about the date set forth above;{" "}
+            <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]">no completion date</span>{" "}
+            is specified, and any dispute shall be resolved by binding arbitration.
           </p>
         </div>
       </article>

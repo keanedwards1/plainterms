@@ -19,7 +19,7 @@ export default function SampleReportPage() {
                 Sample report
               </p>
               <h1 className="mt-3 text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
-                Get the clarity most creators pay a lawyer hundreds for.
+                Get the clarity most homeowners pay a lawyer hundreds for.
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-[var(--pt-muted)]">
                 You get the same report structure as live paid results: At A Glance, Summary,
@@ -43,7 +43,7 @@ export default function SampleReportPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--pt-muted)]">
                 Contract snapshot
               </p>
-              <p className="mt-2 text-lg font-semibold text-[var(--pt-ink)]">Influencer Campaign Agreement</p>
+              <p className="mt-2 text-lg font-semibold text-[var(--pt-ink)]">Home Renovation Agreement</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 <div className="rounded-md border border-[#efc1b6] bg-[#ffe8e3] px-3 py-2">
                   <p className="text-[11px] text-[#9e3f2d]">Risk</p>

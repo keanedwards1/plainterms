@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: "Contract Result",
     description:
-      "Plain-English contract summary result for an independent contractor or services agreement.",
+      "Plain-English contract summary result for a home renovation, remodeling, or construction agreement.",
     alternates: {
       canonical: `/result/${id}`,
     },

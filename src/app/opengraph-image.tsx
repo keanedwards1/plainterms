@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "PlainTerms — plain-English contract analysis for creators";
+export const alt = "PlainTerms — plain-English renovation contract review for homeowners";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Analyze a Contract",
   description:
-    "Upload an independent contractor or services agreement to get a plain-English summary in a calm, neutral tone.",
+    "Upload a home renovation, remodeling, or construction contract to get a plain-English summary in a calm, neutral tone.",
   alternates: {
     canonical: "/analyze",
   },

@@ -181,6 +181,7 @@ export const PtReport = z.object({
     .optional(),
   questions_to_ask: z.array(z.string()).optional(),
   creator_contract: z.boolean().optional(),
+  renovation_contract: z.boolean().optional(),
   protect_upsell: PtProtectUpsell.optional(),
   teaser_report_69: PtTierTeaser.optional(),
   teaser_protect_99: PtTierTeaser.optional(),

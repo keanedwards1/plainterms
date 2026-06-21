@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | PlainTerms",
   },
   description:
-    "Calm, plain-English explanations for independent contractor and services agreements.",
+    "Calm, plain-English explanations of home renovation, remodeling, and construction contracts.",
   manifest: "/site.webmanifest",
   icons: {
     icon: [
@@ -50,13 +50,13 @@ export const metadata: Metadata = {
     siteName: "PlainTerms",
     title: "PlainTerms",
     description:
-      "Calm, plain-English explanations for independent contractor and services agreements.",
+      "Calm, plain-English explanations of home renovation, remodeling, and construction contracts.",
   },
   twitter: {
     card: "summary_large_image",
     title: "PlainTerms",
     description:
-      "Calm, plain-English explanations for independent contractor and services agreements.",
+      "Calm, plain-English explanations of home renovation, remodeling, and construction contracts.",
   },
   ...(googleSiteVerification
     ? {

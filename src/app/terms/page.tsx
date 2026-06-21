@@ -27,7 +27,7 @@ const sections = [
   },
   {
     title: "What PlainTerms is",
-    body: "PlainTerms is an AI-powered contract analysis tool that helps creators understand the language in their agreements. It provides plain-English summaries, flags potential risks, and suggests areas to negotiate. PlainTerms is an informational tool, not a law firm, and does not provide legal advice, legal representation, or legal opinions of any kind.",
+    body: "PlainTerms is an AI-powered contract analysis tool that helps homeowners and other individuals understand the language in their agreements — including home renovation, remodeling, and construction contracts. It provides plain-English summaries, flags potential risks, and suggests areas to negotiate. PlainTerms is an informational tool, not a law firm, and does not provide legal advice, legal representation, or legal opinions of any kind.",
   },
   {
     title: "No legal advice",
