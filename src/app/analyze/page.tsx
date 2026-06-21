@@ -101,8 +101,9 @@ export default function AnalyzePage() {
             See the risk score before you pay.
           </h1>
           <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)] 3xl:text-lg 3xl:mt-6 3xl:max-w-2xl">
-            Upload a PDF or DOCX and get a free risk score and red-flag count in minutes.
-            Decide what level of review you need after you see the result.
+            Upload your renovation or contractor agreement as a PDF or DOCX and get a free risk
+            score and red-flag count in minutes. Decide what level of review you need after you
+            see the result.
           </p>
         </div>
 
@@ -284,15 +285,15 @@ export default function AnalyzePage() {
           <ul className="mt-5 space-y-2">
             {[
               "Who's Involved",
-              "What Work Is Included",
-              "Timeline & Ending the Agreement",
-              "Pay & Invoicing",
-              "Ownership of Work",
-              "Confidentiality",
-              "Restrictions",
-              "Liability & Responsibility",
+              "Scope of Work",
+              "Deposit & Payment Schedule",
+              "Change Orders",
+              "Completion Timeline & Delays",
+              "Mechanics Liens & Waivers",
+              "Workmanship Warranty",
+              "Permits & Inspections",
+              "Liability & Indemnity",
               "Disputes & Governing Law",
-              "Practical Details",
               "Questions & Missing Info",
             ].map((label) => (
               <li key={label} className="flex items-center gap-2.5 text-sm text-foreground">

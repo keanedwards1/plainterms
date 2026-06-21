@@ -62,6 +62,18 @@ export const metadata: Metadata = {
   title: "PlainTerms - Renovation Contract Review for Homeowners",
   description:
     "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
+  keywords: [
+    "renovation contract review",
+    "construction contract review",
+    "contractor agreement review",
+    "home remodel contract",
+    "review my contractor's contract",
+    "mechanics lien protection",
+    "renovation contract red flags",
+    "construction contract lawyer alternative",
+    "remodeling contract analysis",
+    "is my contractor's contract fair",
+  ],
   alternates: {
     canonical: "/",
   },
@@ -89,8 +101,76 @@ export default async function HomePage({
   // Focused hero is the default; ?hero=classic switches back to the original.
   const useClassicHero = hero === "classic";
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        name: "PlainTerms",
+        url: "https://www.plainterms.us",
+        description:
+          "Plain-English review of home renovation, remodeling, and construction contracts for homeowners.",
+      },
+      {
+        "@type": "Service",
+        name: "Renovation Contract Review",
+        serviceType: "Home renovation and construction contract review",
+        provider: { "@type": "Organization", name: "PlainTerms", url: "https://www.plainterms.us" },
+        areaServed: "US",
+        description:
+          "Upload a renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, warranties, and the terms to negotiate before you sign.",
+        offers: [
+          { "@type": "Offer", name: "Core", price: "29", priceCurrency: "USD" },
+          { "@type": "Offer", name: "Report", price: "79", priceCurrency: "USD" },
+          { "@type": "Offer", name: "Protect", price: "149", priceCurrency: "USD" },
+        ],
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "What does PlainTerms check in a renovation contract?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "PlainTerms reviews your home renovation or construction contract for risks like oversized deposits, missing mechanics-lien waivers, vague change-order terms, missing completion dates, uncapped allowances, and one-sided indemnification — then explains each in plain English with negotiation points.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "How much does a renovation contract review cost?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "PlainTerms reviews start at $29 — a fraction of the $400–$1,800 a construction attorney typically charges to review a contract.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Is PlainTerms legal advice?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "No. PlainTerms is an informational tool that helps you understand your contract and spot risks before you sign. It is not a law firm and does not provide legal advice. For high-stakes decisions, consult a licensed attorney.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "What contracts can I upload?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Any home renovation, remodeling, addition, or general-contractor agreement in PDF or Word format — whether you hired a contractor or are managing the project as your own general contractor.",
+            },
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <main className="pt-page-pad pb-12 pt-8 3xl:pb-20 3xl:pt-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="pt-container-wide space-y-10 3xl:space-y-16">
         {useClassicHero ? <ClassicHero /> : <FocusedHero />}
 
