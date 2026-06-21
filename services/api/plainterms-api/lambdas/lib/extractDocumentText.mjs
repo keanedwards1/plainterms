@@ -264,9 +264,11 @@ function guessType({ contentType, filename }) {
 
 function extractTextFromPdf(buffer) {
   const text = buffer.toString("latin1");
-  const contents = [text];
 
-  // Many PDFs compress page content streams. Inflate FlateDecode streams and parse operators there.
+  // Inflate all FlateDecode streams. The raw file is used only for CMap extraction
+  // to avoid duplicate/garbled text: raw glyph bytes in uncompressed form followed
+  // by properly-decoded bytes from the inflated stream produce garbled prefixes.
+  const inflatedStreams = [];
   const streamRegex = /stream\r?\n/g;
   let match;
   while ((match = streamRegex.exec(text)) !== null) {
@@ -291,11 +293,11 @@ function extractTextFromPdf(buffer) {
 
     try {
       const inflated = zlib.inflateSync(raw);
-      contents.push(inflated.toString("latin1"));
+      inflatedStreams.push(inflated.toString("latin1"));
     } catch {
       try {
         const inflatedRaw = zlib.inflateRawSync(raw);
-        contents.push(inflatedRaw.toString("latin1"));
+        inflatedStreams.push(inflatedRaw.toString("latin1"));
       } catch {
         // Ignore non-inflatable streams.
       }
@@ -304,8 +306,9 @@ function extractTextFromPdf(buffer) {
     streamRegex.lastIndex = endIndex + "endstream".length;
   }
 
+  // Build ToUnicode map from all content (raw file often contains CMap in plain text).
   const toUnicodeMap = new Map();
-  for (const content of contents) {
+  for (const content of [text, ...inflatedStreams]) {
     const parsed = parseToUnicodeCMap(content);
     for (const [src, dst] of parsed.entries()) {
       if (!toUnicodeMap.has(src)) {
@@ -314,8 +317,10 @@ function extractTextFromPdf(buffer) {
     }
   }
 
+  // Extract text only from inflated streams; fall back to raw file if none found.
+  const textSources = inflatedStreams.length > 0 ? inflatedStreams : [text];
   const lines = [];
-  for (const content of contents) {
+  for (const content of textSources) {
     lines.push(...collectTextFromPdfContent(content, toUnicodeMap));
   }
 

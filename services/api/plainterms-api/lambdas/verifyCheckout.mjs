@@ -215,11 +215,23 @@ async function applyPurchasedTierToStoredResult(resultId, selectedTier) {
   const currentReport = uiResult?.report;
   if (!currentReport) return;
 
+  const prevTier = currentReport?.tier;
   const tieredReport = applyTierToReport(currentReport, selectedTier);
   const nextUiResult = {
     ...uiResult,
     report: tieredReport,
   };
+
+  // When upgrading from Core (scan_39) to a paid tier, the stored revision status
+  // is "not_available" (gated by tier). Clear it so getResult triggers generation.
+  if (
+    prevTier === "scan_39" &&
+    selectedTier !== "scan_39" &&
+    nextUiResult.document?.revision?.status === "not_available"
+  ) {
+    nextUiResult.document = { ...nextUiResult.document };
+    delete nextUiResult.document.revision;
+  }
 
   await db.send(
     new UpdateItemCommand({
