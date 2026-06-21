@@ -59,7 +59,10 @@ function findJsonObject(text) {
 
 function buildPrompt({ filename, contentType, extractedText }) {
   return `
-You are a contract analyzer for independent contractor/services agreements.
+You are a contract analyzer that helps a homeowner understand a renovation,
+remodeling, or construction agreement before they sign it (the same structure
+also covers general services agreements). Read from the homeowner's side: the
+"client" is the property owner and the "contractor" is the builder/tradesperson.
 Return ONLY valid JSON with this exact top-level object shape:
 {
   "overview": {"status":"found|not_found|not_clearly_stated","summary":"...","quotes":["..."]},

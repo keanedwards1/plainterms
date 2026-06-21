@@ -46,7 +46,7 @@ function sanitizeChanges(rawChanges) {
     .slice(0, 20);
 }
 
-function buildPrompt({ filename, extractedText, flags, clauses, creatorContract }) {
+function buildPrompt({ filename, extractedText, flags, clauses, creatorContract, renovationContract }) {
   const flagLines = flags.length
     ? flags
         .map((flag, idx) => `${idx + 1}. [${flag.severity}] ${flag.title} — ${flag.plain_note}`)
@@ -63,7 +63,7 @@ function buildPrompt({ filename, extractedText, flags, clauses, creatorContract 
     : "None";
 
   return `
-You are a contracts attorney specializing in creator, influencer, and independent contractor agreements.
+You are a contracts attorney who reviews agreements on behalf of the person about to sign them — most often a homeowner reviewing a home renovation, remodeling, or construction contract, but also independent contractor and creator agreements. Protect the interests of the party you represent (for a renovation contract, that is the homeowner/property owner).
 Your job is to fix clauses that are risky, vague, or missing — and leave everything else exactly as written.
 
 Return ONLY valid JSON in this exact shape:
@@ -117,8 +117,24 @@ LICENSE SCOPE: Irrevocable, perpetual, worldwide licenses must be narrowed to: r
 EXCLUSIVITY: Exclusivity clauses must: define the competing category specifically, state the exact duration, and include either a minimum guaranteed payment or a creator right to terminate if no paid work is assigned within 30 days.
 
 WARRANTY: In a creator services agreement, broad "as is" disclaimers that shift all quality risk to the creator are one-sided. Rewrite so the creator warrants professional-quality work meeting industry standards, and remove brand-favoring "as is" language that is not appropriate in this context.
+` : renovationContract ? `
+RENOVATION-SPECIFIC RULES (apply because this is a home renovation / construction / remodeling contract; protect the homeowner):
+
+DEPOSIT & PAYMENT SCHEDULE: An upfront deposit larger than roughly one-third of the contract price is high-risk for the homeowner (many states cap it lower). Reduce an oversized deposit to a reasonable amount and tie all remaining payments to a draw schedule keyed to completed, inspected milestones — never to a calendar alone. A final retainage of around 10% should be withheld until punch-list completion.
+
+MECHANICS LIENS: If the contractor uses any subcontractors or suppliers, require signed lien waivers (conditional on progress payments, unconditional on final payment) from the contractor and every subcontractor and supplier before each payment is released. If lien-waiver language is absent, add it.
+
+CHANGE ORDERS: No change order may be binding unless it is in writing and signed by the homeowner, specifying the added scope, the price, and any schedule impact, BEFORE the extra work begins. Replace any clause that lets the contractor add cost without written homeowner approval.
+
+COMPLETION & DELAY: Add a firm substantial-completion date if none exists. Add a reasonable remedy for unexcused delay (for example a modest per-day credit), while allowing fair extensions for weather, permitting, and homeowner-requested changes.
+
+WORKMANSHIP WARRANTY: Ensure a written workmanship warranty of at least one year and a clear punch-list process at substantial completion. Remove broad "as is" disclaimers that shift all quality risk onto the homeowner.
+
+PERMITS: The contractor (not the homeowner) should obtain required building permits and schedule inspections, unless the homeowner has knowingly chosen to act as their own general contractor.
+
+ALLOWANCES: Any allowance (a budget placeholder for items like fixtures or flooring) must state a dollar amount and require the homeowner's written approval before any overage is charged. Add a cap or approval gate if missing.
 ` : `
-NON-CREATOR CONTRACT RULES (apply because this is not a creator/influencer agreement):
+GENERAL CONTRACT RULES (apply because this is neither a creator nor a renovation agreement):
 
 LICENSE / IP OWNERSHIP: Work-for-hire and full IP assignment clauses are standard and should not be narrowed unless the scope is unreasonably broad beyond the stated project. Flag only if the assignment extends to pre-existing IP or work outside the contract scope.
 
@@ -150,6 +166,7 @@ export async function generateRevisedDocumentWithLlm({
   redFlags,
   clauseBreakdown,
   creatorContract = false,
+  renovationContract = false,
 }) {
   const sourceText = trim(extractedText, MAX_SOURCE_CHARS);
   if (!sourceText) {
@@ -185,6 +202,7 @@ export async function generateRevisedDocumentWithLlm({
     flags,
     clauses,
     creatorContract,
+    renovationContract,
   });
 
   const response = await fetch(`${llm.baseUrl}/chat/completions`, {
@@ -201,7 +219,7 @@ export async function generateRevisedDocumentWithLlm({
         {
           role: "system",
           content:
-            "You are a contracts attorney specializing in creator and independent contractor agreements. Your priority is to protect the talent's interests while keeping the contract professionally fair. Apply every applicable editing rule. Return strict JSON only.",
+            "You are a contracts attorney who reviews agreements for the person about to sign them — most often a homeowner reviewing a renovation or construction contract. Your priority is to protect that person's interests while keeping the contract professionally fair. Apply every applicable editing rule. Return strict JSON only.",
         },
         { role: "user", content: prompt },
       ],

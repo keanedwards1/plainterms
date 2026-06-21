@@ -455,16 +455,18 @@ function makeOverviewFallback({ report }) {
   const risk = report?.risk?.label ?? "medium";
   const flagCount = Array.isArray(report?.red_flags) ? report.red_flags.length : 0;
   const creator = Boolean(report?.creator_contract);
+  const renovation = Boolean(report?.renovation_contract);
+  const flagWord = flagCount === 1 ? "flag" : "flags";
 
-  if (creator) {
-    return `This appears to be a creator/model-focused services agreement with a ${risk} risk profile and ${flagCount} identified risk ${
-      flagCount === 1 ? "flag" : "flags"
-    }.`;
+  if (renovation) {
+    return `This appears to be a home renovation or construction contract with a ${risk} risk profile and ${flagCount} identified risk ${flagWord}.`;
   }
 
-  return `This appears to be a professional services agreement with a ${risk} risk profile and ${flagCount} identified risk ${
-    flagCount === 1 ? "flag" : "flags"
-  }.`;
+  if (creator) {
+    return `This appears to be a creator/model-focused services agreement with a ${risk} risk profile and ${flagCount} identified risk ${flagWord}.`;
+  }
+
+  return `This appears to be a professional services agreement with a ${risk} risk profile and ${flagCount} identified risk ${flagWord}.`;
 }
 
 function makePtV1({ resultId, createdAt, payload, extraction, analysis, report, selectedAddons }) {
