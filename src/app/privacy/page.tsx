@@ -67,7 +67,7 @@ const sections = [
   },
   {
     title: "Contact",
-    body: "If you have questions about this privacy policy or how your data is handled, contact us at plaintermsinfo@gmail.com.",
+    body: "If you have questions about this privacy policy or how your data is handled, contact us at keanedwards1@gmail.com.",
   },
 ];
 

@@ -52,7 +52,7 @@ async function sendReceiptEmail({ toEmail, toName, resultId, accessKey, reportTi
   </p>
   <p style="color:#536378;font-size:13px">If the button doesn't work, paste this into your browser:<br><a href="${reportUrl}" style="color:#f1765d;word-break:break-all">${reportUrl}</a></p>
   <hr style="border:none;border-top:1px solid #e8ecf0;margin:28px 0">
-  <p style="color:#8fa3b8;font-size:12px">Questions? Reply to this email or contact us at plaintermsinfo@gmail.com.<br>PlainTerms provides informational analysis only — not legal advice.</p>
+  <p style="color:#8fa3b8;font-size:12px">Questions? Reply to this email or contact us at keanedwards1@gmail.com.<br>PlainTerms provides informational analysis only — not legal advice.</p>
 </div>`,
       }),
     });

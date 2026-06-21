@@ -151,7 +151,7 @@ Parameters:
     Description: Optional SNS topic ARN for alarm notifications. Leave empty to use the built-in alerts topic.
   AlertsEmail:
     Type: String
-    Default: "plaintermsinfo@gmail.com"
+    Default: "keanedwards1@gmail.com"
     Description: Email address to receive CloudWatch alarm notifications.
   ResendApiKeyParamName:
     Type: String

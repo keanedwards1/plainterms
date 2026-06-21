@@ -47,7 +47,7 @@ const sections = [
   },
   {
     title: "Payments and refunds",
-    body: "PlainTerms charges a one-time fee per analysis. Fees are displayed before checkout and processed securely by Stripe. Because AI analysis begins immediately after payment is confirmed, all sales are final and we do not offer refunds once a report has been generated. If you experience a technical failure that prevented delivery of your report, contact us at plaintermsinfo@gmail.com within 7 days and we will investigate and resolve the issue, including reprocessing your document or issuing a credit at our discretion.",
+    body: "PlainTerms charges a one-time fee per analysis. Fees are displayed before checkout and processed securely by Stripe. Because AI analysis begins immediately after payment is confirmed, all sales are final and we do not offer refunds once a report has been generated. If you experience a technical failure that prevented delivery of your report, contact us at keanedwards1@gmail.com within 7 days and we will investigate and resolve the issue, including reprocessing your document or issuing a credit at our discretion.",
   },
   {
     title: "Uploaded content",
@@ -67,7 +67,7 @@ const sections = [
   },
   {
     title: "Governing law",
-    body: "These terms are governed by the laws of the United States. Any dispute arising from these terms or your use of PlainTerms shall first be attempted to be resolved by contacting us at plaintermsinfo@gmail.com. If unresolved, disputes shall be subject to binding arbitration or the courts of competent jurisdiction.",
+    body: "These terms are governed by the laws of the United States. Any dispute arising from these terms or your use of PlainTerms shall first be attempted to be resolved by contacting us at keanedwards1@gmail.com. If unresolved, disputes shall be subject to binding arbitration or the courts of competent jurisdiction.",
   },
   {
     title: "Changes to these terms",
@@ -75,7 +75,7 @@ const sections = [
   },
   {
     title: "Contact",
-    body: "If you have questions about these terms, contact us at plaintermsinfo@gmail.com.",
+    body: "If you have questions about these terms, contact us at keanedwards1@gmail.com.",
   },
 ];
 

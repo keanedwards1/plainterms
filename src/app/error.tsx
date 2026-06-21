@@ -25,8 +25,8 @@ export default function Error({
         <p className="mt-3 text-sm leading-6 text-[var(--pt-muted)]">
           Sorry about that. You can try again, or head back home. If it keeps happening, contact us
           at{" "}
-          <a className="font-semibold text-[var(--pt-ink)] underline" href="mailto:plaintermsinfo@gmail.com">
-            plaintermsinfo@gmail.com
+          <a className="font-semibold text-[var(--pt-ink)] underline" href="mailto:keanedwards1@gmail.com">
+            keanedwards1@gmail.com
           </a>
           .
         </p>

@@ -30,8 +30,8 @@ export default function GlobalError({
           </h1>
           <p style={{ color: "#536378", margin: "0 0 1.5rem", lineHeight: 1.6 }}>
             Sorry about that. Please try again, or email{" "}
-            <a href="mailto:plaintermsinfo@gmail.com" style={{ color: "#1f2b3d" }}>
-              plaintermsinfo@gmail.com
+            <a href="mailto:keanedwards1@gmail.com" style={{ color: "#1f2b3d" }}>
+              keanedwards1@gmail.com
             </a>{" "}
             if it keeps happening.
           </p>
