@@ -88,6 +88,7 @@ export const handler = async (event) => {
       redFlags: uiResult?.report?.red_flags ?? [],
       clauseBreakdown: uiResult?.report?.clause_breakdown ?? [],
       creatorContract: uiResult?.report?.creator_contract === true,
+      renovationContract: uiResult?.report?.renovation_contract === true,
     });
 
     const readyResult = withRevision(uiResult, {

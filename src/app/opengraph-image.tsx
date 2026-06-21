@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "PlainTerms — plain-English contract analysis for creators";
+export const alt = "PlainTerms — plain-English renovation contract review for homeowners";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -107,8 +107,8 @@ export default function OgImage() {
               fontWeight: 400,
             }}
           >
-            Plain-English contract analysis for creators — risks, red flags,
-            and negotiation points in minutes.
+            Plain-English renovation contract review for homeowners — liens,
+            deposits, change orders, and what to negotiate.
           </div>
         </div>
 
@@ -122,7 +122,7 @@ export default function OgImage() {
           }}
         >
           <div style={{ display: "flex", gap: 12 }}>
-            {["Core $39", "Report $69", "Protect $99"].map((t) => (
+            {["Core $29", "Report $79", "Protect $149"].map((t) => (
               <div
                 key={t}
                 style={{

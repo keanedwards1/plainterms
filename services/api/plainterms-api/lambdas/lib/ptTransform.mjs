@@ -428,6 +428,7 @@ export function transformPtV1ToUiV1(ptV1) {
             (x) => typeof x === "string"
           ),
           creator_contract: Boolean(reportObj?.creator_contract),
+          renovation_contract: Boolean(reportObj?.renovation_contract),
           ...(protectUpsell ? { protect_upsell: protectUpsell } : {}),
           ...(teaserReport69 ? { teaser_report_69: teaserReport69 } : {}),
           ...(teaserProtect99 ? { teaser_protect_99: teaserProtect99 } : {}),

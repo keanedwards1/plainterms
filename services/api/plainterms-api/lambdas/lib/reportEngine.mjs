@@ -71,6 +71,7 @@ const CLAUSE_DEFINITIONS = Object.freeze([
     whyItMatters:
       "IP and licensing terms can permanently affect your ability to reuse work or control your content.",
     relatedField: "sections.intellectual_property.work_product_ownership",
+    skipForRenovation: true,
   },
   {
     key: "confidentiality",
@@ -84,6 +85,7 @@ const CLAUSE_DEFINITIONS = Object.freeze([
     whyItMatters:
       "Undefined confidentiality boundaries can create compliance and reputation risk for both sides.",
     relatedField: "sections.confidentiality.confidential_info",
+    skipForRenovation: true,
   },
   {
     key: "liability",
@@ -168,6 +170,96 @@ const CLAUSE_DEFINITIONS = Object.freeze([
       "Unclear usage terms can lead to unexpected perpetual use, paid media reuse, or reputation issues.",
     relatedField: "sections.intellectual_property.license_grants",
     creatorFocused: true,
+  },
+  {
+    key: "deposit_draw_schedule",
+    title: "Deposit and Payment Schedule",
+    patterns: [
+      /\b(deposit|down ?payment|draw(?:\s+schedule)?|progress payments?|installments?|retainage|retention|mobilization fee|final payment)\b/i,
+    ],
+    missingSeverity: "high",
+    unclearSeverity: "medium",
+    meaning:
+      "This sets how much you pay upfront and how the remaining payments are released as the work progresses.",
+    whyItMatters:
+      "Large deposits or payments that run ahead of completed work put your money at risk if the job stalls or is abandoned.",
+    relatedField: "sections.payment.payment_timing",
+    renovationFocused: true,
+  },
+  {
+    key: "liens",
+    title: "Mechanics Liens and Lien Waivers",
+    patterns: [
+      /\b(lien|mechanic'?s lien|lien waiver|lien release|waiver of lien|preliminary notice|notice of intent)\b/i,
+    ],
+    missingSeverity: "high",
+    unclearSeverity: "medium",
+    meaning:
+      "Mechanics liens let a contractor, subcontractor, or supplier make a legal claim against your home if they are not paid. Lien waivers are how you protect against that.",
+    whyItMatters:
+      "Without lien waivers, you can pay your contractor in full and still face liens from unpaid subcontractors or suppliers.",
+    relatedField: "sections.liability_indemnity_insurance.indemnification",
+    renovationFocused: true,
+  },
+  {
+    key: "change_orders",
+    title: "Change Orders",
+    patterns: [
+      /\b(change order|change directive|extra work|additional work|scope change)\b/i,
+    ],
+    missingSeverity: "medium",
+    unclearSeverity: "medium",
+    meaning:
+      "This defines how changes to the work are priced, documented, and approved once the project is underway.",
+    whyItMatters:
+      "Vague change-order terms let costs grow mid-project without your written sign-off.",
+    relatedField: "sections.scope_of_services.services_description",
+    renovationFocused: true,
+  },
+  {
+    key: "workmanship_warranty",
+    title: "Workmanship Warranty",
+    patterns: [
+      /\b(workmanship|punch ?list|defects?|callback|warrant(?:y|ies)\s+period|guarantee)\b/i,
+    ],
+    missingSeverity: "medium",
+    unclearSeverity: "low",
+    meaning:
+      "This sets how long the contractor stands behind the work and how defects found after completion are fixed.",
+    whyItMatters:
+      "A short or missing workmanship warranty leaves you paying to fix defects that should be the contractor's responsibility.",
+    relatedField: "sections.liability_indemnity_insurance.warranties_disclaimers",
+    renovationFocused: true,
+  },
+  {
+    key: "permits",
+    title: "Permits and Inspections",
+    patterns: [
+      /\b(permits?|building permit|inspections?|certificate of occupancy|code compliance|zoning)\b/i,
+    ],
+    missingSeverity: "medium",
+    unclearSeverity: "low",
+    meaning:
+      "This sets who is responsible for pulling permits and passing required inspections.",
+    whyItMatters:
+      "If you are made responsible for permits, you can be left liable for code violations and unpermitted work.",
+    relatedField: "sections.operational_details.communications_and_reporting",
+    renovationFocused: true,
+  },
+  {
+    key: "timeline",
+    title: "Completion Timeline and Delays",
+    patterns: [
+      /\b(substantial completion|completion date|commencement|start date|schedule|timeline|delays?|time is of the essence|liquidated damages)\b/i,
+    ],
+    missingSeverity: "high",
+    unclearSeverity: "medium",
+    meaning:
+      "This sets when work starts, when it must be finished, and what happens if the project runs late.",
+    whyItMatters:
+      "With no completion date or remedy for delay, a contractor can stretch your project out indefinitely.",
+    relatedField: "sections.term_and_termination.termination_for_convenience",
+    renovationFocused: true,
   },
 ]);
 
@@ -298,6 +390,102 @@ const RISKY_PATTERN_RULES = Object.freeze([
       "Morality clauses can allow suspension or termination based on broad conduct standards and should be reviewed carefully.",
     relatedFields: ["sections.non_solicit_non_compete.non_disparagement"],
     quotePatterns: [/\b(morality clause|morals clause)\b/i],
+  },
+  {
+    id: "large_deposit",
+    when: ({ isRenovationContract, depositPercent }) =>
+      isRenovationContract && Number.isFinite(depositPercent) && depositPercent >= 33,
+    severity: "high",
+    type: "unusual",
+    title: "Upfront deposit appears large",
+    note:
+      "The deposit or down payment appears to be a large share of the total price. Many states cap or discourage big upfront payments, and paying well ahead of completed work increases your risk if the job stalls.",
+    relatedFields: ["sections.payment.payment_timing"],
+    quotePatterns: [
+      /\b(?:deposit|down ?payment)\b[^.]{0,40}\d{1,3}\s*%/i,
+      /\d{1,3}\s*%[^.]{0,40}(?:deposit|down ?payment)/i,
+      /\b(deposit|down ?payment)\b/i,
+    ],
+  },
+  {
+    id: "no_lien_waiver",
+    when: ({ text, isRenovationContract }) =>
+      isRenovationContract &&
+      /\b(subcontractor|supplier|materialmen|material supplier)\b/i.test(text) &&
+      !/\b(lien waiver|lien release|waiver of lien|unconditional waiver|conditional waiver)\b/i.test(text),
+    severity: "high",
+    type: "missing_detail",
+    title: "No lien-waiver protection found",
+    note:
+      "The contract relies on subcontractors or suppliers but does not appear to require lien waivers. Without them, you could pay your contractor in full and still face liens from parties they failed to pay.",
+    relatedFields: ["sections.liability_indemnity_insurance.indemnification"],
+    quotePatterns: [/\b(subcontractor|supplier|lien)\b/i],
+  },
+  {
+    id: "change_order_no_written_approval",
+    when: ({ text, isRenovationContract }) =>
+      isRenovationContract &&
+      /\bchange orders?\b/i.test(text) &&
+      !/\bchange orders?\b[^.]{0,120}\b(written|in writing|signed|approv|consent|authoriz)\b/i.test(text),
+    severity: "medium",
+    type: "missing_detail",
+    title: "Change orders may not require your written approval",
+    note:
+      "Change-order language appears present but may not clearly require your written approval before extra work and cost are added.",
+    relatedFields: ["sections.scope_of_services.services_description"],
+    quotePatterns: [/\bchange orders?\b/i],
+  },
+  {
+    id: "missing_completion_date",
+    when: ({ text, isRenovationContract }) =>
+      isRenovationContract &&
+      !/\b(substantial completion|completion date|complete[d]? (?:the work |all work )?by|finish(?:ed)? by|shall be completed|date of completion)\b/i.test(text),
+    severity: "high",
+    type: "missing_detail",
+    title: "No clear completion date",
+    note:
+      "The agreement does not appear to state a firm completion or substantial-completion date. Without one, there is little to hold the contractor to a schedule.",
+    relatedFields: ["sections.term_and_termination.termination_for_convenience"],
+    quotePatterns: [/\b(completion|schedule|timeline|commencement)\b/i],
+  },
+  {
+    id: "homeowner_pulls_permits",
+    when: ({ text, isRenovationContract }) =>
+      isRenovationContract &&
+      /\b(owner|homeowner|client)\b[^.]{0,40}\b(obtain|responsible for|pull|secure|provide)\b[^.]{0,30}\bpermits?\b/i.test(text),
+    severity: "medium",
+    type: "one_sided",
+    title: "You may be responsible for permits",
+    note:
+      "The contract appears to put responsibility for permits on you rather than the contractor. That can leave you exposed to code-violation and unpermitted-work liability.",
+    relatedFields: ["sections.operational_details.communications_and_reporting"],
+    quotePatterns: [/\bpermits?\b/i],
+  },
+  {
+    id: "uncapped_allowance",
+    when: ({ text, isRenovationContract }) =>
+      isRenovationContract &&
+      /\ballowances?\b/i.test(text) &&
+      !/\ballowances?\b[^.]{0,120}\b(cap|capped|not to exceed|maximum|max\.)\b/i.test(text),
+    severity: "medium",
+    type: "unusual",
+    title: "Allowance overruns may be passed to you without a cap",
+    note:
+      "The contract uses allowances (budget placeholders for items like fixtures or flooring) but does not appear to cap overruns. If actual costs exceed the allowance, you may owe the difference with no ceiling.",
+    relatedFields: ["sections.payment.fee_structure"],
+    quotePatterns: [/\ballowances?\b/i],
+  },
+  {
+    id: "mandatory_arbitration",
+    when: ({ text }) =>
+      /\b(binding arbitration|mandatory arbitration|waiv\w*\s+(?:the\s+)?(?:right\s+to\s+a\s+)?jury)\b/i.test(text),
+    severity: "medium",
+    type: "unusual",
+    title: "Mandatory arbitration or jury-trial waiver",
+    note:
+      "The contract appears to require arbitration or waive the right to a jury trial. That limits how you can pursue a dispute and can be costly, so review it carefully.",
+    relatedFields: ["sections.dispute_resolution_and_governing_law.governing_law"],
+    quotePatterns: [/\b(arbitration|jury)\b/i],
   },
 ]);
 
@@ -542,6 +730,35 @@ function detectCreatorContract(text) {
   return roleSignal && (dealSignal || platformSignal || likenessSignal);
 }
 
+function detectRenovationContract(text) {
+  // Construction/work signal is required so that ordinary "independent
+  // contractor" service agreements (which merely use the word "contractor")
+  // don't misfire as renovation contracts.
+  const workSignal =
+    /\b(renovat\w*|remodel\w*|construction|build(?:ing|er)?|addition|adu|demolition|demo|installation|install|repair|roofing|plumbing|electrical|hvac|drywall|framing|concrete|masonry|landscap\w*|kitchen|bathroom)\b/i.test(
+      text
+    );
+  const roleSignal =
+    /\b(general contractor|gc|subcontractor|remodeler|home ?owner|tradesperson|tradesman)\b/i.test(text);
+  const domainSignal =
+    /\b(lien|change order|draw schedule|punch ?list|retainage|substantial completion|building permit|certificate of occupancy|allowance|scope of work|workmanship)\b/i.test(
+      text
+    );
+
+  return workSignal && (roleSignal || domainSignal);
+}
+
+// Best-effort extraction of an upfront-deposit percentage so we can flag
+// unusually large deposits. Returns NaN when no clear figure is present.
+function extractDepositPercent(text) {
+  const match =
+    /\b(?:deposit|down ?payment|upfront|up front)\b[^.]{0,60}?(\d{1,3})\s*%/i.exec(text) ||
+    /(\d{1,3})\s*%[^.]{0,40}?\b(?:deposit|down ?payment|upfront|up front)\b/i.exec(text);
+  if (!match) return NaN;
+  const pct = Number(match[1]);
+  return Number.isFinite(pct) ? pct : NaN;
+}
+
 function llmStatus(llmFields, key) {
   const status = llmFields?.[key]?.status;
   if (status === "found" || status === "not_found" || status === "not_clearly_stated") {
@@ -550,8 +767,14 @@ function llmStatus(llmFields, key) {
   return null;
 }
 
-function buildClauseStatus({ def, llmFields, text, isCreatorContract }) {
+function buildClauseStatus({ def, llmFields, text, isCreatorContract, isRenovationContract }) {
   if (def.creatorFocused && !isCreatorContract) {
+    return null;
+  }
+  if (def.renovationFocused && !isRenovationContract) {
+    return null;
+  }
+  if (def.skipForRenovation && isRenovationContract) {
     return null;
   }
 
@@ -634,6 +857,30 @@ function priorityFromSeverity(severity) {
 
 function negotiationFromFlag(flag) {
   const title = flag.title.toLowerCase();
+  if (title.includes("deposit") || title.includes("payment schedule")) {
+    return "Request a smaller upfront deposit and tie remaining payments to completed, inspected milestones.";
+  }
+  if (title.includes("lien")) {
+    return "Request lien waivers from the contractor and every subcontractor and supplier before releasing each payment.";
+  }
+  if (title.includes("change order")) {
+    return "Request that no change order is binding without your written, signed approval of the added scope and price.";
+  }
+  if (title.includes("completion") || title.includes("timeline") || title.includes("delay")) {
+    return "Request a firm substantial-completion date with a reasonable remedy if the contractor runs late.";
+  }
+  if (title.includes("permit")) {
+    return "Request that the contractor obtains all required permits and schedules the inspections.";
+  }
+  if (title.includes("allowance")) {
+    return "Request written allowance amounts, with your approval required before any overage is charged to you.";
+  }
+  if (title.includes("workmanship") || title.includes("warranty")) {
+    return "Request a written workmanship warranty of at least one year and a clear punch-list process at completion.";
+  }
+  if (title.includes("arbitration") || title.includes("jury")) {
+    return "Ask whether mandatory arbitration can be removed or made optional, and confirm a practical local venue.";
+  }
   if (title.includes("payment")) {
     return "Request clear invoice timing and a defined payment deadline with late-fee language.";
   }
@@ -753,6 +1000,8 @@ function sortFlags(flags) {
 export function buildReportInsights({ extractedText, llmFields }) {
   const text = normalizeText(extractedText);
   const isCreatorContract = detectCreatorContract(text);
+  const isRenovationContract = detectRenovationContract(text);
+  const depositPercent = extractDepositPercent(text);
   const paymentMatch = firstMatch(text, [
     /\b(net|within)\s+(\d{1,3})\s+(?:business\s*)?days?\b/i,
   ]);
@@ -765,6 +1014,7 @@ export function buildReportInsights({ extractedText, llmFields }) {
       llmFields,
       text,
       isCreatorContract,
+      isRenovationContract,
     });
     if (!clause) continue;
     clauses.push(clause);
@@ -801,7 +1051,7 @@ export function buildReportInsights({ extractedText, llmFields }) {
   }
 
   for (const rule of RISKY_PATTERN_RULES) {
-    if (!rule.when({ text, paymentDays, isCreatorContract })) continue;
+    if (!rule.when({ text, paymentDays, isCreatorContract, isRenovationContract, depositPercent })) continue;
     addFlag(flags, {
       id: `flag_${flags.length + 1}`,
       type: rule.type,
@@ -844,6 +1094,7 @@ export function buildReportInsights({ extractedText, llmFields }) {
     },
     recommendation,
     creator_contract: isCreatorContract,
+    renovation_contract: isRenovationContract,
     red_flags: sortedFlags,
     clause_breakdown: clauses,
     negotiation_bullets: negotiationBullets,

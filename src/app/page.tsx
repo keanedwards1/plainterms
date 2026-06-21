@@ -50,24 +50,37 @@ const PRICING = [
   },
 ] as const;
 
-const SOCIAL_PLATFORMS = [
-  { label: "YouTube", icon: "/graphics/social-youtube.svg" },
-  { label: "Twitch", icon: "/graphics/social-twitch.svg" },
-  { label: "TikTok", icon: "/graphics/social-tiktok.svg" },
-  { label: "Instagram", icon: "/graphics/social-instagram.svg" },
+const PROJECT_TYPES = [
+  "Kitchen & bath remodels",
+  "Home additions & ADUs",
+  "General contractor agreements",
+  "Roofing & exterior work",
+  "Owner-builder subcontracts",
 ] as const;
 
 export const metadata: Metadata = {
-  title: "PlainTerms - Contract Analysis for Creators",
+  title: "PlainTerms - Renovation Contract Review for Homeowners",
   description:
-    "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
+    "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
+  keywords: [
+    "renovation contract review",
+    "construction contract review",
+    "contractor agreement review",
+    "home remodel contract",
+    "review my contractor's contract",
+    "mechanics lien protection",
+    "renovation contract red flags",
+    "construction contract lawyer alternative",
+    "remodeling contract analysis",
+    "is my contractor's contract fair",
+  ],
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "PlainTerms - Know What You're Signing",
     description:
-      "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
+      "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
     url: "/",
     type: "website",
   },
@@ -75,7 +88,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "PlainTerms - Know What You're Signing",
     description:
-      "Upload any creator contract and get a plain-English breakdown of risks, red flags, and negotiation points — in minutes.",
+      "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
   },
 };
 
@@ -88,21 +101,88 @@ export default async function HomePage({
   // Focused hero is the default; ?hero=classic switches back to the original.
   const useClassicHero = hero === "classic";
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        name: "PlainTerms",
+        url: "https://www.plainterms.us",
+        description:
+          "Plain-English review of home renovation, remodeling, and construction contracts for homeowners.",
+      },
+      {
+        "@type": "Service",
+        name: "Renovation Contract Review",
+        serviceType: "Home renovation and construction contract review",
+        provider: { "@type": "Organization", name: "PlainTerms", url: "https://www.plainterms.us" },
+        areaServed: "US",
+        description:
+          "Upload a renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, warranties, and the terms to negotiate before you sign.",
+        offers: [
+          { "@type": "Offer", name: "Core", price: "29", priceCurrency: "USD" },
+          { "@type": "Offer", name: "Report", price: "79", priceCurrency: "USD" },
+          { "@type": "Offer", name: "Protect", price: "149", priceCurrency: "USD" },
+        ],
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "What does PlainTerms check in a renovation contract?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "PlainTerms reviews your home renovation or construction contract for risks like oversized deposits, missing mechanics-lien waivers, vague change-order terms, missing completion dates, uncapped allowances, and one-sided indemnification — then explains each in plain English with negotiation points.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "How much does a renovation contract review cost?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "PlainTerms reviews start at $29 — a fraction of the $400–$1,800 a construction attorney typically charges to review a contract.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Is PlainTerms legal advice?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "No. PlainTerms is an informational tool that helps you understand your contract and spot risks before you sign. It is not a law firm and does not provide legal advice. For high-stakes decisions, consult a licensed attorney.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "What contracts can I upload?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Any home renovation, remodeling, addition, or general-contractor agreement in PDF or Word format — whether you hired a contractor or are managing the project as your own general contractor.",
+            },
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <main className="pt-page-pad pb-12 pt-8 3xl:pb-20 3xl:pt-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="pt-container-wide space-y-10 3xl:space-y-16">
         {useClassicHero ? <ClassicHero /> : <FocusedHero />}
 
         <section className="pt-card p-7 3xl:p-12">
-          <h2 className="text-center text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Built for creators across a multitude of platforms</h2>
+          <h2 className="text-center text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Built for every kind of renovation contract</h2>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-4 3xl:mt-8 3xl:gap-6">
-            {SOCIAL_PLATFORMS.map((item) => (
+            {PROJECT_TYPES.map((label) => (
               <span
-                key={item.label}
+                key={label}
                 className="inline-flex items-center gap-2 rounded-full border border-[var(--pt-border)] bg-white px-3 py-1.5 text-sm font-semibold text-[var(--pt-muted)] 3xl:px-5 3xl:py-2.5 3xl:text-base"
               >
-                <Image src={item.icon} alt={item.label} width={20} height={20} className="h-5 w-5" />
-                {item.label}
+                {label}
               </span>
             ))}
           </div>
@@ -128,7 +208,7 @@ export default async function HomePage({
                 {
                   step: "01",
                   title: "Upload your contract",
-                  body: "Securely upload any brand deal, sponsorship, or creator agreement in PDF or Word format.",
+                  body: "Securely upload any renovation, remodeling, or contractor agreement in PDF or Word format.",
                 },
                 {
                   step: "02",
@@ -252,7 +332,7 @@ function ClassicHero() {
                   Get detailed contract analysis at a fraction of the cost of a lawyer.
                 </h1>
                 <p className="mt-5 max-w-xs text-base text-[#ffe8df] 3xl:text-lg 3xl:max-w-sm 3xl:mt-7">
-                  Contract review built for creators. Understand your rights and protect your work.
+                  Contract review built for homeowners. Understand your renovation agreement and protect your money.
                 </p>
                 <div className="mt-auto flex flex-wrap items-center gap-3 pt-8 3xl:pt-12">
                   <Link
@@ -286,7 +366,7 @@ function ClassicHero() {
                 </div>
                 <Image
                   src="/graphics/creator-studio-1.png"
-                  alt="Creator studio illustration"
+                  alt="Contract review illustration"
                   fill
                   sizes="(min-width: 1024px) 42vw, 100vw"
                   className="relative z-10 object-contain scale-[1.02] sm:scale-[1.12] lg:scale-[1.56]"
@@ -404,7 +484,7 @@ function FocusedHero() {
           Get detailed contract analysis at a fraction of the cost of a lawyer.
         </h1>
         <p className="mt-5 max-w-xl text-lg text-[var(--pt-muted)] 3xl:max-w-2xl 3xl:text-xl">
-          Upload your contract and know exactly what to negotiate before you sign.
+          Upload your renovation or contractor agreement and know exactly what to watch for — liens, deposits, change orders — before you sign.
         </p>
 
         <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:flex-row 3xl:mt-12">
