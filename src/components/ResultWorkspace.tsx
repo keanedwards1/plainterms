@@ -131,10 +131,10 @@ function actionToTone(action: "sign" | "negotiate" | "do_not_sign_yet"): RiskTon
 
 const LEGAL_DISCLAIMER_FOOTER = (
   <div className="mt-5 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2.5 text-xs text-[var(--pt-muted)]">
-    <p className="mb-1 font-semibold uppercase tracking-wide text-[var(--pt-ink)]" style={{ fontSize: "10px" }}>
+    <p className="mb-1 font-semibold uppercase tracking-wide text-[var(--pt-ink)]" style={{ fontSize: "11px" }}>
       Not legal advice
     </p>
-    All analysis, risk scores, flags, clause breakdowns, and suggested edits on this page are for informational purposes only and do not constitute legal advice. Review any contract with a qualified attorney before signing.
+    This report is information to help you understand your contract — not legal advice. For anything high-stakes, have a lawyer review it before you sign.
   </div>
 );
 
