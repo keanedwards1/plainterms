@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
 
-type Stage = "prompt" | "testimonial" | "done";
+type Stage = "prompt" | "testimonial";
 type Variant = "banner" | "modal";
 
 interface Props {
@@ -102,14 +102,12 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
         }),
       }).catch(() => {/* best-effort */});
     }
-    setStage("done");
     setSubmitting(false);
-    setTimeout(() => setOpen(false), 2500);
+    closeFeedback();
   }
 
   function skipTestimonial() {
-    setStage("done");
-    setTimeout(() => setOpen(false), 2500);
+    closeFeedback();
   }
 
   if (!open) return null;
@@ -178,19 +176,19 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={() => submitRating(0)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-red-300 hover:bg-red-50"
+                aria-label="Poor experience"
+              >
+                ☹️
+              </button>
+              <button
+                type="button"
                 onClick={() => submitRating(1)}
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
                 aria-label="Good experience"
               >
                 😊
-              </button>
-              <button
-                type="button"
-                onClick={() => submitRating(0)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-red-300 hover:bg-red-50"
-                aria-label="Poor experience"
-              >
-                😞
               </button>
               <button
                 type="button"
@@ -225,25 +223,12 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
             <div className="mt-3">{testimonialFields}</div>
           </>
         )}
-
-        {stage === "done" && (
-          <p className="text-sm text-[var(--pt-muted)]">
-            Thanks for the feedback — it helps us improve. ✨
-          </p>
-        )}
       </div>
     );
   }
 
   // ── Modal variant (Full Report first click) ───────────────────────────────
   const header = (() => {
-    if (stage === "done") {
-      return {
-        eyebrow: "All set",
-        title: "Thanks for the feedback",
-        description: "It helps us make PlainTerms better.",
-      };
-    }
     if (stage === "testimonial") {
       return {
         eyebrow: "Thank you",
@@ -317,30 +302,24 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
             <div className="flex items-center justify-center gap-4 py-2">
               <button
                 type="button"
+                onClick={() => submitRating(0)}
+                className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-white text-3xl transition-colors hover:border-red-300 hover:bg-red-50"
+                aria-label="Poor experience"
+              >
+                ☹️
+              </button>
+              <button
+                type="button"
                 onClick={() => submitRating(1)}
                 className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-white text-3xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
                 aria-label="Good experience"
               >
                 😊
               </button>
-              <button
-                type="button"
-                onClick={() => submitRating(0)}
-                className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-white text-3xl transition-colors hover:border-red-300 hover:bg-red-50"
-                aria-label="Poor experience"
-              >
-                😞
-              </button>
             </div>
           )}
 
           {stage === "testimonial" && testimonialFields}
-
-          {stage === "done" && (
-            <p className="py-2 text-center text-sm text-[var(--pt-muted)]">
-              Thanks for the feedback — it helps us improve. ✨
-            </p>
-          )}
         </div>
       </div>
     </div>
