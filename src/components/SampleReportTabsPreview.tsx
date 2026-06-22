@@ -7,7 +7,6 @@ import ReportSidebar from "@/components/result/ReportSidebar";
 import QuickReadout from "@/components/result/QuickReadout";
 import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
 import { REPORT_TIER_NAMES, type ReportTierOption } from "@/lib/pricingOptions";
-import { TAB_CLICK_OPENS_MODAL } from "@/lib/previewConfig";
 import { getOrCreateFunnelId } from "@/lib/funnelMetrics";
 import {
   ContractSubmitError,
@@ -72,16 +71,6 @@ const TABS: { key: TabKey; label: string; icon: string; count?: number | "all" }
   { key: "full",      label: "Full Report", icon: "/graphics/icon-doc.svg",    count: "all" },
 ];
 
-const TAB_UNLOCK: Record<TabKey, { title: string; description: string }> = {
-  summary:   { title: "Get your own full summary",              description: "See your contract's complete risk readout, recommendation, and every next step to take." },
-  insights:  { title: "Unlock cross-tab insights",              description: "Connect risk posture, clause clarity, and evidence coverage for your own agreement." },
-  flags:     { title: "Unlock all red flags",                   description: "Every flag with plain-English notes specific to your contract." },
-  terms:     { title: "Unlock the full clause breakdown",       description: "Clause-by-clause status for present, unclear, and missing terms before you sign." },
-  questions: { title: "Unlock negotiation questions",           description: "Practical, ready-to-send questions tailored to your contract's risk areas." },
-  document:  { title: "Unlock document review",                description: "Your contract's source text with risk areas highlighted and suggested rewrites." },
-  full:      { title: "Unlock the full evidence-backed report", description: "Complete context with source-backed notes for stronger negotiation." },
-};
-
 const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
 
 function toProcessing(tier: ReportTierOption, step: SubmitStep): CheckoutProcessing {
@@ -106,26 +95,11 @@ function statusClass(s: "present" | "unclear" | "missing") {
   return "bg-[#ffe8e3] text-[#9e3f2d]";
 }
 
-function LockedTease({ children, onUnlock }: { children: React.ReactNode; onUnlock: () => void }) {
-  return (
-    <div className="relative">
-      <div className="pointer-events-none select-none blur-[2px] [mask-image:linear-gradient(to_top,black_40%,transparent_94%)]">
-        {children}
-      </div>
-      <div className="absolute inset-x-0 top-0 flex items-start justify-center pt-3">
-        <button
-          type="button"
-          onClick={onUnlock}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--pt-border)] bg-white/95 px-3 py-1 text-xs font-semibold text-[var(--pt-ink)] shadow-sm transition-colors hover:border-[var(--pt-accent)] hover:text-[var(--pt-accent)]"
-        >
-          <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
-            <path d="M5 7V5.2a3 3 0 0 1 6 0V7m-7 0h8v6H4z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Locked — choose a plan to unlock
-        </button>
-      </div>
-    </div>
-  );
+// The sample report is shown in full (nothing locked) so prospects see exactly
+// what a real report looks like. This wrapper is now a passthrough; it keeps the
+// onUnlock prop only so the tab components don't need signature changes.
+function LockedTease({ children }: { children: React.ReactNode; onUnlock: () => void }) {
+  return <>{children}</>;
 }
 
 // ─── Tab content — each mirrors the corresponding ResultWorkspace tab layout ──
@@ -356,10 +330,14 @@ function QuestionsTab({ onUnlock }: TabProps) {
         <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-4 py-3">
           <p className="text-sm font-semibold text-[var(--pt-ink)]">Send these questions by email</p>
           <p className="mt-1 text-sm text-[var(--pt-muted)]">Generate a ready-to-send email covering the questions above and your key negotiation points.</p>
-          <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--pt-border)] bg-white/90 px-3 py-1 text-[11px] font-semibold text-[var(--pt-muted)]">
-            <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5"><path d="M5 7V5.2a3 3 0 0 1 6 0V7m-7 0h8v6H4z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            Locked — choose a plan
-          </span>
+          <button
+            type="button"
+            onClick={onUnlock}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--pt-ink)] hover:border-[var(--pt-accent)]"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4"><path d="M2.5 4.5h11v7h-11z M2.5 4.5l5.5 4 5.5-4" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            Generate negotiation email
+          </button>
         </article>
       </div>
     </LockedTease>
@@ -496,18 +474,13 @@ export default function SampleReportTabsPreview() {
     setUploadError(null);
   }
 
-  const unlock = TAB_UNLOCK[activeTab];
-
   return (
     <>
       <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         <ReportSidebar
           tabs={TABS}
           activeKey={activeTab}
-          onSelectTab={(key) => {
-            setActiveTab(key as TabKey);
-            if (TAB_CLICK_OPENS_MODAL && key !== "summary") setModalOpen(true);
-          }}
+          onSelectTab={(key) => setActiveTab(key as TabKey)}
           risk={SAMPLE.risk}
           recommendation={{ label: SAMPLE.recommendation.label, reason: SAMPLE.recommendation.reason, tone: "high" }}
           tabAriaLabel={(label) => `Preview ${label} section`}
@@ -533,16 +506,30 @@ export default function SampleReportTabsPreview() {
             {activeTab === "document"  && <DocumentTab onUnlock={() => setModalOpen(true)} />}
             {activeTab === "full"      && <FullTab onUnlock={() => setModalOpen(true)} />}
           </div>
+
+          <div className="mt-5 flex flex-col items-start justify-between gap-3 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm font-semibold text-[var(--pt-ink)]">This is a sample report.</p>
+              <p className="mt-0.5 text-sm text-[var(--pt-muted)]">Upload your own contract to get a real, private analysis like this one.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="shrink-0 rounded-lg bg-[var(--pt-accent)] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              Analyze your contract →
+            </button>
+          </div>
         </section>
       </section>
 
       <UpgradeModal
         open={modalOpen}
-        featureTitle={pendingTier ? "Upload your contract" : unlock.title}
+        featureTitle={pendingTier ? "Upload your contract" : "Analyze your contract"}
         featureDescription={
           pendingTier
             ? "Upload a PDF or DOCX to generate your real, private analysis."
-            : unlock.description
+            : "Choose a plan and upload your contract to get a real, private analysis like this sample."
         }
         ctaPrefix="Get started with"
         processing={processing}
