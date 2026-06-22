@@ -1000,7 +1000,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                   ))}
                 </div>
                 <p className="mt-6 text-xs text-[#8c6526]">
-                  Preparing your revised draft — this usually takes under a minute.
+                  Preparing your revised draft — this usually takes under two minutes.
                 </p>
               </div>
             ) : (

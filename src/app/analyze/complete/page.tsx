@@ -217,7 +217,7 @@ export default function AnalyzeCompletePage() {
                   {currentStage.label}
                 </p>
                 <p className="mt-1 text-xs text-[var(--pt-muted)]">
-                  This usually takes under a minute once payment is confirmed.
+                  This usually takes under two minutes once payment is confirmed.
                 </p>
               </div>
               <Image
