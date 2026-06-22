@@ -1387,7 +1387,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                       <p className="text-sm font-semibold text-[#344167]">Key Takeaways</p>
                     </div>
                     <p className="mt-1 text-sm text-[#4c5a86]">
-                      A connected view of the risks, clause gaps, evidence, and questions that matter most from this analysis.
+                      A connected view of the risks, clause gaps, and questions that matter most from this analysis.
                     </p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-4">
                       <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
@@ -1403,8 +1403,8 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         <p className="text-lg font-semibold text-[#374175]">{questionsToAsk.length}</p>
                       </div>
                       <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
-                        <p className="text-xs text-[#54629b]">Evidence coverage</p>
-                        <p className="text-lg font-semibold text-[#374175]">{evidenceCoveragePct}%</p>
+                        <p className="text-xs text-[#54629b]">Terms to review</p>
+                        <p className="text-lg font-semibold text-[#374175]">{unclearClauseCount + missingClauseCount}</p>
                       </div>
                     </div>
                   </article>
