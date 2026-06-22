@@ -344,40 +344,118 @@ function QuestionsTab({ onUnlock }: TabProps) {
   );
 }
 
-function DocumentTab({ onUnlock }: TabProps) {
+const SAMPLE_DOC_CHANGES = [
+  {
+    severity: "high" as const,
+    reason: "Reduces an oversized deposit and ties payment to verified progress.",
+    before: "Owner shall pay a deposit of fifty percent (50%) of the contract price upon execution, with the balance due upon completion.",
+    after: "Owner shall pay a deposit of ten percent (10%) upon signing, with the balance paid against completed, inspected milestones and a 10% retainage held until punch-list completion.",
+  },
+  {
+    severity: "high" as const,
+    reason: "Requires your written approval before any extra cost is added.",
+    before: "Contractor may perform additional work as reasonably necessary to complete the project, billed at Contractor's standard rates.",
+    after: "No additional work or cost is owed unless set out in a written change order signed by the Owner before that work begins.",
+  },
+  {
+    severity: "medium" as const,
+    reason: "Adds a firm deadline and a remedy for unexcused delay.",
+    before: "Work shall commence on or about the date set forth above; no completion date is specified.",
+    after: "Contractor shall reach substantial completion by a firm date set in this Agreement, with a per-day credit to the Owner for unexcused delay.",
+  },
+];
+
+const SAMPLE_SEVERITY_CLASS = {
+  high: "bg-[#ffe8e3] text-[#9e3f2d] border-[#efc1b6]",
+  medium: "bg-[#fff4df] text-[#8c6526] border-[#ead3a1]",
+  low: "bg-[#e1f4ef] text-[#1d655f] border-[#b2ddd4]",
+};
+
+function DocumentTab() {
   return (
-    <LockedTease onUnlock={onUnlock}>
+    <div className="space-y-3">
+      {/* Toolbar */}
       <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-[var(--pt-ink)]">{SAMPLE.fileName}</p>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-[var(--pt-ink)]">{SAMPLE.fileName}</p>
             <p className="text-xs text-[var(--pt-muted)]">{SAMPLE.wordCount} words · application/pdf</p>
           </div>
           <div className="flex items-center rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-[3px]">
-            {["Original", "Track Changes", "Revised"].map((label, i) => (
-              <span key={label} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${i === 0 ? "bg-white text-[var(--pt-ink)] shadow-sm" : "text-[var(--pt-muted)]"}`}>{label}</span>
+            {["Original", "Track Changes", "Revised"].map((label) => (
+              <span
+                key={label}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${label === "Track Changes" ? "bg-white text-[var(--pt-ink)] shadow-sm" : "text-[var(--pt-muted)]"}`}
+              >
+                {label}
+              </span>
             ))}
           </div>
         </div>
-        <div className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[#f7f4ef] px-4 py-5 font-serif text-[15px] leading-[1.85] text-[#252830]">
-          <p>
-            Owner shall pay a deposit of{" "}
-            <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]">fifty percent (50%)</span>{" "}
-            of the contract price upon execution, with the balance due upon completion.
-          </p>
-          <p className="mt-4">
-            Contractor may perform{" "}
-            <span className="rounded-[2px] bg-[#fff4df] px-[1px] text-[#8c6526]">additional work as reasonably necessary</span>{" "}
-            to complete the project, billed at Contractor&apos;s standard rates.
-          </p>
-          <p className="mt-4">
-            Work shall commence on or about the date set forth above;{" "}
-            <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]">no completion date</span>{" "}
-            is specified, and any dispute shall be resolved by binding arbitration.
-          </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--pt-muted)]">
+          <del className="rounded-[2px] bg-[#fde8e5] px-1.5 py-0.5 text-[#9e3f2d] line-through no-underline">removed</del>
+          <ins className="rounded-[2px] bg-[#e8f5ee] px-1.5 py-0.5 text-[#1d655f] underline no-underline">inserted</ins>
+          <span>3 tracked changes · hover for reason</span>
         </div>
       </article>
-    </LockedTease>
+
+      {/* Document paper */}
+      <article className="relative overflow-hidden rounded-lg border border-[var(--pt-border)] shadow-sm">
+        <div className="max-h-[580px] overflow-auto bg-[#f0ede8] px-3 py-6 sm:px-10">
+          <div
+            className="mx-auto max-w-[680px] rounded-sm bg-white px-8 py-10 text-[15px] leading-[1.85] tracking-[0.003em] text-[#252830] shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] whitespace-pre-wrap select-text"
+            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          >
+            <p>
+              3. Deposit and Payment Schedule. Owner shall pay a deposit of{" "}
+              <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]" style={{ textDecoration: "line-through" }}>fifty percent (50%) of the contract price upon execution, with the balance due upon completion.</span>
+              <span className="ml-[2px] rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#1d655f]" style={{ textDecoration: "underline", textDecorationColor: "rgba(29,101,95,0.5)" }}>ten percent (10%) upon signing, with the balance paid against completed, inspected milestones and a 10% retainage held until punch-list completion.</span>
+            </p>
+            <p className="mt-6">
+              5. Change Orders.{" "}
+              <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]" style={{ textDecoration: "line-through" }}>Contractor may perform additional work as reasonably necessary to complete the project, billed at Contractor&apos;s standard rates.</span>
+              <span className="ml-[2px] rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#1d655f]" style={{ textDecoration: "underline", textDecorationColor: "rgba(29,101,95,0.5)" }}>No additional work or cost is owed unless set out in a written change order signed by the Owner before that work begins.</span>
+            </p>
+            <p className="mt-6">
+              6. Schedule. Work shall commence on or about the date set forth above;{" "}
+              <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]" style={{ textDecoration: "line-through" }}>no completion date is specified.</span>
+              <span className="ml-[2px] rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#1d655f]" style={{ textDecoration: "underline", textDecorationColor: "rgba(29,101,95,0.5)" }}>Contractor shall reach substantial completion by a firm date set in this Agreement, with a per-day credit to the Owner for unexcused delay.</span>
+            </p>
+          </div>
+        </div>
+      </article>
+
+      {/* Suggested Changes */}
+      <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-[var(--pt-ink)]">Suggested Changes</p>
+          <div className="flex gap-1.5 text-[11px]">
+            <span className="rounded-full border border-[#efc1b6] bg-[#ffe8e3] px-2 py-0.5 text-[#9e3f2d]">2 high</span>
+            <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[#8c6526]">1 medium</span>
+          </div>
+        </div>
+        <ul className="mt-3 space-y-2">
+          {SAMPLE_DOC_CHANGES.map((change, idx) => (
+            <li key={idx} className="rounded-lg border border-[var(--pt-border)] px-3 py-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${SAMPLE_SEVERITY_CLASS[change.severity]}`}>{change.severity}</span>
+                <span className="text-xs text-[var(--pt-muted)]">{change.reason}</span>
+              </div>
+              <div className="mt-2 grid gap-1.5 text-[13px] sm:grid-cols-2">
+                <div className="rounded-md border border-[#f5c6c0] bg-[#fff0ee] px-2.5 py-2">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
+                  <p className="text-[#7f2e1f]">{change.before}</p>
+                </div>
+                <div className="rounded-md border border-[#a8ddd0] bg-[#edf8f5] px-2.5 py-2">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
+                  <p className="text-[#165a52]">{change.after}</p>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </article>
+    </div>
   );
 }
 
@@ -503,7 +581,7 @@ export default function SampleReportTabsPreview() {
             {activeTab === "flags"     && <FlagsTab onUnlock={() => setModalOpen(true)} />}
             {activeTab === "terms"     && <TermsTab onUnlock={() => setModalOpen(true)} />}
             {activeTab === "questions" && <QuestionsTab onUnlock={() => setModalOpen(true)} />}
-            {activeTab === "document"  && <DocumentTab onUnlock={() => setModalOpen(true)} />}
+            {activeTab === "document"  && <DocumentTab />}
             {activeTab === "full"      && <FullTab onUnlock={() => setModalOpen(true)} />}
           </div>
 

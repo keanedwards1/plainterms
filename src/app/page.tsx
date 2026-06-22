@@ -60,47 +60,35 @@ const ICON_PROPS = {
   className: "h-5 w-5",
 };
 
-const CONTRACT_CHECKS = [
+const PROJECT_TYPES = [
   {
-    title: "Oversized deposits",
-    desc: "Flags upfront payments above what's reasonable or legal in your state.",
+    label: "Kitchen & bath remodels",
     icon: (
-      <svg {...ICON_PROPS}><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6" /><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" /></svg>
+      <svg {...ICON_PROPS}><rect x="4" y="4" width="16" height="16" rx="2" /><circle cx="9" cy="9" r="1.4" /><circle cx="15" cy="9" r="1.4" /><path d="M7 15h10" /></svg>
     ),
   },
   {
-    title: "Lien waivers",
-    desc: "Checks you're protected from subcontractor and supplier liens on your home.",
+    label: "Home additions & ADUs",
     icon: (
-      <svg {...ICON_PROPS}><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4" /><path d="M9 14l2 2 4-4" /></svg>
+      <svg {...ICON_PROPS}><path d="M4 11l8-6 8 6" /><path d="M6 10v9h12v-9" /><path d="M10 19v-5h4v5" /></svg>
     ),
   },
   {
-    title: "Change orders",
-    desc: "Confirms changes to scope or price need your written sign-off first.",
+    label: "General contractor agreements",
     icon: (
-      <svg {...ICON_PROPS}><path d="M4 20h4L18 10l-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></svg>
+      <svg {...ICON_PROPS}><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4h6v3H9z" /><path d="M9 12h6M9 16h4" /></svg>
     ),
   },
   {
-    title: "Completion timeline",
-    desc: "Looks for a firm completion date and protection against open-ended delays.",
+    label: "Roofing & exterior work",
     icon: (
-      <svg {...ICON_PROPS}><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 9h16M8 3v4M16 3v4" /></svg>
+      <svg {...ICON_PROPS}><path d="M3 12l9-7 9 7" /><path d="M6 10v9h12v-9" /><path d="M16 6V4h2v3" /></svg>
     ),
   },
   {
-    title: "Permits & inspections",
-    desc: "Verifies the contractor pulls required permits and schedules inspections.",
+    label: "Owner-builder subcontracts",
     icon: (
-      <svg {...ICON_PROPS}><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4h6v3H9z" /><path d="M9 13l2 2 4-4" /></svg>
-    ),
-  },
-  {
-    title: "Workmanship warranty",
-    desc: "Checks for a real warranty and a punch-list process before final payment.",
-    icon: (
-      <svg {...ICON_PROPS}><path d="M12 3l7 3v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z" /><path d="M9 12l2 2 4-4" /></svg>
+      <svg {...ICON_PROPS}><path d="M3 17a9 9 0 0 1 18 0z" /><path d="M9 8a3 3 0 0 1 6 0v2" /><path d="M2 17h20" /></svg>
     ),
   },
 ] as const;
@@ -222,32 +210,20 @@ export default async function HomePage({
         {useClassicHero ? <ClassicHero /> : <FocusedHero />}
 
         <section className="pt-card p-7 3xl:p-12">
-          <div className="text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--pt-accent)]">What PlainTerms checks</p>
-            <h2 className="mt-2 text-4xl text-[var(--pt-ink)] 3xl:text-5xl">We read the fine print that costs homeowners money</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-[var(--pt-muted)] 3xl:text-base">
-              Every contract is scanned for the specific terms that lead to liens, surprise costs, and disputes — the things buried in renovation agreements.
-            </p>
-          </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 3xl:mt-10 3xl:gap-6">
-            {CONTRACT_CHECKS.map((check) => (
+          <h2 className="text-center text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Built for every kind of renovation contract</h2>
+          <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 3xl:mt-10 3xl:gap-6">
+            {PROJECT_TYPES.map((type) => (
               <div
-                key={check.title}
-                className="flex items-start gap-3 rounded-xl border border-[var(--pt-border)] bg-white p-4 3xl:p-5"
+                key={type.label}
+                className="flex flex-col items-center gap-3 rounded-xl border border-[var(--pt-border)] bg-white px-3 py-5 text-center"
               >
-                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--pt-accent)]/10 text-[var(--pt-accent)]">
-                  {check.icon}
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--pt-accent)]/10 text-[var(--pt-accent)]">
+                  {type.icon}
                 </span>
-                <div>
-                  <p className="text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">{check.title}</p>
-                  <p className="mt-0.5 text-sm leading-6 text-[var(--pt-muted)]">{check.desc}</p>
-                </div>
+                <p className="text-sm font-semibold text-[var(--pt-ink)]">{type.label}</p>
               </div>
             ))}
           </div>
-          <p className="mt-5 text-center text-sm text-[var(--pt-muted)]">
-            …plus retainage, allowances, indemnification, arbitration clauses, and more.
-          </p>
         </section>
 
         <section id="how-it-works" className="pt-card p-7 3xl:p-12">
