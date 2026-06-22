@@ -175,23 +175,49 @@ function decodeHexTextWithMap(hex, toUnicodeMap, keyLengths) {
   return buf.toString("latin1");
 }
 
-function collectTextFromPdfContent(content, toUnicodeMap) {
+const EMPTY_CMAP = new Map();
+
+// A subsetted PDF often embeds multiple fonts, each with its OWN ToUnicode
+// CMap. Glyph code <0002> means different characters in different fonts, so the
+// CMaps must be applied per-font — never merged into one global map. We track
+// the active font via the `/Fxx <size> Tf` operator and decode each text token
+// with that font's CMap.
+function collectTextFromPdfContent(content, fontCMaps, defaultEntry) {
   if (typeof content !== "string" || !content) return [];
 
   const blocks = content.match(/BT[\s\S]*?ET/g) || [];
   if (blocks.length === 0) return [];
-  const workingBlocks = blocks;
-  const keyLengths = mapKeyLengths(toUnicodeMap);
   const lines = [];
   const seen = new Set();
 
-  for (const block of workingBlocks) {
+  function decodeHex(hex, entry) {
+    return decodeHexTextWithMap(
+      hex,
+      entry ? entry.map : EMPTY_CMAP,
+      entry ? entry.keyLengths : []
+    );
+  }
+
+  for (const block of blocks) {
+    // Resets to the default font at the start of each block; `Tf` operators
+    // within the block switch the active CMap.
+    let entry = defaultEntry || null;
     const opRegex =
-      /\[(?:.|\n|\r)*?\]\s*TJ|<([0-9A-Fa-f]+)>\s*(?:Tj|'|")|\((?:\\.|[^()])+\)\s*(?:Tj|'|")/g;
+      /\/(F\w+)\s+[\d.]+\s+Tf|\[(?:.|\n|\r)*?\]\s*TJ|<([0-9A-Fa-f]+)>\s*(?:Tj|'|")|\((?:\\.|[^()])+\)\s*(?:Tj|'|")/g;
     let match;
     let line = "";
     while ((match = opRegex.exec(block)) !== null) {
       const token = match[0];
+
+      // Font selection: /Fxx <size> Tf
+      if (match[1]) {
+        entry = fontCMaps.get(match[1]) || defaultEntry || null;
+        continue;
+      }
+
+      // When the active font has a CMap, (string) literals hold raw glyph
+      // indices (garbled if decoded directly), so skip them and use <hex>.
+      const hasMap = !!(entry && entry.map.size > 0);
 
       if (token.startsWith("[")) {
         const itemRegex = /\((?:\\.|[^()])+\)|<([0-9A-Fa-f]+)>/g;
@@ -199,23 +225,21 @@ function collectTextFromPdfContent(content, toUnicodeMap) {
         while ((item = itemRegex.exec(token)) !== null) {
           const itemToken = item[0];
           if (itemToken.startsWith("(")) {
-            line += decodePdfString(itemToken.slice(1, -1));
+            if (!hasMap) line += decodePdfString(itemToken.slice(1, -1));
           } else if (itemToken.startsWith("<")) {
-            line += decodeHexTextWithMap(
-              itemToken.slice(1, -1),
-              toUnicodeMap,
-              keyLengths
-            );
+            line += decodeHex(itemToken.slice(1, -1), entry);
           }
         }
         continue;
       }
 
       if (token.startsWith("(")) {
-        const start = token.indexOf("(");
-        const end = token.lastIndexOf(")");
-        if (start >= 0 && end > start) {
-          line += decodePdfString(token.slice(start + 1, end));
+        if (!hasMap) {
+          const start = token.indexOf("(");
+          const end = token.lastIndexOf(")");
+          if (start >= 0 && end > start) {
+            line += decodePdfString(token.slice(start + 1, end));
+          }
         }
         continue;
       }
@@ -224,11 +248,7 @@ function collectTextFromPdfContent(content, toUnicodeMap) {
         const start = token.indexOf("<");
         const end = token.indexOf(">", start + 1);
         if (start >= 0 && end > start) {
-          line += decodeHexTextWithMap(
-            token.slice(start + 1, end),
-            toUnicodeMap,
-            keyLengths
-          );
+          line += decodeHex(token.slice(start + 1, end), entry);
         }
       }
     }
@@ -262,13 +282,47 @@ function guessType({ contentType, filename }) {
   return "unknown";
 }
 
-function extractTextFromPdf(buffer) {
+// Maps each font resource name (e.g. "F7") to its parsed ToUnicode CMap by
+// walking: /Font << /F7 7 0 R >>  →  obj 7 (… /ToUnicode 21 0 R)  →  obj 21 CMap.
+function buildPdfFontCMaps(rawText, objNumToInflated) {
+  const resourceToFontObj = new Map();
+  for (const dictMatch of rawText.matchAll(/\/Font\s*<<([\s\S]*?)>>/g)) {
+    for (const ref of dictMatch[1].matchAll(/\/(F\w+)\s+(\d+)\s+0\s+R/g)) {
+      if (!resourceToFontObj.has(ref[1])) {
+        resourceToFontObj.set(ref[1], Number(ref[2]));
+      }
+    }
+  }
+
+  const fontObjToTU = new Map();
+  for (const objMatch of rawText.matchAll(/(\d+)\s+0\s+obj([\s\S]*?)endobj/g)) {
+    if (!/\/Type\s*\/Font/.test(objMatch[2])) continue;
+    const tu = objMatch[2].match(/\/ToUnicode\s+(\d+)\s+0\s+R/);
+    if (tu) fontObjToTU.set(Number(objMatch[1]), Number(tu[1]));
+  }
+
+  const fontCMaps = new Map();
+  for (const [resource, fontObj] of resourceToFontObj) {
+    const tuObj = fontObjToTU.get(fontObj);
+    if (tuObj == null) continue;
+    const cmapContent = objNumToInflated.get(tuObj);
+    if (!cmapContent) continue;
+    const map = parseToUnicodeCMap(cmapContent);
+    if (map.size === 0) continue;
+    fontCMaps.set(resource, { map, keyLengths: mapKeyLengths(map) });
+  }
+
+  return fontCMaps;
+}
+
+export function extractTextFromPdf(buffer) {
   const text = buffer.toString("latin1");
 
-  // Inflate all FlateDecode streams. The raw file is used only for CMap extraction
-  // to avoid duplicate/garbled text: raw glyph bytes in uncompressed form followed
-  // by properly-decoded bytes from the inflated stream produce garbled prefixes.
+  // Inflate all FlateDecode streams, tracking each stream's object number so we
+  // can resolve a font's ToUnicode CMap later. The raw file is used only for
+  // structure/CMap lookup, not text extraction, to avoid garbled glyph bytes.
   const inflatedStreams = [];
+  const objNumToInflated = new Map();
   const streamRegex = /stream\r?\n/g;
   let match;
   while ((match = streamRegex.exec(text)) !== null) {
@@ -281,8 +335,21 @@ function extractTextFromPdf(buffer) {
     const dict = dictStart >= 0 && dictEnd >= 0 && dictEnd < match.index
       ? text.slice(dictStart, dictEnd + 2)
       : "";
+    // Object number from the `N 0 obj` header just before this stream's dict.
+    let objNum = null;
+    if (dictStart >= 0) {
+      const header = text.slice(Math.max(0, dictStart - 60), dictStart).match(/(\d+)\s+0\s+obj\s*$/);
+      if (header) objNum = Number(header[1]);
+    }
+
     const hasFlate = /\/Filter\s*\/FlateDecode/.test(dict) || /\/FlateDecode/.test(dict);
     if (!hasFlate) {
+      // Uncompressed stream (e.g. a plain-text ToUnicode CMap). Register it by
+      // object number so font CMap lookup can find it; don't treat it as a text
+      // source.
+      if (objNum !== null) {
+        objNumToInflated.set(objNum, text.slice(streamStart, endIndex));
+      }
       streamRegex.lastIndex = endIndex + "endstream".length;
       continue;
     }
@@ -291,22 +358,29 @@ function extractTextFromPdf(buffer) {
     if (raw.length > 0 && raw[raw.length - 1] === 0x0d) raw = raw.subarray(0, raw.length - 1);
     if (raw.length > 0 && raw[raw.length - 1] === 0x0a) raw = raw.subarray(0, raw.length - 1);
 
+    let inflatedStr = null;
     try {
-      const inflated = zlib.inflateSync(raw);
-      inflatedStreams.push(inflated.toString("latin1"));
+      inflatedStr = zlib.inflateSync(raw).toString("latin1");
     } catch {
       try {
-        const inflatedRaw = zlib.inflateRawSync(raw);
-        inflatedStreams.push(inflatedRaw.toString("latin1"));
+        inflatedStr = zlib.inflateRawSync(raw).toString("latin1");
       } catch {
         // Ignore non-inflatable streams.
       }
     }
 
+    if (inflatedStr !== null) {
+      inflatedStreams.push(inflatedStr);
+      if (objNum !== null) objNumToInflated.set(objNum, inflatedStr);
+    }
+
     streamRegex.lastIndex = endIndex + "endstream".length;
   }
 
-  // Build ToUnicode map from all content (raw file often contains CMap in plain text).
+  // Per-font CMaps keyed by font resource name (the correct approach). Falls
+  // back to a global merged map only for fonts we cannot resolve.
+  const fontCMaps = buildPdfFontCMaps(text, objNumToInflated);
+
   const toUnicodeMap = new Map();
   for (const content of [text, ...inflatedStreams]) {
     const parsed = parseToUnicodeCMap(content);
@@ -316,12 +390,16 @@ function extractTextFromPdf(buffer) {
       }
     }
   }
+  const defaultEntry =
+    toUnicodeMap.size > 0
+      ? { map: toUnicodeMap, keyLengths: mapKeyLengths(toUnicodeMap) }
+      : null;
 
   // Extract text only from inflated streams; fall back to raw file if none found.
   const textSources = inflatedStreams.length > 0 ? inflatedStreams : [text];
   const lines = [];
   for (const content of textSources) {
-    lines.push(...collectTextFromPdfContent(content, toUnicodeMap));
+    lines.push(...collectTextFromPdfContent(content, fontCMaps, defaultEntry));
   }
 
   return normalizeWhitespace(lines.join("\n"));
