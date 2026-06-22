@@ -294,7 +294,7 @@ function QuestionsTab({ redFlagCount, onUnlock }: TabProps) {
       <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-4 py-3">
         <p className="text-sm font-semibold text-[var(--pt-ink)]">Questions to raise with the other party</p>
         <p className="mt-1 text-sm text-[var(--pt-muted)]">
-          {questionCount} questions generated from your contract&apos;s risk areas. Unlock to see them in full — copy and send directly, or use the negotiation email draft.
+          Before you sign, bring these questions to the other party — the contractor, company, or individual offering this agreement. You can ask them in a call or use the email draft below to send them in writing.
         </p>
       </article>
 
