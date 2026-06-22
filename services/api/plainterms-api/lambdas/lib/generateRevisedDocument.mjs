@@ -171,6 +171,7 @@ export async function generateRevisedDocumentWithLlm({
   clauseBreakdown,
   creatorContract = false,
   renovationContract = false,
+  model = null,
 }) {
   const sourceText = trim(extractedText, MAX_SOURCE_CHARS);
   if (!sourceText) {
@@ -181,6 +182,8 @@ export async function generateRevisedDocumentWithLlm({
   if (!llm?.apiKey) {
     throw new Error("LLM API key is not configured for revision generation.");
   }
+  // Caller may pin a tier-appropriate model; otherwise use the deployed default.
+  const revisionModel = typeof model === "string" && model.trim() ? model.trim() : llm.model;
 
   const flags = asArray(redFlags)
     .map((item) => ({
@@ -216,7 +219,7 @@ export async function generateRevisedDocumentWithLlm({
       authorization: `Bearer ${llm.apiKey}`,
     },
     body: JSON.stringify({
-      model: llm.model,
+      model: revisionModel,
       temperature: 0.2,
       response_format: { type: "json_object" },
       messages: [
@@ -256,6 +259,6 @@ export async function generateRevisedDocumentWithLlm({
       summary ||
       "Updated language to reduce legal ambiguity and align high-risk clauses with clearer, balanced terms.",
     changes,
-    model: llm.model,
+    model: revisionModel,
   };
 }

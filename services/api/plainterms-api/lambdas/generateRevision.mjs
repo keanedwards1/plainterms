@@ -3,6 +3,14 @@ import { generateRevisedDocumentWithLlm } from "./lib/generateRevisedDocument.mj
 
 const db = new DynamoDBClient({});
 
+// The document rewrite only runs for Report/Protect (Core has no document tab).
+// Match the paid-analysis models so the rewrite quality lines up with the tier.
+// Flip to "gpt-5.2" here if gpt-5.5 stops being cost-effective.
+const REWRITE_MODEL_BY_TIER = {
+  report_69: "gpt-5.5",
+  protect_99: "gpt-5.5",
+};
+
 function parseJsonField(item, key) {
   const raw = item?.[key]?.S;
   if (typeof raw !== "string" || !raw.trim()) return null;
@@ -89,6 +97,7 @@ export const handler = async (event) => {
       clauseBreakdown: uiResult?.report?.clause_breakdown ?? [],
       creatorContract: uiResult?.report?.creator_contract === true,
       renovationContract: uiResult?.report?.renovation_contract === true,
+      model: REWRITE_MODEL_BY_TIER[uiResult?.report?.tier],
     });
 
     const readyResult = withRevision(uiResult, {

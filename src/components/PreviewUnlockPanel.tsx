@@ -192,6 +192,9 @@ function SummaryTab({ risk, redFlagCount, clauseCounts, onUnlock }: TabProps) {
   return (
     <div className="space-y-3">
       <QuickReadout riskScore={risk.score} recommendationLabel={rec.text} flagsFound={redFlagCount} />
+      <p className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs leading-5 text-[var(--pt-muted)]">
+        This is your free estimate. The paid report is a deeper review and may refine this score.
+      </p>
       <ContractHealthSnapshot riskScore={risk.score} clearClauseCount={clauseCounts.present} totalClauseCount={clauseCounts.total} />
       <LockedSummarySection title="Top Next Steps" onUnlock={onUnlock}>
         <PlaceholderList rows={3} />

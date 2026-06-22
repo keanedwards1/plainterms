@@ -689,32 +689,39 @@ function makePtV1({ resultId, createdAt, payload, extraction, analysis, report, 
   };
 }
 
-function resolveFinalAnalysisSelection(analysisSelection, reportTier) {
-  // Hard cap from deployment config. When ANALYSIS_MODE is not "llm", analysis never
-  // escalates to a paid LLM call — regardless of client input, tier, or A/B assignment.
-  // The free preview computes the score and the paid report reuses that exact result,
-  // so this both prevents LLM spend on unpaid traffic and keeps preview/paid scores identical.
-  const serverMode = String(process.env.ANALYSIS_MODE ?? "rules").trim().toLowerCase();
-  if (serverMode !== "llm") {
-    return { analysisMode: "rules", llmModel: null, abVariant: "rules_locked" };
-  }
+// Per-tier model for the PAID analysis. Free previews never use these — they
+// run the deterministic rules engine. Flip Report/Protect to "gpt-5.2" here if
+// gpt-5.5 ever stops being cost-effective; this is the single source of truth.
+const PAID_ANALYSIS_MODEL_BY_TIER = {
+  scan_39: "gpt-5.2",
+  report_69: "gpt-5.5",
+  protect_99: "gpt-5.5",
+};
 
+function resolveFinalAnalysisSelection(analysisSelection, reportTier, { paidAnalysis = false } = {}) {
   // Explicit llm override from internal settings — respect it for manual testing.
   if (analysisSelection.analysisMode === "llm" && analysisSelection.llmModel) {
     return { analysisMode: "llm", llmModel: analysisSelection.llmModel, abVariant: "override" };
   }
 
-  // Protect tier always uses gpt-5.5, no A/B test.
-  if (reportTier === "protect_99") {
-    return { analysisMode: "llm", llmModel: "gpt-5.5", abVariant: "protect" };
+  // Free preview = the "free estimate". It always runs the rules engine, never a
+  // paid LLM call — this protects against LLM spend on unpaid/abusive traffic.
+  // The paid report re-analyzes with a real model (below), so the buyer's score
+  // may differ from the free estimate; that's surfaced in the UI copy.
+  if (!paidAnalysis) {
+    return { analysisMode: "rules", llmModel: null, abVariant: "preview_rules" };
   }
 
-  // Core and Report tiers: 50/50 between rules (variant_a) and gpt-5.2 (variant_b).
-  const abVariant = Math.random() < 0.5 ? "a_rules" : "b_gpt52";
-  if (abVariant === "b_gpt52") {
-    return { analysisMode: "llm", llmModel: "gpt-5.2", abVariant };
+  // Emergency kill switch: PAID_ANALYSIS_MODE=rules forces paid reports back to
+  // the rules engine (e.g. if LLM costs spike). Defaults to llm.
+  const paidMode = String(process.env.PAID_ANALYSIS_MODE ?? "llm").trim().toLowerCase();
+  if (paidMode === "rules") {
+    return { analysisMode: "rules", llmModel: null, abVariant: "paid_rules_locked" };
   }
-  return { analysisMode: "rules", llmModel: null, abVariant };
+
+  // Paid analysis: pick the best model for the purchased tier.
+  const model = PAID_ANALYSIS_MODEL_BY_TIER[reportTier] ?? PAID_ANALYSIS_MODEL_BY_TIER.report_69;
+  return { analysisMode: "llm", llmModel: model, abVariant: `paid_${reportTier}` };
 }
 
 export async function runAnalysis(payload, analysisSelection = {}, addonSelection = {}, runOptions = {}) {
@@ -749,7 +756,12 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   const expiresAtEpoch = Math.floor(Date.now() / 1000) + getRetentionDays() * 24 * 60 * 60;
 
   const selectedTier = normalizeReportTier(analysisSelection?.reportTier);
-  const finalSelection = resolveFinalAnalysisSelection(analysisSelection, selectedTier);
+  // The free preview defers paid artifacts; a paid run does not. Use that to
+  // decide whether this analysis may use a paid LLM model.
+  const isPaidAnalysis = runOptions.paidAnalysis === true || runOptions.deferPaidArtifacts !== true;
+  const finalSelection = resolveFinalAnalysisSelection(analysisSelection, selectedTier, {
+    paidAnalysis: isPaidAnalysis,
+  });
 
   const bucket = process.env.UPLOAD_BUCKET;
   const extraction = await extractDocumentTextFromUpload({
