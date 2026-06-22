@@ -35,6 +35,11 @@ type PreviewResult = {
     missing: number;
     total: number;
   };
+  teaser?: {
+    top_next_step: string | null;
+    next_step_count: number;
+    red_flag_titles: string[];
+  };
   locked: {
     red_flags: number;
     clause_breakdown: number;
@@ -170,6 +175,7 @@ export default async function PreviewPage({ params, searchParams }: Props) {
           risk={data.risk}
           redFlagCount={data.red_flag_count}
           clauseCounts={data.clause_counts}
+          teaser={data.teaser}
         />
 
       </div>

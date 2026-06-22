@@ -128,6 +128,21 @@ function buildPreviewResult(uiResult, abVariant) {
   const unclearClauseCount = clauses.filter((clause) => clause?.status === "unclear").length;
   const presentClauseCount = clauses.filter((clause) => clause?.status === "present").length;
 
+  // Free teaser: one real next step (rest locked) + the top red-flag titles
+  // (names only — explanations and fixes stay paid).
+  const bullets = report?.negotiation_bullets ?? {};
+  const allNextSteps = [
+    ...asArray(bullets.high),
+    ...asArray(bullets.medium),
+    ...asArray(bullets.low),
+  ].filter((step) => typeof step === "string" && step.trim());
+  const severityRank = { high: 0, medium: 1, low: 2 };
+  const topFlagTitles = [...flags]
+    .sort((a, b) => (severityRank[a?.severity] ?? 3) - (severityRank[b?.severity] ?? 3))
+    .map((flag) => flag?.title)
+    .filter((title) => typeof title === "string" && title.trim())
+    .slice(0, 3);
+
   return {
     schema_version: "pt.preview.v1",
     result_id: uiResult?.result_id,
@@ -157,6 +172,11 @@ function buildPreviewResult(uiResult, abVariant) {
       unclear: unclearClauseCount,
       missing: missingClauseCount,
       total: clauses.length,
+    },
+    teaser: {
+      top_next_step: allNextSteps[0] ?? null,
+      next_step_count: allNextSteps.length,
+      red_flag_titles: topFlagTitles,
     },
     locked: {
       red_flags: redFlagCount,

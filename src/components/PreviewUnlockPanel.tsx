@@ -19,6 +19,7 @@ type PreviewUnlockPanelProps = {
   risk: { score: number; label: RiskLabel };
   redFlagCount: number;
   clauseCounts: { present: number; unclear: number; missing: number; total: number };
+  teaser?: { top_next_step: string | null; next_step_count: number; red_flag_titles: string[] };
 };
 
 type CheckoutResponse = {
@@ -184,11 +185,15 @@ type TabProps = {
   risk: { score: number; label: RiskLabel };
   redFlagCount: number;
   clauseCounts: { present: number; unclear: number; missing: number; total: number };
+  teaser?: { top_next_step: string | null; next_step_count: number; red_flag_titles: string[] };
   onUnlock: () => void;
 };
 
-function SummaryTab({ risk, redFlagCount, clauseCounts, onUnlock }: TabProps) {
+function SummaryTab({ risk, redFlagCount, clauseCounts, teaser, onUnlock }: TabProps) {
   const rec = deriveRecommendation(risk.label);
+  const topNextStep = teaser?.top_next_step?.trim() || "";
+  const moreNextSteps = Math.max((teaser?.next_step_count ?? 0) - 1, 0);
+  const flagTitles = teaser?.red_flag_titles?.filter((t) => t && t.trim()) ?? [];
   return (
     <div className="space-y-3">
       <QuickReadout riskScore={risk.score} recommendationLabel={rec.text} flagsFound={redFlagCount} />
@@ -196,12 +201,57 @@ function SummaryTab({ risk, redFlagCount, clauseCounts, onUnlock }: TabProps) {
         This is your free estimate. The paid report is a deeper review and may refine this score.
       </p>
       <ContractHealthSnapshot riskScore={risk.score} clearClauseCount={clauseCounts.present} totalClauseCount={clauseCounts.total} />
-      <LockedSummarySection title="Top Next Steps" onUnlock={onUnlock}>
-        <PlaceholderList rows={3} />
-      </LockedSummarySection>
-      <LockedSummarySection title="Top Flags Preview" onUnlock={onUnlock}>
-        <PlaceholderFlagList rows={3} />
-      </LockedSummarySection>
+
+      {/* Free: one real next step, the rest locked */}
+      {topNextStep ? (
+        <article className="rounded-lg border border-[var(--pt-border)] bg-white p-3">
+          <p className="text-sm font-semibold text-[var(--pt-ink)]">Top Next Steps</p>
+          <div className="mt-2 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-[15px] leading-6 text-[var(--pt-ink)]/90">
+            {topNextStep}
+          </div>
+          {moreNextSteps > 0 ? (
+            <button
+              type="button"
+              onClick={onUnlock}
+              className="mt-2 flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-left text-xs font-semibold text-[var(--pt-muted)] transition-colors hover:border-[var(--pt-accent)] hover:text-[var(--pt-ink)]"
+            >
+              <span>+{moreNextSteps} more next step{moreNextSteps === 1 ? "" : "s"} in the full report</span>
+              <span aria-hidden="true">🔒</span>
+            </button>
+          ) : null}
+        </article>
+      ) : (
+        <LockedSummarySection title="Top Next Steps" onUnlock={onUnlock}>
+          <PlaceholderList rows={3} />
+        </LockedSummarySection>
+      )}
+
+      {/* Free: red-flag titles (names only); explanations + fixes stay locked */}
+      {flagTitles.length > 0 ? (
+        <article className="rounded-lg border border-[var(--pt-border)] bg-white p-3">
+          <p className="text-sm font-semibold text-[var(--pt-ink)]">Red flags found</p>
+          <ul className="mt-2 space-y-1.5">
+            {flagTitles.map((title, idx) => (
+              <li key={`flag-title-${idx}`} className="flex items-start gap-2 text-sm text-[var(--pt-ink)]/90">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#e7745c]" />
+                {title}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={onUnlock}
+            className="mt-2 flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-left text-xs font-semibold text-[var(--pt-muted)] transition-colors hover:border-[var(--pt-accent)] hover:text-[var(--pt-ink)]"
+          >
+            <span>Unlock to see why each matters and how to fix it{redFlagCount > flagTitles.length ? `, plus ${redFlagCount - flagTitles.length} more` : ""}</span>
+            <span aria-hidden="true">🔒</span>
+          </button>
+        </article>
+      ) : (
+        <LockedSummarySection title="Top Flags Preview" onUnlock={onUnlock}>
+          <PlaceholderFlagList rows={3} />
+        </LockedSummarySection>
+      )}
     </div>
   );
 }
@@ -397,6 +447,7 @@ export default function PreviewUnlockPanel({
   risk,
   redFlagCount,
   clauseCounts,
+  teaser,
 }: PreviewUnlockPanelProps) {
   const [activeTab, setActiveTab] = useState<PreviewTabKey>("summary");
   const [modalOpen, setModalOpen] = useState(false);
@@ -461,7 +512,7 @@ export default function PreviewUnlockPanel({
     }
   }
 
-  const tabProps: TabProps = { risk, redFlagCount, clauseCounts, onUnlock: openModal };
+  const tabProps: TabProps = { risk, redFlagCount, clauseCounts, teaser, onUnlock: openModal };
 
   return (
     <>
