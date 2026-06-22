@@ -838,6 +838,10 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
       ab_variant: { S: finalSelection.abVariant },
       pt_v1_result: { S: JSON.stringify(ptV1) },
       ui_result: { S: JSON.stringify(uiResult) },
+      // Full, untiered report. Tier filtering is destructive (Core strips
+      // clauses/questions/flags), so upgrades re-tier from this to restore the
+      // complete analysis instead of re-filtering an already-reduced report.
+      full_report: { S: JSON.stringify(reportInsights) },
     },
   });
 

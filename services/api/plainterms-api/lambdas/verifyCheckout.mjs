@@ -215,8 +215,27 @@ async function applyPurchasedTierToStoredResult(resultId, selectedTier) {
   const currentReport = uiResult?.report;
   if (!currentReport) return;
 
+  // Re-tier from the FULL untiered report when available. Tier filtering is
+  // destructive (Core keeps only present clauses, drops questions/bullets/flags),
+  // so re-tiering an already-reduced report on upgrade cannot restore content.
+  // The full report is persisted at analysis time for exactly this reason.
+  let baseReport = currentReport;
+  if (res.Item?.full_report?.S) {
+    try {
+      const parsedFull = JSON.parse(res.Item.full_report.S);
+      if (parsedFull && typeof parsedFull === "object") baseReport = parsedFull;
+    } catch {
+      // Fall back to the stored (possibly reduced) report.
+    }
+  }
+
   const prevTier = currentReport?.tier;
-  const tieredReport = applyTierToReport(currentReport, selectedTier);
+  const tieredReport = applyTierToReport(baseReport, selectedTier);
+  // Carry over a previously generated negotiation email draft (not part of the
+  // untiered base report) so an upgrade doesn't drop it.
+  if (currentReport.negotiation_email_draft && !tieredReport.negotiation_email_draft) {
+    tieredReport.negotiation_email_draft = currentReport.negotiation_email_draft;
+  }
   const nextUiResult = {
     ...uiResult,
     report: tieredReport,
