@@ -296,7 +296,7 @@ export default async function HomePage({
         <footer className="pt-card-soft px-6 py-5 3xl:px-10 3xl:py-7">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="text-sm font-medium text-[var(--pt-muted)] 3xl:text-base">
-              Informational analysis, not legal advice. Always consult a lawyer for high-stakes decisions.
+              Informational analysis, not legal advice.
             </p>
             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--pt-muted)]">
               <Link
