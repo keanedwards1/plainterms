@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "feedback": "node scripts/feedback-dashboard.mjs",
     "smoke:funnel": "node scripts/smoke-funnel.mjs",
     "stripe:sandbox": "node scripts/deploy-stripe-mode.mjs sandbox",
     "stripe:live": "node scripts/deploy-stripe-mode.mjs live",
