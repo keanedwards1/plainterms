@@ -1849,12 +1849,72 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
 
               {activeReportTab === "document" && (
                 isCoreTier ? (
-                  <LockedDisclosure
-                    title="Document review"
-                    meta={REPORT_TIER_NAMES.report_69}
-                    description="Open the contract text with risk areas highlighted and suggested wording changes where available."
-                    onOpen={() => openUpgradePrompt(documentReviewPrompt)}
-                  />
+                  <>
+                    {/* Real file toolbar; Track Changes / Revised are locked */}
+                    <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-[var(--pt-ink)]" title={fileName}>{fileName}</p>
+                          <p className="text-xs text-[var(--pt-muted)]">{documentWordCount} words · {documentContentType}</p>
+                        </div>
+                        <div className="flex items-center rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-[3px]">
+                          <span className="rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-[var(--pt-ink)] shadow-sm">Original</span>
+                          {["Track Changes", "Revised"].map((label) => (
+                            <button
+                              key={label}
+                              type="button"
+                              onClick={() => openUpgradePrompt(documentReviewPrompt)}
+                              className="flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+                            >
+                              <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3 w-3"><path d="M5 7V5.2a3 3 0 0 1 6 0V7m-7 0h8v6H4z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </article>
+
+                    {/* The user's real contract, faded at the bottom */}
+                    {extractedDocumentText ? (
+                      <article className="relative overflow-hidden rounded-lg border border-[var(--pt-border)] shadow-sm">
+                        <div className="max-h-[340px] overflow-hidden bg-[#f0ede8] px-3 py-6 sm:px-10">
+                          <div
+                            className="mx-auto max-w-[680px] rounded-sm bg-white px-8 py-10 text-[15px] leading-[1.85] tracking-[0.003em] text-[#252830] shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] whitespace-pre-wrap select-text"
+                            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                          >
+                            {displayDocumentText}
+                          </div>
+                        </div>
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#f0ede8] to-transparent" />
+                      </article>
+                    ) : null}
+
+                    {/* Concrete example of what the upgrade adds */}
+                    <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-[var(--pt-ink)]">What Report &amp; Protect add</p>
+                        <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Example</span>
+                      </div>
+                      <p className="mt-1 text-xs text-[var(--pt-muted)]">Every risky clause rewritten in plain, balanced language — shown as tracked changes and a clean revised draft you can copy and send.</p>
+                      <div className="mt-3 grid gap-1.5 text-[13px] sm:grid-cols-2">
+                        <div className="rounded-md border border-[#f5c6c0] bg-[#fff0ee] px-2.5 py-2">
+                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
+                          <p className="text-[#7f2e1f]">Any changes requested by Owner will be billed at Contractor&apos;s discretion with no prior written approval required.</p>
+                        </div>
+                        <div className="rounded-md border border-[#a8ddd0] bg-[#edf8f5] px-2.5 py-2">
+                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
+                          <p className="text-[#165a52]">No change order is binding unless it is in writing and signed by the Owner before the work begins, stating the added scope, price, and schedule impact.</p>
+                        </div>
+                      </div>
+                    </article>
+
+                    <LockedDisclosure
+                      title="Unlock Track Changes & a revised draft"
+                      meta={REPORT_TIER_NAMES.report_69}
+                      description="See every risky clause in your contract rewritten, with a clean revised version you can copy and send."
+                      onOpen={() => openUpgradePrompt(documentReviewPrompt)}
+                    />
+                  </>
                 ) : documentReviewContent
               )}
 

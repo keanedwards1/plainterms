@@ -384,6 +384,25 @@ function QuestionsTab({ redFlagCount, onUnlock }: TabProps) {
 function DocumentTab({ clauseCounts, redFlagCount, onUnlock }: TabProps) {
   return (
     <div className="space-y-3">
+      {/* Visible example of the rewrite — the strongest part of the report */}
+      <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-[var(--pt-ink)]">Your contract, rewritten</p>
+          <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Example</span>
+        </div>
+        <p className="mt-1 text-xs text-[var(--pt-muted)]">The full report rewrites every risky clause in plain, balanced language — shown as tracked changes and a clean revised draft you can copy and send.</p>
+        <div className="mt-3 grid gap-1.5 text-[13px] sm:grid-cols-2">
+          <div className="rounded-md border border-[#f5c6c0] bg-[#fff0ee] px-2.5 py-2">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
+            <p className="text-[#7f2e1f]">Any changes requested by Owner will be billed at Contractor&apos;s discretion with no prior written approval required.</p>
+          </div>
+          <div className="rounded-md border border-[#a8ddd0] bg-[#edf8f5] px-2.5 py-2">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
+            <p className="text-[#165a52]">No change order is binding unless it is in writing and signed by the Owner before the work begins, stating the added scope, price, and schedule impact.</p>
+          </div>
+        </div>
+      </article>
+
       <LockedSummarySection title="Document review" onUnlock={onUnlock}>
         {/* Mirrors the real document tab: file toolbar + segmented control + document text */}
         <div className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
