@@ -25,6 +25,41 @@ function normalizeWhitespace(text) {
   return text.replace(/\s+/g, " ").trim();
 }
 
+const NAMED_HTML_ENTITIES = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&apos;": "'",
+  "&nbsp;": " ",
+  "&ldquo;": "“",
+  "&rdquo;": "”",
+  "&lsquo;": "‘",
+  "&rsquo;": "’",
+  "&ndash;": "–",
+  "&mdash;": "—",
+  "&hellip;": "…",
+};
+
+// Some documents (DOCX XML, web-exported PDFs) carry XML/HTML-escaped characters
+// in their text. Decode the common ones so extracted text reads naturally.
+function decodeHtmlEntities(value) {
+  if (typeof value !== "string" || !value.includes("&")) return value;
+  return value
+    .replace(
+      /&(?:amp|lt|gt|quot|apos|nbsp|ldquo|rdquo|lsquo|rsquo|ndash|mdash|hellip);/g,
+      (match) => NAMED_HTML_ENTITIES[match] ?? match
+    )
+    .replace(/&#(\d+);/g, (match, dec) => {
+      const code = Number(dec);
+      return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+    })
+    .replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => {
+      const code = parseInt(hex, 16);
+      return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+    });
+}
+
 function decodePdfString(raw) {
   // Decode common PDF escapes: \( \) \\ \n \r \t \b \f and octal like \123
   return raw
@@ -505,7 +540,7 @@ export async function extractDocumentTextFromUpload(
     notes.push(`extract_error:${err instanceof Error ? err.message : String(err)}`);
   }
 
-  const normalized = normalizeWhitespace(text);
+  const normalized = normalizeWhitespace(decodeHtmlEntities(text));
   if (!normalized) {
     notes.push("no_text_extracted");
   }

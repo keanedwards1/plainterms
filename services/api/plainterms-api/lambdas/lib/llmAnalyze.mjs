@@ -144,7 +144,6 @@ export async function analyzeExtractedTextWithLlm({
     },
     body: JSON.stringify({
       model: llm.model,
-      temperature: 0,
       response_format: { type: "json_object" },
       messages: [
         {

@@ -220,7 +220,6 @@ export async function generateRevisedDocumentWithLlm({
     },
     body: JSON.stringify({
       model: revisionModel,
-      temperature: 0.2,
       response_format: { type: "json_object" },
       messages: [
         {

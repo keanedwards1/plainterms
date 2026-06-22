@@ -113,7 +113,6 @@ export async function generateNegotiationEmailDraftWithLlm({ report, tier, analy
     },
     body: JSON.stringify({
       model: llm.model,
-      temperature: 0.35,
       response_format: { type: "json_object" },
       messages: [
         {
