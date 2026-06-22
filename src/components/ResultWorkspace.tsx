@@ -134,7 +134,7 @@ const LEGAL_DISCLAIMER_FOOTER = (
     <p className="mb-1 font-semibold uppercase tracking-wide text-[var(--pt-ink)]" style={{ fontSize: "11px" }}>
       Not legal advice
     </p>
-    This report is information to help you understand your contract — not legal advice. For anything high-stakes, have a lawyer review it before you sign.
+    This report is information to help you understand your contract — not legal advice.
   </div>
 );
 
