@@ -271,6 +271,20 @@ function normalizeDocText(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
 
+// Re-inserts paragraph breaks into the whitespace-collapsed extracted text so
+// the Original and Track Changes views read with the spacing of the Revised
+// view. It only INSERTS whitespace (never removes characters), so tracked-change
+// matching — which treats runs of whitespace flexibly — stays aligned.
+function formatDocumentText(value: string): string {
+  if (!value) return value;
+  return value
+    // Break before numbered section headings, e.g. "… Agreement. 2. Contract Price …".
+    .replace(/([^\d,])\s+(\d{1,2}\.\s+[A-Z][a-z])/g, "$1\n\n$2")
+    // Break before a signature block heading.
+    .replace(/\s+(Signed,|Signatures\b)/g, "\n\n$1")
+    .trim();
+}
+
 function pickMatchingTarget(sourceText: string, candidates: string[]) {
   const normalizedSource = sourceText.toLowerCase();
   for (const candidate of candidates) {
@@ -619,6 +633,11 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   );
   const fileName = data.document?.file_name ?? "Contract document";
   const extractedDocumentText = data.document?.extracted_text?.trim() ?? "";
+  // Spacing-restored copy used for the Original and Track Changes views.
+  const displayDocumentText = useMemo(
+    () => formatDocumentText(extractedDocumentText),
+    [extractedDocumentText]
+  );
   const effectiveDocumentRevision = documentRevision ?? data.document?.revision;
   const revisionChanges = useMemo(
     () => (Array.isArray(effectiveDocumentRevision?.changes) ? effectiveDocumentRevision.changes : []),
@@ -632,8 +651,8 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   const isRevisionProcessing = effectiveDocumentRevision?.status === "processing";
   const baseDocumentAnnotations = useMemo(() => buildDocumentAnnotations(data), [data]);
   const trackedDiffs = useMemo(
-    () => buildTrackedDiffs(extractedDocumentText, revisionChanges),
-    [extractedDocumentText, revisionChanges]
+    () => buildTrackedDiffs(displayDocumentText, revisionChanges),
+    [displayDocumentText, revisionChanges]
   );
   const topDocumentAnnotations = baseDocumentAnnotations.slice(0, 6);
   const documentWordCount =
@@ -1011,10 +1030,10 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 {documentViewMode === "tracked"
-                  ? renderTrackedChanges(extractedDocumentText, trackedDiffs, "tc")
+                  ? renderTrackedChanges(displayDocumentText, trackedDiffs, "tc")
                   : documentViewMode === "revised"
                   ? backendRevisedText
-                  : extractedDocumentText}
+                  : displayDocumentText}
               </div>
             )}
           </div>
@@ -1082,11 +1101,11 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                   <div className="mt-2 grid gap-1.5 text-[13px] sm:grid-cols-2">
                     <div className="rounded-md border border-[#f5c6c0] bg-[#fff0ee] px-2.5 py-2">
                       <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
-                      <p className="text-[#7f2e1f]">{change.before}</p>
+                      <p className="max-h-40 overflow-y-auto text-[#7f2e1f]">{change.before}</p>
                     </div>
                     <div className="rounded-md border border-[#a8ddd0] bg-[#edf8f5] px-2.5 py-2">
                       <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
-                      <p className="text-[#165a52]">{change.after}</p>
+                      <p className="max-h-40 overflow-y-auto text-[#165a52]">{change.after}</p>
                     </div>
                   </div>
                 </li>

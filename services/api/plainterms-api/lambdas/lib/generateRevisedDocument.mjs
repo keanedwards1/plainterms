@@ -29,9 +29,13 @@ function sanitizeChanges(rawChanges) {
   return asArray(rawChanges)
     .map((item) => {
       if (!item || typeof item !== "object") return null;
-      const before = trim(item.before, 240);
-      const after = trim(item.after, 260);
-      const reason = trim(item.reason, 260);
+      // Keep the full excerpt: the UI matches `before` verbatim against the
+      // document to render tracked changes, so truncating it (with an appended
+      // ellipsis) makes longer clauses fail to match and silently drop. The UI
+      // clamps these for display.
+      const before = trim(item.before, 1400);
+      const after = trim(item.after, 1400);
+      const reason = trim(item.reason, 280);
       const severityRaw = trim(item.severity, 32).toLowerCase();
       const severity = ["high", "medium", "low"].includes(severityRaw) ? severityRaw : undefined;
       if (!before || !after || !reason) return null;
