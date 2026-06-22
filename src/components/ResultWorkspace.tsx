@@ -134,6 +134,8 @@ const LEGAL_DISCLAIMER_FOOTER = (
     <p className="mb-1 font-semibold uppercase tracking-wide text-[var(--pt-ink)]" style={{ fontSize: "11px" }}>
       Not legal advice
     </p>
+    {/* Optional softer attorney nod (not legally required; ToS already covers it):
+        "Consider an attorney before you sign." */}
     This report is information to help you understand your contract — not legal advice.
   </div>
 );
