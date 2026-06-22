@@ -165,6 +165,23 @@ type DrilldownPanelProps = {
 };
 
 function DrilldownPanel({ title, meta, open, onToggle, children }: DrilldownPanelProps) {
+  // The expand/collapse animation (grid-template-rows) requires overflow-hidden
+  // to clip cleanly while moving. But that also clips hover tooltips on terms
+  // inside the panel. So we only reapply overflow-visible AFTER the open
+  // animation settles; on close we clip immediately so the collapse looks right.
+  const [overflowVisible, setOverflowVisible] = useState(false);
+  useEffect(() => {
+    if (!open) return undefined;
+    const timer = window.setTimeout(() => setOverflowVisible(true), 320);
+    return () => {
+      window.clearTimeout(timer);
+      setOverflowVisible(false);
+    };
+  }, [open]);
+  // While closed (or mid-animation) we force overflow-hidden so the collapse
+  // clips cleanly; overflow-visible is only allowed once open settles.
+  const overflowClass = open && overflowVisible ? "overflow-visible" : "overflow-hidden";
+
   return (
     <div
       className={`relative shrink-0 rounded-lg border border-[var(--pt-border)] bg-white ${
@@ -197,11 +214,11 @@ function DrilldownPanel({ title, meta, open, onToggle, children }: DrilldownPane
         </span>
       </button>
       <div
-        className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`grid ${overflowClass} transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           open ? "[grid-template-rows:1fr]" : "[grid-template-rows:0fr]"
         }`}
       >
-        <div className="min-h-0 overflow-hidden">
+        <div className={`min-h-0 ${overflowClass}`}>
           <div
             className={`border-t border-[var(--pt-border)] px-3 py-2 transition-opacity duration-200 ease-out ${
               open ? "opacity-100" : "opacity-0"
@@ -1438,7 +1455,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                       <p className="text-base font-semibold text-[var(--pt-ink)]">Interactive Drilldown</p>
                       <span className="text-xs text-[var(--pt-muted)]">Per-tab view, condensed</span>
                     </div>
-                    <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                    <div className="mt-3 space-y-2">
                       <DrilldownPanel
                         title="Summary Insights"
                         meta="Top action"
