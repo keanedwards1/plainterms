@@ -154,8 +154,11 @@ export default async function PreviewPage({ params, searchParams }: Props) {
             href="/analyze"
             className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:text-[var(--pt-ink)]"
           >
-            <span aria-hidden="true" className="inline-block transition-transform duration-200 ease-out group-hover:-translate-x-1">←</span>
-            Analyze another file
+            <span aria-hidden="true">←</span>
+            <span className="relative">
+              Analyze another file
+              <span className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-current transition-transform duration-300 ease-out group-hover:scale-x-100" />
+            </span>
           </Link>
           <div className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3.5 py-1.5 text-xs text-[var(--pt-muted)]">
             <svg className="h-3.5 w-3.5 shrink-0 text-[var(--pt-muted)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
