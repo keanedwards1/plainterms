@@ -129,13 +129,34 @@ export default function HeroBubbles() {
       }
     };
 
+    // Advance one blob's spring physics by a single fixed step (no drawing).
+    const stepBlob = (b: Blob) => {
+      const pts = b.points;
+      const n = pts.length;
+      pts[0].solveWith(pts[n - 1], pts[1]);
+      for (let i = 1; i < n; i++) {
+        pts[i].solveWith(pts[i - 1], pts[i + 1] || pts[0]);
+      }
+    };
+
+    // One fixed physics tick across everything: ambient nudge + spring solve.
+    const step = () => {
+      frame += 1;
+      if (frame % AMBIENT_INTERVAL === 0) {
+        for (const b of blobs) {
+          const p = b.points[(Math.random() * b.points.length) | 0];
+          p.applyAcceleration((Math.random() - 0.5) * AMBIENT);
+        }
+      }
+      for (const b of blobs) stepBlob(b);
+    };
+
+    // Paint the blob's current state (no physics).
     const drawBlob = (b: Blob) => {
       b.cx = W * b.posX;
       b.cy = H * b.posY;
       const pts = b.points;
       const n = pts.length;
-
-      pts[0].solveWith(pts[n - 1], pts[1]);
 
       const p0 = pts[n - 1];
       let p1 = pts[0];
@@ -146,7 +167,6 @@ export default function HeroBubbles() {
       ctx.moveTo((p0.x + p1.x) / 2, (p0.y + p1.y) / 2);
 
       for (let i = 1; i < n; i++) {
-        pts[i].solveWith(pts[i - 1], pts[i + 1] || pts[0]);
         const p2 = pts[i];
         ctx.quadraticCurveTo(p1.x, p1.y, (p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
         p1 = p2;
@@ -158,16 +178,27 @@ export default function HeroBubbles() {
       ctx.stroke();
     };
 
-    const render = () => {
-      // Ambient idle jiggle: nudge a random vertex on each blob now and then so
-      // the surface keeps undulating on its own (no cursor needed).
-      frame += 1;
-      if (frame % AMBIENT_INTERVAL === 0) {
-        for (const b of blobs) {
-          const p = b.points[(Math.random() * b.points.length) | 0];
-          p.applyAcceleration((Math.random() - 0.5) * AMBIENT);
-        }
+    // Fixed-timestep loop. The physics advances by wall-clock elapsed time, so
+    // when the browser starves requestAnimationFrame during a touch-scroll
+    // (RAF runs on the main thread; scrolling is prioritised on the compositor),
+    // we catch up the dropped ticks on the next frame instead of freezing.
+    const STEP_MS = 1000 / 60;
+    const MAX_STEPS = 6; // cap catch-up so a long stall can't lock the frame
+    let last = performance.now();
+    let acc = 0;
+
+    const render = (now: number) => {
+      acc += now - last;
+      last = now;
+      if (acc > STEP_MS * 30) acc = STEP_MS * 30; // drop huge gaps (tab backgrounded)
+
+      let steps = 0;
+      while (acc >= STEP_MS && steps < MAX_STEPS) {
+        step();
+        acc -= STEP_MS;
+        steps += 1;
       }
+      if (steps === MAX_STEPS) acc = 0; // stayed behind — resync rather than spiral
 
       ctx.clearRect(0, 0, W, H);
       ctx.lineWidth = 2;
