@@ -227,6 +227,8 @@ function workerBody() {
     | (OffscreenCanvasRenderingContext2D & { setTransform: CanvasRenderingContext2D["setTransform"] })
     | null = null;
   let running = false;
+  let curW = -1;
+  let curH = -1;
   const STEP_MS = 1000 / 60;
   const MAX_STEPS = 6;
   let last = 0;
@@ -238,8 +240,16 @@ function workerBody() {
 
   const applySize = (w: number, h: number, dpr: number) => {
     if (!canvas || !ctx || !engine) return;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
+    const bw = Math.round(w * dpr);
+    const bh = Math.round(h * dpr);
+    // Mobile scroll fires resize (URL bar show/hide). Reassigning canvas.width
+    // clears + reallocates the bitmap every time, which flickers mid-animation.
+    // Only touch the backing store when the pixel dimensions actually change.
+    if (bw === curW && bh === curH) return;
+    curW = bw;
+    curH = bh;
+    canvas.width = bw;
+    canvas.height = bh;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     engine.setSize(w, h);
   };
@@ -398,7 +408,16 @@ export default function HeroBubbles() {
       };
     };
 
-    // ----- Preferred path: render in a Worker via OffscreenCanvas. ---------
+    // Desktop (fine pointer) always renders on the main thread — it needs the
+    // cursor-poke interaction, which only the main-thread path wires up, and it
+    // has no touch-scroll contention to avoid. The worker path is reserved for
+    // touch devices, where it buys scroll smoothness and interaction is moot.
+    const coarse = window.matchMedia("(hover: none), (pointer: coarse)");
+    if (!coarse.matches) {
+      return startMainThread();
+    }
+
+    // ----- Touch path: render in a Worker via OffscreenCanvas. -------------
     // Keeps the per-frame paint off the main thread, so scrolling (even with a
     // finger held down) never contends with the animation — smooth on mobile.
     //
@@ -423,6 +442,7 @@ export default function HeroBubbles() {
     let url = "";
     let onResize: (() => void) | null = null;
     let mainCleanup: (() => void) | null = null;
+    let resizeDebounce = 0;
     let settled = false; // handshake resolved (either way) — don't double-handle
 
     const fallBackToMainThread = () => {
@@ -463,9 +483,15 @@ export default function HeroBubbles() {
           { type: "init", canvas: offscreen, w, h, dpr, color: orange, cfg },
           [offscreen as unknown as Transferable],
         );
+        // Debounced: mobile scroll toggles the URL bar, which fires a stream of
+        // resize events (viewport height changes). Only push the final size
+        // once it settles, so we don't reallocate the worker canvas mid-scroll.
         onResize = () => {
-          const m = measure();
-          worker?.postMessage({ type: "resize", w: m.w, h: m.h, dpr: m.dpr });
+          window.clearTimeout(resizeDebounce);
+          resizeDebounce = window.setTimeout(() => {
+            const m = measure();
+            worker?.postMessage({ type: "resize", w: m.w, h: m.h, dpr: m.dpr });
+          }, 200);
         };
         window.addEventListener("resize", onResize);
       };
@@ -476,6 +502,7 @@ export default function HeroBubbles() {
 
       return () => {
         clearTimer();
+        window.clearTimeout(resizeDebounce);
         settled = true;
         if (onResize) window.removeEventListener("resize", onResize);
         if (worker) worker.terminate();
