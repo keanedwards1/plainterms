@@ -279,6 +279,10 @@ function workerBody() {
       applySize(d.w, d.h, d.dpr);
     }
   };
+
+  // Handshake: signal we're alive so the main thread only transfers the canvas
+  // (an irreversible op) once it knows the worker script actually ran.
+  (self as unknown as Worker).postMessage({ type: "ready" });
 }
 
 export default function HeroBubbles() {
@@ -339,108 +343,152 @@ export default function HeroBubbles() {
       return () => window.removeEventListener("resize", onResize);
     }
 
+    // ----- Main-thread animated loop. --------------------------------------
+    // Used directly on desktop, and as the fallback whenever the worker path
+    // isn't available (no OffscreenCanvas, or a CSP that blocks blob workers).
+    // Returns its own cleanup fn.
+    const startMainThread = (): (() => void) => {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return () => {};
+      const engine = createEngine(ctx, orange, cfg);
+
+      const applySize = () => {
+        const { w, h, dpr } = measure();
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        engine.setSize(w, h);
+      };
+      applySize();
+
+      const STEP_MS = 1000 / 60;
+      const MAX_STEPS = 6;
+      let last = performance.now();
+      let acc = 0;
+      let raf = 0;
+
+      const render = (now: number) => {
+        acc += now - last;
+        last = now;
+        if (acc > STEP_MS * 30) acc = STEP_MS * 30;
+        let steps = 0;
+        while (acc >= STEP_MS && steps < MAX_STEPS) {
+          engine.step();
+          acc -= STEP_MS;
+          steps += 1;
+        }
+        if (steps === MAX_STEPS) acc = 0;
+        engine.draw();
+        raf = requestAnimationFrame(render);
+      };
+
+      const onMove = (e: PointerEvent) => {
+        const rect = canvas.getBoundingClientRect();
+        engine.poke(e.clientX - rect.left, e.clientY - rect.top, e.clientX, e.clientY);
+      };
+
+      raf = requestAnimationFrame(render);
+      window.addEventListener("resize", applySize);
+      window.addEventListener("pointermove", onMove, { passive: true });
+
+      return () => {
+        cancelAnimationFrame(raf);
+        window.removeEventListener("resize", applySize);
+        window.removeEventListener("pointermove", onMove);
+      };
+    };
+
     // ----- Preferred path: render in a Worker via OffscreenCanvas. ---------
     // Keeps the per-frame paint off the main thread, so scrolling (even with a
-    // finger held down) never contends with the animation. This is what makes
-    // it smooth on mobile.
+    // finger held down) never contends with the animation — smooth on mobile.
+    //
+    // Two failure modes we must survive without a blank hero:
+    //   1. No OffscreenCanvas support (older iOS).
+    //   2. A CSP that blocks the blob-URL worker (fails ASYNChronously via
+    //      onerror, not a throw).
+    // Because transferControlToOffscreen() permanently detaches the canvas, we
+    // must confirm the worker is alive BEFORE transferring. So we probe with a
+    // handshake: the worker posts "ready"; only then do we transfer + init.
     const canOffscreen =
       typeof (canvas as HTMLCanvasElement & {
         transferControlToOffscreen?: () => OffscreenCanvas;
       }).transferControlToOffscreen === "function" &&
       typeof Worker !== "undefined";
 
-    if (canOffscreen) {
-      try {
-        // Assemble the worker as a self-contained script: the engine factory,
-        // then the worker bootstrap that calls it.
-        const workerSource = `
-          self.__createEngine = ${createEngine.toString()};
-          (${workerBody.toString()})();
-        `;
-        const url = URL.createObjectURL(
-          new Blob([workerSource], { type: "application/javascript" }),
-        );
-        const worker = new Worker(url);
+    if (!canOffscreen) {
+      return startMainThread();
+    }
 
+    let worker: Worker | null = null;
+    let url = "";
+    let onResize: (() => void) | null = null;
+    let mainCleanup: (() => void) | null = null;
+    let settled = false; // handshake resolved (either way) — don't double-handle
+
+    const fallBackToMainThread = () => {
+      if (settled) return;
+      settled = true;
+      if (worker) {
+        worker.terminate();
+        worker = null;
+      }
+      if (url) URL.revokeObjectURL(url);
+      mainCleanup = startMainThread();
+    };
+
+    try {
+      const workerSource = `
+        self.__createEngine = ${createEngine.toString()};
+        (${workerBody.toString()})();
+      `;
+      url = URL.createObjectURL(
+        new Blob([workerSource], { type: "application/javascript" }),
+      );
+      worker = new Worker(url);
+
+      // If the worker script is blocked (CSP) or throws, this fires — fall back.
+      worker.onerror = () => fallBackToMainThread();
+
+      worker.onmessage = (e: MessageEvent) => {
+        if (settled) return;
+        if (e.data?.type !== "ready" || !worker) return;
+        settled = true;
         const offscreen = (
           canvas as HTMLCanvasElement & {
             transferControlToOffscreen: () => OffscreenCanvas;
           }
         ).transferControlToOffscreen();
-
         const { w, h, dpr } = measure();
         worker.postMessage(
           { type: "init", canvas: offscreen, w, h, dpr, color: orange, cfg },
           [offscreen as unknown as Transferable],
         );
-
-        // On resize we can't re-transfer the canvas; instead the worker owns it
-        // and we just tell it the new size. (Worker reads its own canvas ref.)
-        const onResize = () => {
+        onResize = () => {
           const m = measure();
-          worker.postMessage({ type: "resize", w: m.w, h: m.h, dpr: m.dpr });
+          worker?.postMessage({ type: "resize", w: m.w, h: m.h, dpr: m.dpr });
         };
         window.addEventListener("resize", onResize);
+      };
 
-        return () => {
-          window.removeEventListener("resize", onResize);
-          worker.terminate();
-          URL.revokeObjectURL(url);
-        };
-      } catch {
-        // Fall through to the main-thread path below.
-      }
+      // Safety net: if no handshake arrives shortly (silent failure), fall back.
+      const handshakeTimer = window.setTimeout(fallBackToMainThread, 1500);
+      const clearTimer = () => window.clearTimeout(handshakeTimer);
+
+      return () => {
+        clearTimer();
+        settled = true;
+        if (onResize) window.removeEventListener("resize", onResize);
+        if (worker) worker.terminate();
+        if (url) URL.revokeObjectURL(url);
+        if (mainCleanup) mainCleanup();
+      };
+    } catch {
+      fallBackToMainThread();
+      return () => {
+        if (onResize) window.removeEventListener("resize", onResize);
+        if (mainCleanup) mainCleanup();
+      };
     }
-
-    // ----- Fallback: main-thread animated loop (older browsers). -----------
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const engine = createEngine(ctx, orange, cfg);
-
-    const applySize = () => {
-      const { w, h, dpr } = measure();
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      engine.setSize(w, h);
-    };
-    applySize();
-
-    const STEP_MS = 1000 / 60;
-    const MAX_STEPS = 6;
-    let last = performance.now();
-    let acc = 0;
-    let raf = 0;
-
-    const render = (now: number) => {
-      acc += now - last;
-      last = now;
-      if (acc > STEP_MS * 30) acc = STEP_MS * 30;
-      let steps = 0;
-      while (acc >= STEP_MS && steps < MAX_STEPS) {
-        engine.step();
-        acc -= STEP_MS;
-        steps += 1;
-      }
-      if (steps === MAX_STEPS) acc = 0;
-      engine.draw();
-      raf = requestAnimationFrame(render);
-    };
-
-    const onMove = (e: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      engine.poke(e.clientX - rect.left, e.clientY - rect.top, e.clientX, e.clientY);
-    };
-
-    raf = requestAnimationFrame(render);
-    window.addEventListener("resize", applySize);
-    window.addEventListener("pointermove", onMove, { passive: true });
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", applySize);
-      window.removeEventListener("pointermove", onMove);
-    };
   }, []);
 
   return (

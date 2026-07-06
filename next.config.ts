@@ -37,6 +37,8 @@ const securityHeaders = [
       "frame-ancestors 'none'",
       "object-src 'none'",
       `script-src 'self' 'unsafe-inline' ${devScriptSrc}${vercelLiveSrc}https://js.stripe.com https://checkout.stripe.com https://www.googletagmanager.com https://*.clarity.ms https://connect.facebook.net`,
+      // Hero blob animation runs in a Blob-URL Web Worker (OffscreenCanvas).
+      "worker-src 'self' blob:",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https: https://www.google-analytics.com",
       "font-src 'self' data: https://fonts.gstatic.com",
