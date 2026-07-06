@@ -4,10 +4,14 @@ import { useState } from "react";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import UpgradeModal, { type CheckoutProcessing } from "@/components/UpgradeModal";
 import {
+  REPORT_TIER_OPTIONS,
   REPORT_TIER_PRICES,
   DEFAULT_REPORT_TIER,
   type ReportTierOption,
 } from "@/lib/pricingOptions";
+
+// Tiers are ordered cheapest-first; the "from" price is the floor.
+const FROM_PRICE = REPORT_TIER_PRICES[REPORT_TIER_OPTIONS[0]];
 
 type RiskLabel = "low" | "medium" | "high";
 
@@ -234,14 +238,14 @@ export default function PreviewUnlockPanel({
         {/* Findings: flags + next steps side by side on desktop */}
         <div className="grid gap-6 lg:grid-cols-2">
           {flagTitles.length > 0 ? (
-            <section className="pt-card p-6 sm:p-7">
+            <section className="pt-card flex h-full flex-col p-6 sm:p-7">
               <h2 className="text-lg font-semibold text-[var(--pt-ink)]">What stood out</h2>
               <p className="mt-1 text-sm text-[var(--pt-muted)]">The issues we spotted in your contract.</p>
-              <ul className="mt-5 space-y-3">
+              <ul className="mt-5 divide-y divide-[var(--pt-border)]">
                 {flagTitles.map((title, idx) => (
-                  <li key={`flag-${idx}`} className="flex items-start gap-3">
+                  <li key={`flag-${idx}`} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                     <span
-                      className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                      className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
                       style={{ backgroundColor: meta.chipBg, color: meta.chipText }}
                     >
                       !
@@ -254,12 +258,12 @@ export default function PreviewUnlockPanel({
           ) : null}
 
           {nextSteps.length > 0 ? (
-            <section className="pt-card p-6 sm:p-7">
+            <section className="pt-card flex h-full flex-col p-6 sm:p-7">
               <h2 className="text-lg font-semibold text-[var(--pt-ink)]">Where to start</h2>
               <p className="mt-1 text-sm text-[var(--pt-muted)]">A few priority moves for this contract, in plain terms.</p>
-              <ol className="mt-5 space-y-3">
+              <ol className="mt-5 divide-y divide-[var(--pt-border)]">
                 {nextSteps.map((step, idx) => (
-                  <li key={`step-${idx}`} className="flex items-start gap-3">
+                  <li key={`step-${idx}`} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                     <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0071e3] text-xs font-bold text-white">
                       {idx + 1}
                     </span>
@@ -290,7 +294,7 @@ export default function PreviewUnlockPanel({
             onClick={openModal}
             className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[#0071e3] px-8 py-3.5 text-base font-semibold text-white transition-transform hover:-translate-y-0.5 sm:w-auto"
           >
-            See the changes — from {REPORT_TIER_PRICES[DEFAULT_REPORT_TIER]}
+            See the changes — from {FROM_PRICE}
           </button>
           <p className="mt-4 text-xs text-[#0b3d75]/60">One-time payment · No subscription</p>
         </section>
