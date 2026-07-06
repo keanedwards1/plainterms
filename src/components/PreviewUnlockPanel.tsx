@@ -260,7 +260,7 @@ export default function PreviewUnlockPanel({
               <ol className="mt-5 space-y-3">
                 {nextSteps.map((step, idx) => (
                   <li key={`step-${idx}`} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--pt-teal)] text-xs font-bold text-white">
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0071e3] text-xs font-bold text-white">
                       {idx + 1}
                     </span>
                     <span className="flex-1 text-[15px] leading-6 text-[var(--pt-ink)]">{step}</span>
