@@ -32,6 +32,20 @@ export default function AnalyzePage() {
   const [step, setStep] = React.useState<SubmitStep | null>(null);
   const [checkoutCanceled, setCheckoutCanceled] = React.useState(false);
   const [reviewChoice, setReviewChoice] = React.useState<ReviewChoice>("report_69");
+  const [isDragging, setIsDragging] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const ACCEPTED_EXT = /\.(pdf|docx)$/i;
+
+  function acceptDroppedFile(dropped: File | undefined) {
+    if (!dropped) return;
+    if (!ACCEPTED_EXT.test(dropped.name)) {
+      setError("Please choose a PDF or DOCX file.");
+      return;
+    }
+    setError(null);
+    setFile(dropped);
+  }
 
   const stepOrder = reviewChoice === "free" ? FREE_STEP_ORDER : PAID_STEP_ORDER;
 
@@ -107,21 +121,32 @@ export default function AnalyzePage() {
           </p>
         </div>
 
-        <aside className="rounded-[var(--pt-radius)] border border-[#c8d8e6] bg-[#eaf3fa] p-5 text-sm text-[var(--pt-muted)] shadow-[0_14px_26px_-24px_var(--pt-shadow)] 3xl:p-8">
-          <h2 className="text-lg text-[var(--pt-ink)] 3xl:text-xl">Secure review flow</h2>
-          <ul className="mt-3 space-y-2 3xl:text-base 3xl:space-y-3 3xl:mt-5">
-            <li>• Private upload and validation</li>
-            <li>• Free risk score before checkout</li>
-            <li>• Details unlock only after payment</li>
-            <li>• Informational only, not legal advice</li>
+        <aside className="flex flex-col rounded-[var(--pt-radius)] border border-[#cfe4fb] bg-[#eaf3fe] p-5 text-sm text-[var(--pt-muted)] shadow-[0_14px_26px_-24px_var(--pt-shadow)] 3xl:p-7">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/graphics/icon-shield.svg"
+              alt=""
+              width={44}
+              height={44}
+              className="h-11 w-11 shrink-0 rounded-xl border border-[#cfe4fb] bg-white p-2"
+            />
+            <h2 className="text-lg text-[var(--pt-ink)] 3xl:text-xl">Secure review flow</h2>
+          </div>
+          <ul className="mt-4 space-y-3 3xl:text-base">
+            {[
+              "Private upload and validation",
+              "Free risk score before checkout",
+              "Details unlock only after payment",
+              "Informational only, not legal advice",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2.5">
+                <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#0071e3]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3.5 8.5l3 3 6-7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>{item}</span>
+              </li>
+            ))}
           </ul>
-          <Image
-            src="/graphics/icon-shield.svg"
-            alt=""
-            width={88}
-            height={88}
-            className="mt-4 h-20 w-20 rounded-xl border border-[#c8d8e6] bg-white p-2 3xl:h-24 3xl:w-24 3xl:mt-6"
-          />
         </aside>
       </section>
 
@@ -132,18 +157,56 @@ export default function AnalyzePage() {
             Contract file (PDF or DOCX)
           </label>
 
-          <div className="rounded-2xl border-2 border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-5 3xl:p-8">
-            <input
-              type="file"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-[var(--pt-ink)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--pt-accent)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[var(--pt-accent-ink)] hover:file:brightness-95 3xl:text-base 3xl:file:text-base 3xl:file:px-6 3xl:file:py-3"
-            />
-            {file && (
-              <p className="mt-3 text-sm text-[var(--pt-muted)] 3xl:text-base">
-                Selected: <span className="font-semibold text-[var(--pt-ink)]">{file.name}</span>{" "}
-                ({prettyFileSize(file.size)})
-              </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="sr-only"
+          />
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              acceptDroppedFile(e.dataTransfer.files?.[0]);
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInputRef.current?.click(); } }}
+            className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-colors 3xl:p-8 ${
+              isDragging
+                ? "border-[#0071e3] bg-[#eaf3fe]"
+                : file
+                  ? "border-[#2ba59f] bg-[#edf8f5]"
+                  : "border-[var(--pt-border)] bg-[var(--pt-surface-soft)] hover:border-[var(--pt-accent)]"
+            }`}
+          >
+            {file ? (
+              <div className="flex items-center justify-center gap-3">
+                <svg className="h-9 w-9 shrink-0 text-[#2ba59f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <path d="M6 2h8l4 4v16H6z" strokeLinejoin="round" />
+                  <path d="M14 2v4h4" strokeLinejoin="round" />
+                  <path d="M9 14l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">{file.name}</p>
+                  <p className="text-xs text-[var(--pt-muted)]">{prettyFileSize(file.size)} · click to replace</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <svg className="h-9 w-9 text-[var(--pt-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <path d="M12 15V3m0 0L8 7m4-4l4 4" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <p className="text-sm text-[var(--pt-ink)] 3xl:text-base">
+                  <span className="font-semibold text-[var(--pt-accent)]">Choose a file</span> or drag it here
+                </p>
+                <p className="text-xs text-[var(--pt-muted)]">PDF or DOCX</p>
+              </div>
             )}
           </div>
 
@@ -151,15 +214,15 @@ export default function AnalyzePage() {
             <legend className="mb-3 block text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">
               Choose your review
             </legend>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 pt-2.5 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setReviewChoice("free")}
                 aria-pressed={reviewChoice === "free"}
-                className={`relative rounded-xl border p-4 text-left transition-colors ${
+                className={`relative rounded-xl border p-4 text-left transition-all ${
                   reviewChoice === "free"
-                    ? "border-[#de8f79] bg-[#fff6f1] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
-                    : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
+                    ? "border-[var(--pt-accent)] bg-[#fff6f1] ring-1 ring-[var(--pt-accent)]"
+                    : "border-[var(--pt-border)] bg-white hover:border-[var(--pt-accent)]"
                 }`}
               >
                 <div className="flex items-baseline justify-between gap-2">
@@ -177,14 +240,14 @@ export default function AnalyzePage() {
                   type="button"
                   onClick={() => setReviewChoice(tier)}
                   aria-pressed={reviewChoice === tier}
-                  className={`relative rounded-xl border p-4 text-left transition-colors ${
+                  className={`relative rounded-xl border p-4 text-left transition-all ${
                     reviewChoice === tier
-                      ? "border-[#de8f79] bg-[#fff6f1] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
-                      : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
+                      ? "border-[var(--pt-accent)] bg-[#fff6f1] ring-1 ring-[var(--pt-accent)]"
+                      : "border-[var(--pt-border)] bg-white hover:border-[var(--pt-accent)]"
                   }`}
                 >
                   {tier === "report_69" ? (
-                    <span className="absolute -top-2.5 right-4 rounded-full bg-[#de8f79] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                    <span className="absolute -top-2.5 left-4 rounded-full bg-[var(--pt-accent)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--pt-accent-ink)] shadow-sm">
                       Most popular
                     </span>
                   ) : null}

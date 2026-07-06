@@ -300,7 +300,7 @@ export default function PreviewUnlockPanel({
           >
             See the changes — from {FROM_PRICE}
             <svg
-              className="h-4 w-4 shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-1"
+              className="h-4 w-4 shrink-0 transition-transform duration-500 ease group-hover:translate-x-1"
               viewBox="0 0 16 16"
               fill="none"
               stroke="currentColor"
