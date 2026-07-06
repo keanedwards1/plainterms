@@ -3,10 +3,7 @@
 import { useState } from "react";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import UpgradeModal, { type CheckoutProcessing } from "@/components/UpgradeModal";
-import QuickReadout from "@/components/result/QuickReadout";
-import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
 import {
-  REPORT_TIER_NAMES,
   REPORT_TIER_PRICES,
   DEFAULT_REPORT_TIER,
   type ReportTierOption,
@@ -18,6 +15,7 @@ type PreviewUnlockPanelProps = {
   resultId: string;
   previewAccessKey: string;
   canceled?: boolean;
+  overview?: string;
   risk: { score: number; label: RiskLabel };
   redFlagCount: number;
   clauseCounts: { present: number; unclear: number; missing: number; total: number };
@@ -41,11 +39,32 @@ const CHECKOUT_STEP_DESCRIPTIONS = [
   "Redirecting to encrypted Stripe checkout.",
 ];
 
-function deriveRecommendation(label: RiskLabel): { text: string; reason: string } {
-  if (label === "high") return { text: "Negotiate before signing", reason: "Several terms shift risk toward you. Push on the highest-severity issues first." };
-  if (label === "medium") return { text: "Review key terms", reason: "A few clauses need clarification before you commit." };
-  return { text: "Looks broadly balanced", reason: "No major risk drivers stood out, but confirm the details that matter to you." };
-}
+const RISK_META: Record<RiskLabel, { label: string; note: string; ring: string; text: string; chipBg: string; chipText: string }> = {
+  high: {
+    label: "High risk",
+    note: "Several terms shift risk toward you. Worth negotiating before you sign.",
+    ring: "#e5573c",
+    text: "#b23a22",
+    chipBg: "#fdeae4",
+    chipText: "#a53a22",
+  },
+  medium: {
+    label: "Moderate risk",
+    note: "A few clauses need clarifying before you commit.",
+    ring: "#e0a53a",
+    text: "#9a6f16",
+    chipBg: "#fbf0d6",
+    chipText: "#8a6413",
+  },
+  low: {
+    label: "Low risk",
+    note: "No major risk drivers stood out. Confirm the details that matter to you.",
+    ring: "#24b4ae",
+    text: "#12756f",
+    chipBg: "#d9f2f0",
+    chipText: "#0f6560",
+  },
+};
 
 async function readErrorResponse(res: Response): Promise<string> {
   const contentType = res.headers.get("content-type") ?? "";
@@ -66,12 +85,43 @@ function delay(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+// ─── Score dial ────────────────────────────────────────────────────────────────
+
+function ScoreDial({ score, color }: { score: number; color: string }) {
+  const clamped = Math.max(0, Math.min(100, score));
+  const radius = 52;
+  const circumference = 2 * Math.PI * radius;
+  const dash = (clamped / 100) * circumference;
+  return (
+    <div className="relative h-32 w-32 shrink-0">
+      <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
+        <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--pt-border)" strokeWidth="10" />
+        <circle
+          cx="60"
+          cy="60"
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circumference}`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-semibold leading-none" style={{ color }}>{clamped}</span>
+        <span className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-[var(--pt-muted)]">/ 100 risk</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function PreviewUnlockPanel({
   resultId,
   previewAccessKey,
   canceled,
+  overview,
   risk,
   redFlagCount,
   clauseCounts,
@@ -81,7 +131,7 @@ export default function PreviewUnlockPanel({
   const [processing, setProcessing] = useState<CheckoutProcessing | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const recommendation = deriveRecommendation(risk.label);
+  const meta = RISK_META[risk.label];
 
   const nextSteps = (teaser?.next_steps?.length
     ? teaser.next_steps
@@ -89,10 +139,8 @@ export default function PreviewUnlockPanel({
       ? [teaser.top_next_step]
       : []
   ).filter((step) => step && step.trim());
-  const moreNextSteps = Math.max((teaser?.next_step_count ?? nextSteps.length) - nextSteps.length, 0);
 
   const flagTitles = (teaser?.red_flag_titles ?? []).filter((t) => t && t.trim());
-  const moreFlags = Math.max(redFlagCount - flagTitles.length, 0);
 
   function openModal() {
     setError(null);
@@ -149,137 +197,100 @@ export default function PreviewUnlockPanel({
     }
   }
 
+  const overviewText = overview?.trim() || meta.note;
+
   return (
     <>
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-        {/* Recommendation banner */}
-        <section className="pt-card p-5">
-          <QuickReadout riskScore={risk.score} recommendationLabel={recommendation.text} flagsFound={redFlagCount} />
-          <p className="mt-3 text-[15px] leading-6 text-[var(--pt-ink)]/85">{recommendation.reason}</p>
-          <p className="mt-3 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs leading-5 text-[var(--pt-muted)]">
-            This is your free estimate. The full report is a deeper review and may refine this score.
-          </p>
-        </section>
-
-        {/* Health snapshot */}
-        <section className="pt-card p-5">
-          <ContractHealthSnapshot
-            riskScore={risk.score}
-            clearClauseCount={clauseCounts.present}
-            totalClauseCount={clauseCounts.total}
-          />
-        </section>
-
-        {/* Red flags found (real titles) */}
-        {flagTitles.length > 0 ? (
-          <section className="pt-card p-5">
-            <h2 className="text-lg text-[var(--pt-ink)]">
-              {redFlagCount > 0 ? `${redFlagCount} red flag${redFlagCount === 1 ? "" : "s"} found` : "Red flags"}
-            </h2>
-            <p className="mt-1 text-sm text-[var(--pt-muted)]">
-              Here&apos;s what stood out in your contract. The full report explains why each one matters and how to fix it.
-            </p>
-            <ul className="mt-4 space-y-2.5">
-              {flagTitles.map((title, idx) => (
-                <li
-                  key={`flag-${idx}`}
-                  className="flex items-start gap-3 rounded-xl border border-[var(--pt-border)] bg-white px-4 py-3"
-                >
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#e7745c]" />
-                  <span className="flex-1 text-[15px] leading-6 text-[var(--pt-ink)]">{title}</span>
-                </li>
-              ))}
-            </ul>
-            {moreFlags > 0 ? (
-              <p className="mt-3 text-sm text-[var(--pt-muted)]">
-                +{moreFlags} more flag{moreFlags === 1 ? "" : "s"} covered in the full report.
-              </p>
-            ) : null}
-          </section>
-        ) : null}
-
-        {/* Recommended next steps (real) */}
-        {nextSteps.length > 0 ? (
-          <section className="pt-card p-5">
-            <h2 className="text-lg text-[var(--pt-ink)]">Where to start</h2>
-            <p className="mt-1 text-sm text-[var(--pt-muted)]">
-              A few of the priority moves for this contract, in plain terms.
-            </p>
-            <ol className="mt-4 space-y-2.5">
-              {nextSteps.map((step, idx) => (
-                <li
-                  key={`step-${idx}`}
-                  className="flex items-start gap-3 rounded-xl border border-[var(--pt-border)] bg-white px-4 py-3"
-                >
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] text-xs font-bold text-[var(--pt-muted)]">
-                    {idx + 1}
-                  </span>
-                  <span className="flex-1 text-[15px] leading-6 text-[var(--pt-ink)]">{step}</span>
-                </li>
-              ))}
-            </ol>
-            {moreNextSteps > 0 ? (
-              <p className="mt-3 text-sm text-[var(--pt-muted)]">
-                +{moreNextSteps} more prioritized step{moreNextSteps === 1 ? "" : "s"} in the full report.
-              </p>
-            ) : null}
-          </section>
-        ) : null}
-
-        {/* One rewrite example */}
-        <section className="pt-card p-5">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg text-[var(--pt-ink)]">Your contract, rewritten</h2>
-            <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">
-              Example
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-[var(--pt-muted)]">
-            The full report rewrites every risky clause in plain, balanced language — with tracked changes and a clean
-            revised draft you can copy and send.
-          </p>
-          <div className="mt-4 grid gap-2 text-[13px] sm:grid-cols-2">
-            <div className="rounded-lg border border-[#f5c6c0] bg-[#fff0ee] px-3 py-2.5">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
-              <p className="leading-6 text-[#7f2e1f]">
-                Any changes requested by Owner will be billed at Contractor&apos;s discretion with no prior written
-                approval required.
-              </p>
-            </div>
-            <div className="rounded-lg border border-[#a8ddd0] bg-[#edf8f5] px-3 py-2.5">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
-              <p className="leading-6 text-[#165a52]">
-                No change order is binding unless it is in writing and signed by the Owner before the work begins,
-                stating the added scope, price, and schedule impact.
-              </p>
+      <div className="flex flex-col gap-6">
+        {/* Hero: score + verdict */}
+        <section className="pt-card p-6 sm:p-8">
+          <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:gap-8 sm:text-left">
+            <ScoreDial score={risk.score} color={meta.ring} />
+            <div className="flex-1">
+              <span
+                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide"
+                style={{ backgroundColor: meta.chipBg, color: meta.chipText }}
+              >
+                {meta.label}
+              </span>
+              <h1 className="mt-3 text-2xl font-semibold leading-tight text-[var(--pt-ink)] sm:text-3xl">
+                {redFlagCount > 0
+                  ? `We found ${redFlagCount} thing${redFlagCount === 1 ? "" : "s"} worth a closer look`
+                  : "This contract looks broadly balanced"}
+              </h1>
+              <p className="mt-2 max-w-xl text-[15px] leading-6 text-[var(--pt-muted)]">{overviewText}</p>
             </div>
           </div>
+
+          {/* Quick stats strip */}
+          <div className="mt-6 grid grid-cols-2 gap-3 border-t border-[var(--pt-border)] pt-5 sm:grid-cols-4">
+            <Stat value={redFlagCount} label="Red flags" />
+            <Stat value={clauseCounts.total} label="Clauses reviewed" />
+            <Stat value={clauseCounts.present} label="Clauses clear" />
+            <Stat value={clauseCounts.missing} label="Clauses missing" />
+          </div>
         </section>
+
+        {/* Findings: flags + next steps side by side on desktop */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {flagTitles.length > 0 ? (
+            <section className="pt-card p-6 sm:p-7">
+              <h2 className="text-lg font-semibold text-[var(--pt-ink)]">What stood out</h2>
+              <p className="mt-1 text-sm text-[var(--pt-muted)]">The issues we spotted in your contract.</p>
+              <ul className="mt-5 space-y-3">
+                {flagTitles.map((title, idx) => (
+                  <li key={`flag-${idx}`} className="flex items-start gap-3">
+                    <span
+                      className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                      style={{ backgroundColor: meta.chipBg, color: meta.chipText }}
+                    >
+                      !
+                    </span>
+                    <span className="flex-1 text-[15px] leading-6 text-[var(--pt-ink)]">{title}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {nextSteps.length > 0 ? (
+            <section className="pt-card p-6 sm:p-7">
+              <h2 className="text-lg font-semibold text-[var(--pt-ink)]">Where to start</h2>
+              <p className="mt-1 text-sm text-[var(--pt-muted)]">A few priority moves for this contract, in plain terms.</p>
+              <ol className="mt-5 space-y-3">
+                {nextSteps.map((step, idx) => (
+                  <li key={`step-${idx}`} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--pt-teal)] text-xs font-bold text-white">
+                      {idx + 1}
+                    </span>
+                    <span className="flex-1 text-[15px] leading-6 text-[var(--pt-ink)]">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+        </div>
 
         {canceled && !error ? (
-          <p className="rounded-md border border-[#ead3a1] bg-white px-4 py-3 text-sm text-[#6e4f1e]">
+          <p className="rounded-xl border border-[#ead3a1] bg-[#fbf6ea] px-4 py-3 text-sm text-[#8a6413]">
             Checkout was canceled. Your preview is still here whenever you&apos;re ready.
           </p>
         ) : null}
         {error ? (
-          <p className="rounded-md border border-[#efc1b6] bg-[#fff0ee] px-4 py-3 text-sm text-[#9e3f2d]">{error}</p>
+          <p className="rounded-xl border border-[#efc1b6] bg-[#fdeae4] px-4 py-3 text-sm text-[#a53a22]">{error}</p>
         ) : null}
 
-        {/* Single closing CTA */}
-        <section className="pt-card overflow-hidden bg-gradient-to-br from-[#fff4ef] via-[#fff9f6] to-[#fff2dc] p-6 text-center sm:p-8">
-          <h2 className="text-2xl leading-tight text-[var(--pt-ink)]">Get the full report</h2>
-          <p className="mx-auto mt-2 max-w-md text-[15px] leading-6 text-[var(--pt-muted)]">
-            Every red flag explained, a clause-by-clause breakdown, negotiation questions with a ready-to-send email
-            draft, and your whole contract rewritten in plain terms.
-          </p>
+        {/* Single CTA */}
+        <section className="overflow-hidden rounded-[var(--pt-radius)] border border-[var(--pt-teal)]/25 bg-[var(--pt-teal-deep)] p-8 text-center sm:p-10">
+          <h2 className="text-2xl font-semibold leading-tight text-white sm:text-[28px]">Get the full report</h2>
           <button
             type="button"
             onClick={openModal}
-            className="pt-btn-primary mt-5 w-full px-6 py-3.5 text-base font-semibold sm:w-auto"
+            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-white px-8 py-3.5 text-base font-semibold text-[var(--pt-teal-deep)] transition-transform hover:-translate-y-0.5 sm:w-auto"
           >
             Get the full report — from {REPORT_TIER_PRICES[DEFAULT_REPORT_TIER]}
           </button>
-          <p className="mt-3 text-xs text-[var(--pt-muted)]">One-time payment · No subscription · Informational only, not legal advice.</p>
+          <p className="mt-4 text-xs text-white/70">One-time payment · Not legal advice</p>
         </section>
       </div>
 
@@ -295,5 +306,14 @@ export default function PreviewUnlockPanel({
         onClose={() => { setModalOpen(false); setError(null); }}
       />
     </>
+  );
+}
+
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="text-center sm:text-left">
+      <p className="text-2xl font-semibold text-[var(--pt-ink)]">{value}</p>
+      <p className="mt-0.5 text-xs text-[var(--pt-muted)]">{label}</p>
+    </div>
   );
 }

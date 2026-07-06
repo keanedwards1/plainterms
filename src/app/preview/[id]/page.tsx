@@ -147,38 +147,32 @@ export default async function PreviewPage({ params, searchParams }: Props) {
   const fileNameLabel = data.document?.file_name ?? "Contract document";
 
   return (
-    <main className="pt-page-pad py-5 [--pt-muted:#7f7466]">
-      <div className="pt-container-wide flex flex-col gap-5">
-        <section className="pt-card p-4 sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link
-              href="/analyze"
-              className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
-            >
-              ← Analyze another file
-            </Link>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--pt-muted)]">
-              <span>File name: {fileNameLabel}</span>
-              <span>Reviewed: {createdAtLabel}</span>
-            </div>
+    <main className="pt-page-pad py-6 sm:py-8">
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <Link
+            href="/analyze"
+            className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+          >
+            ← Analyze another file
+          </Link>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--pt-muted)]">
+            <span className="truncate max-w-[12rem] sm:max-w-none">{fileNameLabel}</span>
+            <span aria-hidden="true">·</span>
+            <span>Reviewed {createdAtLabel}</span>
           </div>
-
-          <div className="mt-3 max-w-4xl">
-            <h1 className="text-2xl leading-tight text-[var(--pt-ink)] sm:text-3xl">{data.headline}</h1>
-            <p className="mt-2 text-[15px] leading-6 text-[var(--pt-muted)] lg:max-w-3xl">{data.overview}</p>
-          </div>
-        </section>
+        </div>
 
         <PreviewUnlockPanel
           resultId={data.result_id}
           previewAccessKey={previewAccessKey}
           canceled={query.canceled === "1"}
+          overview={data.overview}
           risk={data.risk}
           redFlagCount={data.red_flag_count}
           clauseCounts={data.clause_counts}
           teaser={data.teaser}
         />
-
       </div>
     </main>
   );
