@@ -137,11 +137,10 @@ function buildPreviewResult(uiResult, abVariant) {
     ...asArray(bullets.low),
   ].filter((step) => typeof step === "string" && step.trim());
   const severityRank = { high: 0, medium: 1, low: 2 };
-  const topFlagTitles = [...flags]
+  const orderedFlagTitles = [...flags]
     .sort((a, b) => (severityRank[a?.severity] ?? 3) - (severityRank[b?.severity] ?? 3))
     .map((flag) => flag?.title)
-    .filter((title) => typeof title === "string" && title.trim())
-    .slice(0, 3);
+    .filter((title) => typeof title === "string" && title.trim());
 
   return {
     schema_version: "pt.preview.v1",
@@ -175,8 +174,9 @@ function buildPreviewResult(uiResult, abVariant) {
     },
     teaser: {
       top_next_step: allNextSteps[0] ?? null,
+      next_steps: allNextSteps.slice(0, 3),
       next_step_count: allNextSteps.length,
-      red_flag_titles: topFlagTitles,
+      red_flag_titles: orderedFlagTitles,
     },
     locked: {
       red_flags: redFlagCount,

@@ -37,6 +37,7 @@ type PreviewResult = {
   };
   teaser?: {
     top_next_step: string | null;
+    next_steps?: string[];
     next_step_count: number;
     red_flag_titles: string[];
   };

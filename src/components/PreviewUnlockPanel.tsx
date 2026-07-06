@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 import UpgradeModal, { type CheckoutProcessing } from "@/components/UpgradeModal";
-import ReportSidebar from "@/components/result/ReportSidebar";
 import QuickReadout from "@/components/result/QuickReadout";
 import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
-import LockedSummarySection from "@/components/result/LockedSummarySection";
-import { type ReportTierOption } from "@/lib/pricingOptions";
-import { TAB_CLICK_OPENS_MODAL } from "@/lib/previewConfig";
+import {
+  REPORT_TIER_NAMES,
+  REPORT_TIER_PRICES,
+  DEFAULT_REPORT_TIER,
+  type ReportTierOption,
+} from "@/lib/pricingOptions";
 
 type RiskLabel = "low" | "medium" | "high";
 
@@ -19,41 +21,17 @@ type PreviewUnlockPanelProps = {
   risk: { score: number; label: RiskLabel };
   redFlagCount: number;
   clauseCounts: { present: number; unclear: number; missing: number; total: number };
-  teaser?: { top_next_step: string | null; next_step_count: number; red_flag_titles: string[] };
+  teaser?: {
+    top_next_step: string | null;
+    next_steps?: string[];
+    next_step_count: number;
+    red_flag_titles: string[];
+  };
 };
 
 type CheckoutResponse = {
   checkoutSessionId: string;
   checkoutUrl: string;
-};
-
-type PreviewTabKey =
-  | "summary"
-  | "insights"
-  | "flags"
-  | "terms"
-  | "questions"
-  | "document"
-  | "full";
-
-const TABS: { key: PreviewTabKey; label: string; icon: string }[] = [
-  { key: "summary",   label: "Summary",     icon: "/window.svg" },
-  { key: "insights",  label: "Insights",    icon: "/graphics/icon-search.svg" },
-  { key: "flags",     label: "Red Flags",   icon: "/graphics/icon-shield.svg" },
-  { key: "terms",     label: "Key Terms",   icon: "/file.svg" },
-  { key: "questions", label: "Questions",   icon: "/globe.svg" },
-  { key: "document",  label: "Document",    icon: "/graphics/icon-doc.svg" },
-  { key: "full",      label: "Full Report", icon: "/graphics/icon-doc.svg" },
-];
-
-const TAB_UNLOCK: Record<PreviewTabKey, { title: string; description: string }> = {
-  summary:   { title: "Unlock the full summary",          description: "See every prioritized next step, full flag list, and actionable guidance for this contract." },
-  insights:  { title: "Unlock cross-tab insights",        description: "Connect risk posture, clause clarity, and evidence coverage to spot hidden leverage fast." },
-  flags:     { title: "Unlock all red flags",             description: "Every high, medium, and low severity flag with plain-English notes on what each one means for you." },
-  terms:     { title: "Unlock the full clause breakdown", description: "Clause-by-clause status for present, unclear, and missing terms before you sign." },
-  questions: { title: "Unlock negotiation questions",     description: "Practical, ready-to-send questions to move your next email or call forward." },
-  document:  { title: "Unlock document review",          description: "Source text with inline callouts, tracked changes, and revised wording where available." },
-  full:      { title: "Unlock the full evidence-backed report", description: "Complete context with supporting details and source notes for stronger negotiation." },
 };
 
 const CHECKOUT_STEPS = ["Securing your session", "Preparing your full report", "Opening secure checkout"];
@@ -88,375 +66,6 @@ function delay(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-// ─── Placeholder shapes (no real data) ────────────────────────────────────────
-
-function PlaceholderList({ rows = 3 }: { rows?: number }) {
-  return (
-    <ul className="space-y-2">
-      {Array.from({ length: rows }).map((_, i) => (
-        <li key={i} className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5">
-          <div className="h-3 w-full rounded bg-[#e6d8c3]" />
-          <div className="mt-1.5 h-3 w-3/4 rounded bg-[#ede6db]" />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function PlaceholderFlagList({ rows = 4 }: { rows?: number }) {
-  return (
-    <ul className="space-y-2">
-      {Array.from({ length: rows }).map((_, i) => (
-        <li key={i} className="flex items-center justify-between rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5">
-          <div className="h-3 w-2/3 rounded bg-[#e6d8c3]" />
-          <div className="h-5 w-14 rounded-full bg-[#fde8e3]" />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function PlaceholderTermList({ rows = 5 }: { rows?: number }) {
-  return (
-    <div className="space-y-2">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5">
-          <div className="h-4 w-4 shrink-0 rounded-full bg-[#d4ece9]" />
-          <div className="flex-1"><div className="h-3 w-2/3 rounded bg-[#e6d8c3]" /></div>
-          <div className="h-4 w-16 rounded-full bg-[#ede6db]" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PlaceholderQA({ rows = 4 }: { rows?: number }) {
-  return (
-    <div className="space-y-2">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-3">
-          <div className="h-3 w-3/4 rounded bg-[#e6d8c3]" />
-          <div className="mt-1.5 h-3 w-full rounded bg-[#ede6db]" />
-          <div className="mt-1 h-3 w-1/2 rounded bg-[#ede6db]" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PlaceholderText({ lines = 6 }: { lines?: number }) {
-  const widths = ["w-full", "w-11/12", "w-full", "w-4/5", "w-full", "w-10/12", "w-3/4", "w-full"];
-  return (
-    <div className="space-y-2 rounded-lg border border-[var(--pt-border)] bg-white px-4 py-4">
-      {Array.from({ length: lines }).map((_, i) => (
-        <div key={i} className={`h-3 rounded bg-[#e6d8c3] ${widths[i % widths.length]}`} />
-      ))}
-    </div>
-  );
-}
-
-// ─── Teaser stat banners (real counts, no detailed content) ───────────────────
-
-function TeaserBanner({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-3 rounded-xl border border-[var(--pt-border)] bg-gradient-to-r from-[#fff4ef] via-[#fff9f6] to-[#fff2dc] px-4 py-3">
-      {children}
-    </div>
-  );
-}
-
-function StatPill({ label, value, color = "red" }: { label: string; value: string | number; color?: "red" | "amber" | "teal" }) {
-  const cls = {
-    red:   "border-[#efc1b6] bg-[#ffe8e3] text-[#7f2e1f]",
-    amber: "border-[#ead3a1] bg-[#fff4df] text-[#6e4f1e]",
-    teal:  "border-[#b2ddd4] bg-[#e1f4ef] text-[#154f4a]",
-  }[color];
-  return (
-    <div className={`rounded-lg border px-3 py-2 ${cls}`}>
-      <p className="text-xs opacity-70">{label}</p>
-      <p className="text-lg font-semibold">{value}</p>
-    </div>
-  );
-}
-
-// ─── Tab content components ────────────────────────────────────────────────────
-
-type TabProps = {
-  risk: { score: number; label: RiskLabel };
-  redFlagCount: number;
-  clauseCounts: { present: number; unclear: number; missing: number; total: number };
-  teaser?: { top_next_step: string | null; next_step_count: number; red_flag_titles: string[] };
-  onUnlock: () => void;
-};
-
-function SummaryTab({ risk, redFlagCount, clauseCounts, teaser, onUnlock }: TabProps) {
-  const rec = deriveRecommendation(risk.label);
-  const topNextStep = teaser?.top_next_step?.trim() || "";
-  const moreNextSteps = Math.max((teaser?.next_step_count ?? 0) - 1, 0);
-  const flagTitles = teaser?.red_flag_titles?.filter((t) => t && t.trim()) ?? [];
-  return (
-    <div className="space-y-3">
-      <QuickReadout riskScore={risk.score} recommendationLabel={rec.text} flagsFound={redFlagCount} />
-      <p className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs leading-5 text-[var(--pt-muted)]">
-        This is your free estimate. The paid report is a deeper review and may refine this score.
-      </p>
-      <ContractHealthSnapshot riskScore={risk.score} clearClauseCount={clauseCounts.present} totalClauseCount={clauseCounts.total} />
-
-      {/* Free: one real next step, the rest locked */}
-      {topNextStep ? (
-        <article className="rounded-lg border border-[var(--pt-border)] bg-white p-3">
-          <p className="text-sm font-semibold text-[var(--pt-ink)]">Top Next Steps</p>
-          <div className="mt-2 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-2 text-[15px] leading-6 text-[var(--pt-ink)]/90">
-            {topNextStep}
-          </div>
-          {moreNextSteps > 0 ? (
-            <button
-              type="button"
-              onClick={onUnlock}
-              className="mt-2 flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-left text-xs font-semibold text-[var(--pt-muted)] transition-colors hover:border-[var(--pt-accent)] hover:text-[var(--pt-ink)]"
-            >
-              <span>+{moreNextSteps} more next step{moreNextSteps === 1 ? "" : "s"} in the full report</span>
-              <span aria-hidden="true">🔒</span>
-            </button>
-          ) : null}
-        </article>
-      ) : (
-        <LockedSummarySection title="Top Next Steps" onUnlock={onUnlock}>
-          <PlaceholderList rows={3} />
-        </LockedSummarySection>
-      )}
-
-      {/* Free: red-flag titles (names only); explanations + fixes stay locked */}
-      {flagTitles.length > 0 ? (
-        <article className="rounded-lg border border-[var(--pt-border)] bg-white p-3">
-          <p className="text-sm font-semibold text-[var(--pt-ink)]">Red flags found</p>
-          <ul className="mt-2 space-y-1.5">
-            {flagTitles.map((title, idx) => (
-              <li key={`flag-title-${idx}`} className="flex items-start gap-2 text-sm text-[var(--pt-ink)]/90">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#e7745c]" />
-                {title}
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            onClick={onUnlock}
-            className="mt-2 flex w-full items-center justify-between rounded-lg border border-dashed border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-left text-xs font-semibold text-[var(--pt-muted)] transition-colors hover:border-[var(--pt-accent)] hover:text-[var(--pt-ink)]"
-          >
-            <span>Unlock to see why each matters and how to fix it{redFlagCount > flagTitles.length ? `, plus ${redFlagCount - flagTitles.length} more` : ""}</span>
-            <span aria-hidden="true">🔒</span>
-          </button>
-        </article>
-      ) : (
-        <LockedSummarySection title="Top Flags Preview" onUnlock={onUnlock}>
-          <PlaceholderFlagList rows={3} />
-        </LockedSummarySection>
-      )}
-    </div>
-  );
-}
-
-function InsightsTab({ risk, redFlagCount, clauseCounts, onUnlock }: TabProps) {
-  const missingCount = clauseCounts.missing;
-  return (
-    <div className="space-y-3">
-      <TeaserBanner>
-        <p className="text-sm font-semibold text-[var(--pt-ink)]">Risk snapshot</p>
-        <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
-          Your contract scored <strong>{risk.score}/100</strong> on risk with {redFlagCount} flags identified.
-          {missingCount > 0 && <> <strong>{missingCount}</strong> standard protective clauses are missing entirely.</>}
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <StatPill label="Risk score" value={risk.score} color="red" />
-          <StatPill label="Flags found" value={redFlagCount} color="amber" />
-          <StatPill label="Clauses missing" value={clauseCounts.missing} color="teal" />
-        </div>
-      </TeaserBanner>
-      <LockedSummarySection title="Risk Breakdown" onUnlock={onUnlock}>
-        <PlaceholderList rows={3} />
-      </LockedSummarySection>
-      <LockedSummarySection title="Coverage Gaps" onUnlock={onUnlock}>
-        <PlaceholderList rows={4} />
-      </LockedSummarySection>
-    </div>
-  );
-}
-
-function FlagsTab({ risk, redFlagCount, onUnlock }: TabProps) {
-  const highEst = risk.label === "high" ? Math.ceil(redFlagCount * 0.5) : risk.label === "medium" ? Math.ceil(redFlagCount * 0.3) : Math.ceil(redFlagCount * 0.1);
-  const highCount = Math.max(highEst, 1);
-  const medCount = Math.max(redFlagCount - highCount - 1, 0);
-  return (
-    <div className="space-y-3">
-      <TeaserBanner>
-        <p className="text-sm font-semibold text-[var(--pt-ink)]">{redFlagCount} issues flagged</p>
-        <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
-          Unlock to see exactly what each flag means for you and what to do about it.
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <StatPill label="High severity" value={highCount} color="red" />
-          <StatPill label="Medium" value={medCount} color="amber" />
-          <StatPill label="Total" value={redFlagCount} color="teal" />
-        </div>
-      </TeaserBanner>
-      <LockedSummarySection title="High Severity Flags" onUnlock={onUnlock}>
-        <PlaceholderFlagList rows={3} />
-      </LockedSummarySection>
-      <LockedSummarySection title="Medium &amp; Low Severity" onUnlock={onUnlock}>
-        <PlaceholderFlagList rows={4} />
-      </LockedSummarySection>
-    </div>
-  );
-}
-
-function TermsTab({ clauseCounts, onUnlock }: TabProps) {
-  return (
-    <div className="space-y-3">
-      <TeaserBanner>
-        <p className="text-sm font-semibold text-[var(--pt-ink)]">{clauseCounts.total} clauses reviewed</p>
-        <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
-          Unlock to see a plain-English breakdown of every term — present, unclear, or missing.
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <StatPill label="Present" value={clauseCounts.present} color="teal" />
-          <StatPill label="Unclear" value={clauseCounts.unclear} color="amber" />
-          <StatPill label="Missing" value={clauseCounts.missing} color="red" />
-        </div>
-      </TeaserBanner>
-      <LockedSummarySection title="Clause Breakdown" onUnlock={onUnlock}>
-        <PlaceholderTermList rows={6} />
-      </LockedSummarySection>
-    </div>
-  );
-}
-
-const PLACEHOLDER_QUESTIONS = [
-  "What specific deliverables are included in the scope of work, and how are revisions handled?",
-  "Under what circumstances can either party terminate this agreement early?",
-  "How is intellectual property ownership assigned for work created during the engagement?",
-  "What are the payment terms if a milestone is delayed on your end?",
-];
-
-function QuestionsTab({ redFlagCount, onUnlock }: TabProps) {
-  const questionCount = Math.max(redFlagCount + 2, 4);
-  return (
-    <div className="space-y-3">
-      <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-4 py-3">
-        <p className="text-sm font-semibold text-[var(--pt-ink)]">Questions to raise with the other party</p>
-        <p className="mt-1 text-sm text-[var(--pt-muted)]">
-          Before you sign, bring these questions to the other party — the contractor, company, or individual offering this agreement. You can ask them in a call or use the email draft below to send them in writing.
-        </p>
-      </article>
-
-      <LockedSummarySection title={`${questionCount} negotiation questions`} onUnlock={onUnlock}>
-        <div className="space-y-2">
-          {PLACEHOLDER_QUESTIONS.map((q, idx) => (
-            <div key={idx} className="flex items-start gap-3 rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] px-4 py-3">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] text-[11px] font-bold text-[var(--pt-muted)]">
-                {idx + 1}
-              </span>
-              <span className="flex-1 text-[15px] leading-6 text-[var(--pt-ink)]">{q}</span>
-              <svg className="mt-1 h-4 w-4 shrink-0 text-[var(--pt-muted)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          ))}
-        </div>
-      </LockedSummarySection>
-
-      <LockedSummarySection title="Negotiation email draft" onUnlock={onUnlock}>
-        <div className="rounded-lg border border-[var(--pt-border)] bg-white">
-          <div className="border-b border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Subject</p>
-            <div className="mt-1 h-4 w-2/3 rounded bg-[#e6d8c3]" />
-          </div>
-          <div className="space-y-2 p-3">
-            <div className="h-3 w-full rounded bg-[#e6d8c3]" />
-            <div className="h-3 w-11/12 rounded bg-[#ede6db]" />
-            <div className="h-3 w-4/5 rounded bg-[#ede6db]" />
-          </div>
-        </div>
-      </LockedSummarySection>
-    </div>
-  );
-}
-
-function DocumentTab({ clauseCounts, redFlagCount, onUnlock }: TabProps) {
-  return (
-    <div className="space-y-3">
-      {/* Visible example of the rewrite — the strongest part of the report */}
-      <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-[var(--pt-ink)]">Your contract, rewritten</p>
-          <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Example</span>
-        </div>
-        <p className="mt-1 text-xs text-[var(--pt-muted)]">The full report rewrites every risky clause in plain, balanced language — shown as tracked changes and a clean revised draft you can copy and send.</p>
-        <div className="mt-3 grid gap-1.5 text-[13px] sm:grid-cols-2">
-          <div className="rounded-md border border-[#f5c6c0] bg-[#fff0ee] px-2.5 py-2">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
-            <p className="text-[#7f2e1f]">Any changes requested by Owner will be billed at Contractor&apos;s discretion with no prior written approval required.</p>
-          </div>
-          <div className="rounded-md border border-[#a8ddd0] bg-[#edf8f5] px-2.5 py-2">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
-            <p className="text-[#165a52]">No change order is binding unless it is in writing and signed by the Owner before the work begins, stating the added scope, price, and schedule impact.</p>
-          </div>
-        </div>
-      </article>
-
-      <LockedSummarySection title="Document review" onUnlock={onUnlock}>
-        {/* Mirrors the real document tab: file toolbar + segmented control + document text */}
-        <div className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="h-4 w-48 rounded bg-[#e6d8c3]" />
-              <p className="mt-1 text-xs text-[var(--pt-muted)]">
-                {redFlagCount} flagged passages · {clauseCounts.total} clauses reviewed
-              </p>
-            </div>
-            <div className="flex items-center rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-[3px]">
-              {["Original", "Track Changes", "Revised"].map((label) => (
-                <span key={label} className="rounded-md px-3 py-1.5 text-xs font-semibold text-[var(--pt-muted)] first:bg-white first:text-[var(--pt-ink)] first:shadow-sm">
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4 space-y-2">
-            <PlaceholderText lines={7} />
-          </div>
-        </div>
-      </LockedSummarySection>
-    </div>
-  );
-}
-
-function FullReportTab({ risk, redFlagCount, clauseCounts, onUnlock }: TabProps) {
-  return (
-    <div className="space-y-3">
-      <TeaserBanner>
-        <p className="text-sm font-semibold text-[var(--pt-ink)]">Full evidence-backed report</p>
-        <p className="mt-0.5 text-xs text-[var(--pt-muted)]">
-          Every finding backed by source text. Risk score {risk.score}/100 · {redFlagCount} flags · {clauseCounts.total} clauses.
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <StatPill label="Risk score" value={risk.score} color="red" />
-          <StatPill label="Flags" value={redFlagCount} color="amber" />
-          <StatPill label="Clauses" value={clauseCounts.total} color="teal" />
-        </div>
-      </TeaserBanner>
-      <LockedSummarySection title="Executive Summary" onUnlock={onUnlock}>
-        <PlaceholderText lines={5} />
-      </LockedSummarySection>
-      <LockedSummarySection title="Detailed Findings" onUnlock={onUnlock}>
-        <PlaceholderFlagList rows={5} />
-      </LockedSummarySection>
-      <LockedSummarySection title="Supporting Evidence" onUnlock={onUnlock}>
-        <PlaceholderText lines={6} />
-      </LockedSummarySection>
-    </div>
-  );
-}
-
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function PreviewUnlockPanel({
@@ -468,13 +77,22 @@ export default function PreviewUnlockPanel({
   clauseCounts,
   teaser,
 }: PreviewUnlockPanelProps) {
-  const [activeTab, setActiveTab] = useState<PreviewTabKey>("summary");
   const [modalOpen, setModalOpen] = useState(false);
   const [processing, setProcessing] = useState<CheckoutProcessing | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const recommendation = deriveRecommendation(risk.label);
-  const activeUnlock = TAB_UNLOCK[activeTab];
+
+  const nextSteps = (teaser?.next_steps?.length
+    ? teaser.next_steps
+    : teaser?.top_next_step
+      ? [teaser.top_next_step]
+      : []
+  ).filter((step) => step && step.trim());
+  const moreNextSteps = Math.max((teaser?.next_step_count ?? nextSteps.length) - nextSteps.length, 0);
+
+  const flagTitles = (teaser?.red_flag_titles ?? []).filter((t) => t && t.trim());
+  const moreFlags = Math.max(redFlagCount - flagTitles.length, 0);
 
   function openModal() {
     setError(null);
@@ -531,61 +149,146 @@ export default function PreviewUnlockPanel({
     }
   }
 
-  const tabProps: TabProps = { risk, redFlagCount, clauseCounts, teaser, onUnlock: openModal };
-
   return (
     <>
-      <section className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <ReportSidebar
-          tabs={TABS}
-          activeKey={activeTab}
-          onSelectTab={(key) => {
-            setActiveTab(key as PreviewTabKey);
-            if (TAB_CLICK_OPENS_MODAL && key !== "summary") setModalOpen(true);
-          }}
-          risk={risk}
-          recommendation={{ label: recommendation.text, reason: recommendation.reason, tone: risk.label }}
-          footer={
-            <div className="mt-4 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs text-[var(--pt-muted)]">
-              Informational only. Not legal advice.
-            </div>
-          }
-        />
-
-        <section className="pt-card p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-xl text-[var(--pt-ink)]">
-              {TABS.find((t) => t.key === activeTab)?.label ?? "Summary"}
-            </h2>
-            <button type="button" onClick={openModal} className="pt-btn-primary px-4 py-2 text-sm font-semibold">
-              Unlock full report
-            </button>
-          </div>
-
-          {activeTab === "summary"   && <SummaryTab   {...tabProps} />}
-          {activeTab === "insights"  && <InsightsTab  {...tabProps} />}
-          {activeTab === "flags"     && <FlagsTab     {...tabProps} />}
-          {activeTab === "terms"     && <TermsTab     {...tabProps} />}
-          {activeTab === "questions" && <QuestionsTab {...tabProps} />}
-          {activeTab === "document"  && <DocumentTab  {...tabProps} />}
-          {activeTab === "full"      && <FullReportTab {...tabProps} />}
-
-          {canceled && !error ? (
-            <p className="mt-3 rounded-md border border-[#ead3a1] bg-white px-3 py-2 text-xs text-[#6e4f1e]">
-              Checkout was canceled. The preview is still here.
-            </p>
-          ) : null}
-          {error ? (
-            <p className="mt-3 rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">{error}</p>
-          ) : null}
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+        {/* Recommendation banner */}
+        <section className="pt-card p-5">
+          <QuickReadout riskScore={risk.score} recommendationLabel={recommendation.text} flagsFound={redFlagCount} />
+          <p className="mt-3 text-[15px] leading-6 text-[var(--pt-ink)]/85">{recommendation.reason}</p>
+          <p className="mt-3 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3 py-2 text-xs leading-5 text-[var(--pt-muted)]">
+            This is your free estimate. The full report is a deeper review and may refine this score.
+          </p>
         </section>
-      </section>
+
+        {/* Health snapshot */}
+        <section className="pt-card p-5">
+          <ContractHealthSnapshot
+            riskScore={risk.score}
+            clearClauseCount={clauseCounts.present}
+            totalClauseCount={clauseCounts.total}
+          />
+        </section>
+
+        {/* Red flags found (real titles) */}
+        {flagTitles.length > 0 ? (
+          <section className="pt-card p-5">
+            <h2 className="text-lg text-[var(--pt-ink)]">
+              {redFlagCount > 0 ? `${redFlagCount} red flag${redFlagCount === 1 ? "" : "s"} found` : "Red flags"}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--pt-muted)]">
+              Here&apos;s what stood out in your contract. The full report explains why each one matters and how to fix it.
+            </p>
+            <ul className="mt-4 space-y-2.5">
+              {flagTitles.map((title, idx) => (
+                <li
+                  key={`flag-${idx}`}
+                  className="flex items-start gap-3 rounded-xl border border-[var(--pt-border)] bg-white px-4 py-3"
+                >
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#e7745c]" />
+                  <span className="flex-1 text-[15px] leading-6 text-[var(--pt-ink)]">{title}</span>
+                </li>
+              ))}
+            </ul>
+            {moreFlags > 0 ? (
+              <p className="mt-3 text-sm text-[var(--pt-muted)]">
+                +{moreFlags} more flag{moreFlags === 1 ? "" : "s"} covered in the full report.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {/* Recommended next steps (real) */}
+        {nextSteps.length > 0 ? (
+          <section className="pt-card p-5">
+            <h2 className="text-lg text-[var(--pt-ink)]">Where to start</h2>
+            <p className="mt-1 text-sm text-[var(--pt-muted)]">
+              A few of the priority moves for this contract, in plain terms.
+            </p>
+            <ol className="mt-4 space-y-2.5">
+              {nextSteps.map((step, idx) => (
+                <li
+                  key={`step-${idx}`}
+                  className="flex items-start gap-3 rounded-xl border border-[var(--pt-border)] bg-white px-4 py-3"
+                >
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] text-xs font-bold text-[var(--pt-muted)]">
+                    {idx + 1}
+                  </span>
+                  <span className="flex-1 text-[15px] leading-6 text-[var(--pt-ink)]">{step}</span>
+                </li>
+              ))}
+            </ol>
+            {moreNextSteps > 0 ? (
+              <p className="mt-3 text-sm text-[var(--pt-muted)]">
+                +{moreNextSteps} more prioritized step{moreNextSteps === 1 ? "" : "s"} in the full report.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {/* One rewrite example */}
+        <section className="pt-card p-5">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg text-[var(--pt-ink)]">Your contract, rewritten</h2>
+            <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">
+              Example
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-[var(--pt-muted)]">
+            The full report rewrites every risky clause in plain, balanced language — with tracked changes and a clean
+            revised draft you can copy and send.
+          </p>
+          <div className="mt-4 grid gap-2 text-[13px] sm:grid-cols-2">
+            <div className="rounded-lg border border-[#f5c6c0] bg-[#fff0ee] px-3 py-2.5">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
+              <p className="leading-6 text-[#7f2e1f]">
+                Any changes requested by Owner will be billed at Contractor&apos;s discretion with no prior written
+                approval required.
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#a8ddd0] bg-[#edf8f5] px-3 py-2.5">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
+              <p className="leading-6 text-[#165a52]">
+                No change order is binding unless it is in writing and signed by the Owner before the work begins,
+                stating the added scope, price, and schedule impact.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {canceled && !error ? (
+          <p className="rounded-md border border-[#ead3a1] bg-white px-4 py-3 text-sm text-[#6e4f1e]">
+            Checkout was canceled. Your preview is still here whenever you&apos;re ready.
+          </p>
+        ) : null}
+        {error ? (
+          <p className="rounded-md border border-[#efc1b6] bg-[#fff0ee] px-4 py-3 text-sm text-[#9e3f2d]">{error}</p>
+        ) : null}
+
+        {/* Single closing CTA */}
+        <section className="pt-card overflow-hidden bg-gradient-to-br from-[#fff4ef] via-[#fff9f6] to-[#fff2dc] p-6 text-center sm:p-8">
+          <h2 className="text-2xl leading-tight text-[var(--pt-ink)]">Get the full report</h2>
+          <p className="mx-auto mt-2 max-w-md text-[15px] leading-6 text-[var(--pt-muted)]">
+            Every red flag explained, a clause-by-clause breakdown, negotiation questions with a ready-to-send email
+            draft, and your whole contract rewritten in plain terms.
+          </p>
+          <button
+            type="button"
+            onClick={openModal}
+            className="pt-btn-primary mt-5 w-full px-6 py-3.5 text-base font-semibold sm:w-auto"
+          >
+            Get the full report — from {REPORT_TIER_PRICES[DEFAULT_REPORT_TIER]}
+          </button>
+          <p className="mt-3 text-xs text-[var(--pt-muted)]">One-time payment · No subscription · Informational only, not legal advice.</p>
+        </section>
+      </div>
 
       <UpgradeModal
         open={modalOpen}
-        featureTitle={activeUnlock.title}
-        featureDescription={activeUnlock.description}
+        featureTitle="Unlock your full report"
+        featureDescription="Choose your level of review. Every option unlocks the complete analysis of this contract."
         ctaPrefix="Continue with"
+        recommendedTier={DEFAULT_REPORT_TIER}
         processing={processing}
         error={error}
         onSelectTier={startCheckout}

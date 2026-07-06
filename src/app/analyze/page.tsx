@@ -31,7 +31,7 @@ export default function AnalyzePage() {
   const [error, setError] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<SubmitStep | null>(null);
   const [checkoutCanceled, setCheckoutCanceled] = React.useState(false);
-  const [reviewChoice, setReviewChoice] = React.useState<ReviewChoice>("free");
+  const [reviewChoice, setReviewChoice] = React.useState<ReviewChoice>("report_69");
 
   const stepOrder = reviewChoice === "free" ? FREE_STEP_ORDER : PAID_STEP_ORDER;
 
