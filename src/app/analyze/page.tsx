@@ -214,15 +214,15 @@ export default function AnalyzePage() {
             <legend className="mb-3 block text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">
               Choose your review
             </legend>
-            <div className="grid gap-3 pt-2.5 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setReviewChoice("free")}
                 aria-pressed={reviewChoice === "free"}
-                className={`relative rounded-xl border p-4 text-left transition-all ${
+                className={`relative rounded-xl border p-4 text-left transition-colors ${
                   reviewChoice === "free"
-                    ? "border-[var(--pt-accent)] bg-[#fff6f1] ring-1 ring-[var(--pt-accent)]"
-                    : "border-[var(--pt-border)] bg-white hover:border-[var(--pt-accent)]"
+                    ? "border-[#de8f79] bg-[#fff6f1] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
+                    : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
                 }`}
               >
                 <div className="flex items-baseline justify-between gap-2">
@@ -240,14 +240,14 @@ export default function AnalyzePage() {
                   type="button"
                   onClick={() => setReviewChoice(tier)}
                   aria-pressed={reviewChoice === tier}
-                  className={`relative rounded-xl border p-4 text-left transition-all ${
+                  className={`relative rounded-xl border p-4 text-left transition-colors ${
                     reviewChoice === tier
-                      ? "border-[var(--pt-accent)] bg-[#fff6f1] ring-1 ring-[var(--pt-accent)]"
-                      : "border-[var(--pt-border)] bg-white hover:border-[var(--pt-accent)]"
+                      ? "border-[#de8f79] bg-[#fff6f1] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
+                      : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
                   }`}
                 >
                   {tier === "report_69" ? (
-                    <span className="absolute -top-2.5 left-4 rounded-full bg-[var(--pt-accent)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--pt-accent-ink)] shadow-sm">
+                    <span className="absolute -top-2.5 right-4 rounded-full bg-[#de8f79] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                       Most popular
                     </span>
                   ) : null}
