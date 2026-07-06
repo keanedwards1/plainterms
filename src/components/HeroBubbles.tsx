@@ -237,7 +237,6 @@ export default function HeroBubbles() {
     // interaction is desktop-only — on touch it caused scroll lag.
     raf = requestAnimationFrame(render);
     window.addEventListener("resize", resize);
-    window.addEventListener("scroll", resize, { passive: true });
     if (!coarse.matches) {
       window.addEventListener("pointermove", onMove, { passive: true });
     }
@@ -246,7 +245,6 @@ export default function HeroBubbles() {
       cancelAnimationFrame(raf);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("resize", resize);
-      window.removeEventListener("scroll", resize);
     };
   }, []);
 
