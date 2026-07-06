@@ -281,18 +281,18 @@ export default function PreviewUnlockPanel({
         ) : null}
 
         {/* Single CTA */}
-        <section className="overflow-hidden rounded-[var(--pt-radius)] bg-[var(--pt-ink)] p-8 text-center sm:p-10">
-          <h2 className="mx-auto max-w-lg text-2xl font-semibold leading-tight text-white sm:text-[28px]">
+        <section className="overflow-hidden rounded-[var(--pt-radius)] border border-[#cfe4fb] bg-[#eaf3fe] p-8 text-center sm:p-10">
+          <h2 className="mx-auto max-w-lg text-2xl font-semibold leading-tight text-[#0b3d75] sm:text-[28px]">
             See your contract with the changes applied
           </h2>
           <button
             type="button"
             onClick={openModal}
-            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[var(--pt-accent)] px-8 py-3.5 text-base font-semibold text-[var(--pt-accent-ink)] transition-transform hover:-translate-y-0.5 sm:w-auto"
+            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[#0071e3] px-8 py-3.5 text-base font-semibold text-white transition-transform hover:-translate-y-0.5 sm:w-auto"
           >
             See the changes — from {REPORT_TIER_PRICES[DEFAULT_REPORT_TIER]}
           </button>
-          <p className="mt-4 text-xs text-white/60">One-time payment · No subscription</p>
+          <p className="mt-4 text-xs text-[#0b3d75]/60">One-time payment · No subscription</p>
         </section>
       </div>
 
