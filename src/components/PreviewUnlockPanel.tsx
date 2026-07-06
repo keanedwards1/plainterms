@@ -281,16 +281,18 @@ export default function PreviewUnlockPanel({
         ) : null}
 
         {/* Single CTA */}
-        <section className="overflow-hidden rounded-[var(--pt-radius)] border border-[var(--pt-teal)]/25 bg-[var(--pt-teal-deep)] p-8 text-center sm:p-10">
-          <h2 className="text-2xl font-semibold leading-tight text-white sm:text-[28px]">Get the full report</h2>
+        <section className="overflow-hidden rounded-[var(--pt-radius)] bg-[var(--pt-ink)] p-8 text-center sm:p-10">
+          <h2 className="mx-auto max-w-lg text-2xl font-semibold leading-tight text-white sm:text-[28px]">
+            See your contract with the changes applied
+          </h2>
           <button
             type="button"
             onClick={openModal}
-            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-white px-8 py-3.5 text-base font-semibold text-[var(--pt-teal-deep)] transition-transform hover:-translate-y-0.5 sm:w-auto"
+            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[var(--pt-accent)] px-8 py-3.5 text-base font-semibold text-[var(--pt-accent-ink)] transition-transform hover:-translate-y-0.5 sm:w-auto"
           >
-            Get the full report — from {REPORT_TIER_PRICES[DEFAULT_REPORT_TIER]}
+            See the changes — from {REPORT_TIER_PRICES[DEFAULT_REPORT_TIER]}
           </button>
-          <p className="mt-4 text-xs text-white/70">One-time payment · Not legal advice</p>
+          <p className="mt-4 text-xs text-white/60">One-time payment · No subscription</p>
         </section>
       </div>
 
