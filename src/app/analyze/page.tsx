@@ -21,6 +21,25 @@ import {
   type SubmitStep,
 } from "@/lib/contractSubmit";
 
+const CHECK_ICON = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.7,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  className: "h-5 w-5",
+};
+
+const CHECK_AREAS = [
+  { label: "Scope & payment schedule", icon: (<svg {...CHECK_ICON}><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></svg>) },
+  { label: "Change orders & overruns", icon: (<svg {...CHECK_ICON}><path d="M4 7h16M4 12h16M4 17h10" /><path d="M17 15l2 2-2 2" /></svg>) },
+  { label: "Timelines & delays", icon: (<svg {...CHECK_ICON}><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg>) },
+  { label: "Liens & warranties", icon: (<svg {...CHECK_ICON}><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /><path d="M9.5 12l1.8 1.8L15 10" /></svg>) },
+  { label: "Liability & indemnity", icon: (<svg {...CHECK_ICON}><path d="M12 3l8 4v5c0 4-3.2 7.5-8 9-4.8-1.5-8-5-8-9V7z" /></svg>) },
+  { label: "Missing protections", icon: (<svg {...CHECK_ICON}><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></svg>) },
+] as const;
+
 const TIER_ORDER: ReportTierOption[] = ["scan_39", "report_69", "protect_99"];
 const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
 
@@ -109,19 +128,10 @@ export default function AnalyzePage() {
         <h1 className="text-3xl leading-tight text-[var(--pt-ink)] sm:text-4xl 3xl:text-5xl">
           Analyze your contract
         </h1>
-        <p className="mt-3 text-base text-[var(--pt-muted)] 3xl:text-lg">
-          Upload a PDF or DOCX. Get a free risk score and red-flag count in minutes.
+        <p className="mt-3 max-w-2xl text-base text-[var(--pt-muted)] 3xl:text-lg">
+          Upload a renovation or contractor agreement and get a risk score, red-flag count, and a
+          clause-by-clause review.
         </p>
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--pt-muted)]">
-          {["Private upload", "Free risk score", "Details unlock after payment"].map((item) => (
-            <span key={item} className="inline-flex items-center gap-1.5">
-              <svg className="h-4 w-4 shrink-0 text-[#0071e3]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3.5 8.5l3 3 6-7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {item}
-            </span>
-          ))}
-        </div>
       </section>
 
       <section className="mt-8 3xl:mt-10 3xl:grid 3xl:grid-cols-[1.2fr_0.8fr] 3xl:items-stretch 3xl:gap-8">
@@ -317,22 +327,20 @@ export default function AnalyzePage() {
 
       <aside className="mt-6 3xl:mt-0">
         <div className="pt-card h-full p-6 3xl:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-(--pt-muted)">What we check</p>
-          <ul className="mt-5 space-y-4">
-            {[
-              "Scope & payment schedule",
-              "Change orders & overruns",
-              "Timelines & delays",
-              "Liens & warranties",
-              "Liability & indemnity",
-              "Missing protections",
-            ].map((label) => (
-              <li key={label} className="flex items-center gap-3 text-lg font-medium text-foreground 3xl:text-xl">
-                <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-(--pt-accent)" />
-                {label}
-              </li>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--pt-muted)">What we check</p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 3xl:grid-cols-1">
+            {CHECK_AREAS.map((area) => (
+              <div
+                key={area.label}
+                className="flex items-center gap-3 rounded-xl border border-[var(--pt-border)] bg-white px-4 py-3.5"
+              >
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--pt-accent)]/10 text-[var(--pt-accent)]">
+                  {area.icon}
+                </span>
+                <p className="text-[15px] font-semibold text-[var(--pt-ink)]">{area.label}</p>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       </aside>
 
