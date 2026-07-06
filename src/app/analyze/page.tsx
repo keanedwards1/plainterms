@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { getOrCreateFunnelId } from "@/lib/funnelMetrics";
 import {
   REPORT_TIER_DESCRIPTIONS,
@@ -106,48 +105,23 @@ export default function AnalyzePage() {
           ← Back to home
         </Link>
 
-      <section className="mt-5 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] 3xl:mt-8 3xl:gap-8">
-        <div>
-          <p className="pt-kicker mb-3">
-            Free risk preview
-          </p>
-          <h1 className="text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl 3xl:text-6xl">
-            See the risk score before you pay.
-          </h1>
-          <p className="mt-4 max-w-xl text-base text-[var(--pt-muted)] 3xl:text-lg 3xl:mt-6 3xl:max-w-2xl">
-            Upload your renovation or contractor agreement as a PDF or DOCX and get a free risk
-            score and red-flag count in minutes. Decide what level of review you need after you
-            see the result.
-          </p>
+      <section className="mt-6 3xl:mt-8">
+        <h1 className="text-3xl leading-tight text-[var(--pt-ink)] sm:text-4xl 3xl:text-5xl">
+          Analyze your contract
+        </h1>
+        <p className="mt-3 text-base text-[var(--pt-muted)] 3xl:text-lg">
+          Upload a PDF or DOCX. Get a free risk score and red-flag count in minutes.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--pt-muted)]">
+          {["Private upload", "Free risk score", "Details unlock after payment"].map((item) => (
+            <span key={item} className="inline-flex items-center gap-1.5">
+              <svg className="h-4 w-4 shrink-0 text-[#0071e3]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3.5 8.5l3 3 6-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {item}
+            </span>
+          ))}
         </div>
-
-        <aside className="flex flex-col rounded-[var(--pt-radius)] border border-[#cfe4fb] bg-[#eaf3fe] p-5 text-sm text-[var(--pt-muted)] shadow-[0_14px_26px_-24px_var(--pt-shadow)] 3xl:p-7">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/graphics/icon-shield.svg"
-              alt=""
-              width={44}
-              height={44}
-              className="h-11 w-11 shrink-0 rounded-xl border border-[#cfe4fb] bg-white p-2"
-            />
-            <h2 className="text-lg text-[var(--pt-ink)] 3xl:text-xl">Secure review flow</h2>
-          </div>
-          <ul className="mt-4 space-y-3 3xl:text-base">
-            {[
-              "Private upload and validation",
-              "Free risk score before checkout",
-              "Details unlock only after payment",
-              "Informational only, not legal advice",
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-2.5">
-                <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#0071e3]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3.5 8.5l3 3 6-7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </aside>
       </section>
 
       <section className="mt-8 3xl:mt-10 3xl:grid 3xl:grid-cols-[1.2fr_0.8fr] 3xl:items-stretch 3xl:gap-8">
@@ -176,7 +150,7 @@ export default function AnalyzePage() {
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInputRef.current?.click(); } }}
-            className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-colors 3xl:p-8 ${
+            className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-colors duration-200 ease 3xl:p-8 ${
               isDragging
                 ? "border-[#0071e3] bg-[#eaf3fe]"
                 : file
@@ -210,26 +184,26 @@ export default function AnalyzePage() {
             )}
           </div>
 
-          <fieldset className="mt-6">
-            <legend className="mb-3 block text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">
+          <fieldset className="mt-7">
+            <legend className="mb-4 block text-base font-semibold text-[var(--pt-ink)] 3xl:text-lg">
               Choose your review
             </legend>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3.5 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setReviewChoice("free")}
                 aria-pressed={reviewChoice === "free"}
-                className={`relative rounded-xl border p-4 text-left transition-colors ${
+                className={`relative rounded-2xl border p-5 text-left transition-colors 3xl:p-6 ${
                   reviewChoice === "free"
                     ? "border-[#de8f79] bg-[var(--pt-surface-soft)] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
                     : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
                 }`}
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-base font-semibold text-[var(--pt-ink)]">Free risk preview</p>
-                  <p className="text-base font-semibold text-[#2ba59f]">$0</p>
+                  <p className="text-lg font-semibold text-[var(--pt-ink)]">Free risk preview</p>
+                  <p className="text-lg font-semibold text-[#2ba59f]">$0</p>
                 </div>
-                <p className="mt-1 text-xs leading-5 text-[var(--pt-muted)]">
+                <p className="mt-1.5 text-sm leading-6 text-[var(--pt-muted)]">
                   Risk score and red-flag counts. Decide what to unlock after you see it.
                 </p>
               </button>
@@ -240,7 +214,7 @@ export default function AnalyzePage() {
                   type="button"
                   onClick={() => setReviewChoice(tier)}
                   aria-pressed={reviewChoice === tier}
-                  className={`relative rounded-xl border p-4 text-left transition-colors ${
+                  className={`relative rounded-2xl border p-5 text-left transition-colors 3xl:p-6 ${
                     reviewChoice === tier
                       ? "border-[#de8f79] bg-[var(--pt-surface-soft)] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
                       : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
@@ -252,10 +226,10 @@ export default function AnalyzePage() {
                     </span>
                   ) : null}
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-base font-semibold text-[var(--pt-ink)]">{REPORT_TIER_NAMES[tier]}</p>
-                    <p className="text-base font-semibold text-[var(--pt-ink)]">{REPORT_TIER_PRICES[tier]}</p>
+                    <p className="text-lg font-semibold text-[var(--pt-ink)]">{REPORT_TIER_NAMES[tier]}</p>
+                    <p className="text-lg font-semibold text-[var(--pt-ink)]">{REPORT_TIER_PRICES[tier]}</p>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-[var(--pt-muted)]">{REPORT_TIER_DESCRIPTIONS[tier]}</p>
+                  <p className="mt-1.5 text-sm leading-6 text-[var(--pt-muted)]">{REPORT_TIER_DESCRIPTIONS[tier]}</p>
                 </button>
               ))}
             </div>
@@ -341,38 +315,24 @@ export default function AnalyzePage() {
         </form>
       </div>
 
-      <aside className="hidden 3xl:block">
-        <div className="pt-card h-full p-7">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-(--pt-muted)">Clauses we cover</p>
-          <p className="mt-1 text-sm text-(--pt-muted)">Every contract is analyzed across these areas.</p>
-          <ul className="mt-5 space-y-2">
+      <aside className="mt-6 3xl:mt-0">
+        <div className="pt-card h-full p-6 3xl:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-(--pt-muted)">What we check</p>
+          <ul className="mt-5 space-y-4">
             {[
-              "Who's Involved",
-              "Scope of Work",
-              "Deposit & Payment Schedule",
-              "Change Orders",
-              "Completion Timeline & Delays",
-              "Mechanics Liens & Waivers",
-              "Workmanship Warranty",
-              "Permits & Inspections",
-              "Liability & Indemnity",
-              "Disputes & Governing Law",
-              "Questions & Missing Info",
+              "Scope & payment schedule",
+              "Change orders & overruns",
+              "Timelines & delays",
+              "Liens & warranties",
+              "Liability & indemnity",
+              "Missing protections",
             ].map((label) => (
-              <li key={label} className="flex items-center gap-2.5 text-sm text-foreground">
-                <span className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-(--pt-accent)" />
+              <li key={label} className="flex items-center gap-3 text-lg font-medium text-foreground 3xl:text-xl">
+                <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-(--pt-accent)" />
                 {label}
               </li>
             ))}
           </ul>
-          <div className="mt-6 rounded-xl border border-dashed border-(--pt-border) p-4">
-            <p className="text-xs font-semibold text-(--pt-muted) uppercase tracking-[0.14em]">Your report also includes</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {["Risk score", "Recommendation", "Red flags", "Negotiation points", "Questions to ask"].map((tag) => (
-                <span key={tag} className="rounded-full border border-(--pt-border) bg-(--pt-surface-soft) px-2.5 py-1 text-xs font-semibold text-(--pt-muted)">{tag}</span>
-              ))}
-            </div>
-          </div>
         </div>
       </aside>
 
