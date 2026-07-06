@@ -221,8 +221,8 @@ export default function AnalyzePage() {
                 aria-pressed={reviewChoice === "free"}
                 className={`relative rounded-xl border p-4 text-left transition-colors ${
                   reviewChoice === "free"
-                    ? "border-[#de8f79] bg-[#fff6f1] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
-                    : "border-[var(--pt-border)] bg-[var(--pt-surface-soft)] hover:border-[#de8f79]"
+                    ? "border-[#de8f79] bg-[var(--pt-surface-soft)] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
+                    : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
                 }`}
               >
                 <div className="flex items-baseline justify-between gap-2">
@@ -242,8 +242,8 @@ export default function AnalyzePage() {
                   aria-pressed={reviewChoice === tier}
                   className={`relative rounded-xl border p-4 text-left transition-colors ${
                     reviewChoice === tier
-                      ? "border-[#de8f79] bg-[#fff6f1] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
-                      : "border-[var(--pt-border)] bg-[var(--pt-surface-soft)] hover:border-[#de8f79]"
+                      ? "border-[#de8f79] bg-[var(--pt-surface-soft)] shadow-[0_14px_28px_-26px_rgba(222,143,121,0.9)]"
+                      : "border-[var(--pt-border)] bg-white hover:border-[#de8f79]"
                   }`}
                 >
                   {tier === "report_69" ? (
