@@ -154,7 +154,7 @@ export default async function PreviewPage({ params, searchParams }: Props) {
             href="/analyze"
             className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:text-[var(--pt-ink)]"
           >
-            <span aria-hidden="true" className="inline-block transition-transform duration-200 ease-out group-hover:-translate-x-1">←</span>
+            <span aria-hidden="true" className="inline-block transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-x-1">←</span>
             Analyze another file
           </Link>
           <div className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3.5 py-1.5 text-xs text-[var(--pt-muted)]">
