@@ -55,10 +55,10 @@ const RISK_META: Record<RiskLabel, { label: string; note: string; ring: string; 
   medium: {
     label: "Moderate risk",
     note: "A few clauses need clarifying before you commit.",
-    ring: "#e0a53a",
-    text: "#9a6f16",
-    chipBg: "#fbf0d6",
-    chipText: "#8a6413",
+    ring: "#f5b93f",
+    text: "#a9791a",
+    chipBg: "#fdf1cf",
+    chipText: "#9a6c14",
   },
   low: {
     label: "Low risk",
