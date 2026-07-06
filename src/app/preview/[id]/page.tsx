@@ -152,13 +152,17 @@ export default async function PreviewPage({ params, searchParams }: Props) {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/analyze"
-            className="text-sm font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3.5 py-1.5 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:text-[var(--pt-ink)]"
           >
-            ← Analyze another file
+            <span aria-hidden="true">←</span> Analyze another file
           </Link>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--pt-muted)]">
-            <span className="truncate max-w-[12rem] sm:max-w-none">{fileNameLabel}</span>
-            <span aria-hidden="true">·</span>
+          <div className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3.5 py-1.5 text-xs text-[var(--pt-muted)]">
+            <svg className="h-3.5 w-3.5 shrink-0 text-[var(--pt-muted)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M4 1.5h5L13 5.5v9H4z" strokeLinejoin="round" />
+              <path d="M9 1.5v4h4" strokeLinejoin="round" />
+            </svg>
+            <span className="truncate max-w-[12rem] font-medium text-[var(--pt-ink)] sm:max-w-none">{fileNameLabel}</span>
+            <span aria-hidden="true" className="opacity-50">·</span>
             <span>Reviewed {createdAtLabel}</span>
           </div>
         </div>

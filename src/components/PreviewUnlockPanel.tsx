@@ -98,9 +98,14 @@ function ScoreDial({ score, color }: { score: number; color: string }) {
   const dash = (clamped / 100) * circumference;
   return (
     <div className="relative h-32 w-32 shrink-0">
+      <style>{`
+        @keyframes pt-dial-draw { from { stroke-dashoffset: ${dash}; } to { stroke-dashoffset: 0; } }
+        @media (prefers-reduced-motion: reduce) { .pt-dial-arc { animation: none !important; } }
+      `}</style>
       <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
         <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--pt-border)" strokeWidth="10" />
         <circle
+          className="pt-dial-arc"
           cx="60"
           cy="60"
           r={radius}
@@ -109,6 +114,7 @@ function ScoreDial({ score, color }: { score: number; color: string }) {
           strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={`${dash} ${circumference}`}
+          style={{ animation: "pt-dial-draw 900ms ease-out both" }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -211,10 +217,8 @@ export default function PreviewUnlockPanel({
           <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:gap-8 sm:text-left">
             <ScoreDial score={risk.score} color={meta.ring} />
             <div className="flex-1">
-              <span
-                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide"
-                style={{ backgroundColor: meta.chipBg, color: meta.chipText }}
-              >
+              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--pt-border)] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--pt-ink)]">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.ring }} />
                 {meta.label}
               </span>
               <h1 className="mt-3 text-2xl font-semibold leading-tight text-[var(--pt-ink)] sm:text-3xl">
@@ -292,9 +296,19 @@ export default function PreviewUnlockPanel({
           <button
             type="button"
             onClick={openModal}
-            className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[#0071e3] px-8 py-3.5 text-base font-semibold text-white transition-transform hover:-translate-y-0.5 sm:w-auto"
+            className="group mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#0071e3] px-8 py-3.5 text-base font-semibold text-white sm:w-auto"
           >
             See the changes — from {FROM_PRICE}
+            <svg
+              className="h-4 w-4 shrink-0 transition-transform duration-200 ease-out group-hover:translate-x-1"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
           <p className="mt-4 text-xs text-[#0b3d75]/60">One-time payment · No subscription</p>
         </section>
