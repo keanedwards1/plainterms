@@ -264,13 +264,46 @@ export default function HeroBubbles() {
       return;
     }
 
-    // The blobs animate (and ambient-jiggle) on every device. Pointer
-    // interaction is desktop-only — on touch it caused scroll lag.
+    if (coarse.matches) {
+      // Touch devices: no animation loop at all (repainting the canvas each
+      // frame contends with scroll on the main thread and causes a hitch).
+      // Instead we freeze one lively frame from the initial load — the vertices
+      // start randomly poked, so a handful of ticks develops a rounded,
+      // asymmetric wobble that looks far more alive than the settled shape.
+      const LIVELY_TICKS = 14;
+      const paintStatic = () => {
+        for (const b of blobs) {
+          for (const p of b.points) {
+            p.acceleration = 0;
+            p.speed = 0;
+            p.radialEffect = 0;
+            // Re-seed the initial poke so a resize re-derives the same lively look.
+            p.applyAcceleration(-0.3 + Math.random() * 0.6);
+          }
+        }
+        for (let i = 0; i < LIVELY_TICKS; i++) {
+          for (const b of blobs) stepBlob(b);
+        }
+        ctx.clearRect(0, 0, W, H);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = orange;
+        ctx.fillStyle = orange;
+        for (const b of blobs) drawBlob(b);
+      };
+      paintStatic();
+      // Only respond to resize (re-fit + repaint); never on scroll/touch.
+      const onResize = () => {
+        resize();
+        paintStatic();
+      };
+      window.addEventListener("resize", onResize);
+      return () => window.removeEventListener("resize", onResize);
+    }
+
+    // Desktop: full animation, ambient jiggle, and cursor interaction.
     raf = requestAnimationFrame(render);
     window.addEventListener("resize", resize);
-    if (!coarse.matches) {
-      window.addEventListener("pointermove", onMove, { passive: true });
-    }
+    window.addEventListener("pointermove", onMove, { passive: true });
 
     return () => {
       cancelAnimationFrame(raf);
