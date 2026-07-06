@@ -152,9 +152,10 @@ export default async function PreviewPage({ params, searchParams }: Props) {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/analyze"
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3.5 py-1.5 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:text-[var(--pt-ink)]"
+            className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:text-[var(--pt-ink)]"
           >
-            <span aria-hidden="true">←</span> Analyze another file
+            <span aria-hidden="true" className="inline-block transition-transform duration-200 ease-out group-hover:-translate-x-1">←</span>
+            Analyze another file
           </Link>
           <div className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-3.5 py-1.5 text-xs text-[var(--pt-muted)]">
             <svg className="h-3.5 w-3.5 shrink-0 text-[var(--pt-muted)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
