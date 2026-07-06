@@ -150,7 +150,7 @@ export default function AnalyzePage() {
         </aside>
       </section>
 
-      <section className="mt-8 3xl:mt-10 3xl:grid 3xl:grid-cols-[1fr_0.52fr] 3xl:items-stretch 3xl:gap-8">
+      <section className="mt-8 3xl:mt-10 3xl:grid 3xl:grid-cols-[1.2fr_0.8fr] 3xl:items-stretch 3xl:gap-8">
       <div className="pt-card p-6 3xl:p-8">
         <form onSubmit={onSubmit}>
           <label className="mb-3 block text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">
