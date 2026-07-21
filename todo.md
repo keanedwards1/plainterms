@@ -1,5 +1,14 @@
 # Security Audit TODO
 
+## Critical — Broken Paid Flow (Blocker)
+
+- [ ] **Preview-unlock checkout always returns 500** — `services/api/plainterms-api/lambdas/createCheckout.mjs:166`
+  - `resultCheck.reportTier` is read inside the **preview-unlock** branch, but `resultCheck` is declared with `const` at line 223 in the **result-upgrade** branch below. Temporal dead zone violation.
+  - Verified: throws `ReferenceError: Cannot access 'resultCheck' before initialization` (not `undefined`). The branch's own `catch` at line 211 swallows it into a generic `500 checkout_creation_failed`.
+  - Impact: **nobody converting from a preview link can pay.** This code path has never succeeded in production. Fails closed, so it is a revenue bug, not an exploit.
+  - Complication: `verifyPreviewResultAccess` (line 74) does not return `reportTier` at all, unlike `verifyResultAccess` (line 126). So renaming to `previewCheck` alone is not enough.
+  - Decision needed: a preview has no purchased tier to upgrade *from*, so the tier-rank check should probably be dropped for previews rather than adding the field.
+
 ## Pre-Launch — Before Running Ads
 
 ### Blockers (must do before any ad spend)
@@ -54,6 +63,7 @@
 - [ ] **No Frontend Rate Limiting** — `src/app/api/` routes
   - Next.js proxy layer has no rate limiting. Backend has WAF (1500 req/5min per IP) and API Gateway throttling (10 req/sec), but Vercel frontend routes are unprotected.
   - Action: Add Vercel rate limiting or middleware-based throttling on sensitive endpoints (`/api/checkout`, `/api/upload-url`).
+  - Note: the backend WAF/throttle figures above were carried over from an earlier audit and were **not** re-verified against `template.yaml` in the 2026-07-21 pass. Confirm before relying on them — the unpaid-LLM item above assumes they hold.
 
 - [ ] **Precheck Token Replay** — `services/api/plainterms-api/lambdas/createCheckout.mjs:78-98`
   - A valid precheck token can create multiple Stripe checkout sessions within its 15-minute TTL. Each requires separate payment, but could enable abuse patterns.
@@ -62,6 +72,12 @@
 - [ ] **Webhook URL Not Validated** — `src/lib/observability.ts:59`
   - `ALERT_WEBHOOK_URL` is fetched without URL validation. If the env var is compromised, it becomes an SSRF vector.
   - Action: Validate the URL is HTTPS and matches an expected domain pattern.
+
+- [ ] **Unpaid LLM cost amplification via `/preview`** — `services/api/plainterms-api/lambdas/previewAnalysis.mjs`
+  - `previewAnalysis` runs a **full** `runAnalysis` (LLM call included) with no payment required — only a valid precheck token gates it. Each request costs real inference spend.
+  - Backend WAF (1500 req/5min per IP) and API Gateway throttling (10 req/sec) blunt this, but both are per-IP and the endpoint is unauthenticated, so a distributed caller can still drive cost.
+  - Interacts with the "Precheck Token Replay" item below: one valid token can drive repeated preview analyses within its 15-min TTL. A one-time-use nonce would fix both at once.
+  - Action: Confirm actual WAF/throttle values in `template.yaml`, then consider per-token single-use enforcement and a cheaper preview path (rules-only, no LLM).
 
 ## Low Severity
 
@@ -85,6 +101,16 @@
   - Novel techniques could bypass signature detection. Mitigated by text-extraction-only approach.
   - Action: Monitor for new PDF/DOCX exploit techniques; consider integrating a third-party scanning service for higher assurance.
 
+- [ ] **CORS falls open to a default origin** — `services/api/plainterms-api/lib/cors.mjs:65-67`
+  - A disallowed origin receives `access-control-allow-origin: https://www.plainterms.us` rather than no header at all.
+  - Not exploitable — the browser still blocks on the mismatch, and the API is capability-key-based rather than cookie-based. Purely a "fail closed vs. fail confusing" cleanup.
+  - Action: Omit the CORS origin header entirely when the request origin is not allowed.
+
+- [ ] **`getResult` mutates state on GET** — `services/api/plainterms-api/lambdas/getResult.mjs:280`
+  - The revision backfill issues an `UpdateItemCommand` and can invoke the revision Lambda during a read request.
+  - Access-key check precedes it, so this is not an authz hole — but it makes GET non-idempotent and lets an authorized caller trigger repeated Lambda invocations by re-fetching.
+  - Action: Move the backfill to the write path, or guard it with a conditional update so concurrent GETs cannot each fire a worker.
+
 - [ ] **S3 CORS Allows All Headers** — `services/api/plainterms-api/template.yaml:126`
   - Low risk since objects aren't publicly readable.
   - Action: Restrict `AllowedHeaders` to specific values (`content-type`, `x-amz-*`).
@@ -94,6 +120,18 @@
   - Action: Consider restricting to explicitly listed preview URLs or requiring auth on preview backends.
 
 ---
+
+## Verified Sound — 2026-07-21 Review
+
+No action needed. Recorded so a later audit does not re-litigate these.
+
+- **Upload chain gates properly.** Presigned PUT is scoped to one key with a 300s expiry; `validateObjectKey` pins the `uploads/` prefix; `sanitizeFilename` strips path separators before use. MIME/extension disagreement is rejected outright (`uploadPolicy.mjs:71`), blocking `.pdf`-named-DOCX.
+- **Precheck token cannot be cross-bound.** `createCheckout.mjs:325-347` re-binds the token to the current request's objectKey/filename/contentType/size and requires `scanPassed === true`, so a token from a clean file cannot be replayed against a different upload. (Same-file replay within TTL is still open — tracked above.)
+- **Malware scan is content-based.** Magic-byte checks plus hand-rolled ZIP central-directory parsing; EOCD scan bounded to 65557 bytes and every offset bounds-checked before read — no OOB reads.
+- **Access keys are capability-grade.** 256-bit random, stored only as SHA-256 hashes, compared with `timingSafeEqual`. Rotation on checkout keeps one grace generation. Preview and full access use separate keys, and preview mode returns only aggregate counts — never flag or clause text (`getResult.mjs:115-169`).
+- **Prices are server-held.** Tier maps to a Stripe price ID server-side; the client never supplies an amount. `payment_status !== "paid"` blocks entry, and post-payment analysis failure auto-refunds.
+- **Prompt injection is bounded.** Quotes are verified as literal substrings of the source before being kept (`llmAnalyze.mjs:19-32`) and statuses re-normalized against an allowlist. A malicious contract can sway prose summaries but cannot fabricate quotes or inject status values.
+- **Secrets hygiene.** SSM-backed with env fallback; `.env*` gitignored and `.env.local` confirmed untracked.
 
 ## Homepage Changes
 
