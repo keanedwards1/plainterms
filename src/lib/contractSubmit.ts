@@ -1,4 +1,5 @@
 import { trackFunnelMetric } from "@/lib/funnelMetrics";
+import { reportFreePreviewCompleted } from "@/lib/gtag";
 import { type ReportTierOption } from "@/lib/pricingOptions";
 
 // Shared contract upload → validate → preview/checkout pipeline.
@@ -268,6 +269,7 @@ export async function submitContract(opts: {
     }
 
     void trackFunnelMetric({ event: "preview_ready", funnelId, resultId: data.resultId });
+    reportFreePreviewCompleted(data.resultId);
     currentStep = "opening-preview";
     onStep(currentStep);
     return {

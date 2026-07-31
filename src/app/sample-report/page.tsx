@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import SampleReportTabsPreview from "@/components/SampleReportTabsPreview";
+import StickyMobileCta from "@/components/StickyMobileCta";
 
 export const metadata: Metadata = {
   title: "Sample Report | PlainTerms",
@@ -10,7 +12,7 @@ export default function SampleReportPage() {
   const tabs = ["Summary", "Insights", "Red Flags", "Key Terms", "Questions", "Full Report"];
 
   return (
-    <main className="pt-page-pad pb-12 pt-8">
+    <main className="pt-page-pad pb-28 pt-8 sm:pb-12">
       <div className="pt-container-wide space-y-6">
         <section className="pt-card overflow-hidden p-6 sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
@@ -28,6 +30,17 @@ export default function SampleReportPage() {
               <p className="mt-2 text-sm font-semibold text-[var(--pt-ink)]">
                 Typical attorney review memo: ~$900–$1,800.
               </p>
+              <div className="mt-5">
+                <Link
+                  href="/analyze"
+                  className="pt-btn-primary inline-flex w-full items-center justify-center px-6 py-3 text-base font-semibold sm:w-auto"
+                >
+                  Check your own contract — free →
+                </Link>
+                <p className="mt-2 text-xs text-[var(--pt-muted)]">
+                  Get a risk score and red flags in minutes. No card required.
+                </p>
+              </div>
               <div className="mt-5 flex flex-wrap gap-2">
                 {tabs.map((tab) => (
                   <span
@@ -65,6 +78,8 @@ export default function SampleReportPage() {
         <SampleReportTabsPreview />
 
       </div>
+
+      <StickyMobileCta href="/analyze" label="Check your own contract — free →" />
     </main>
   );
 }
