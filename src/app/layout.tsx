@@ -77,12 +77,10 @@ export default function RootLayout({
       <body className={`${headingFont.variable} ${bodyFont.variable} pt-body antialiased`}>
         {gaMeasurementId ? (
           <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
+            <script
+              id="google-analytics"
+              dangerouslySetInnerHTML={{
+                __html: `
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){window.dataLayer.push(arguments);}
                 window.gtag = gtag;
@@ -95,8 +93,10 @@ export default function RootLayout({
                 });
                 gtag('js', new Date());
                 gtag('config', '${gaMeasurementId}', { send_page_view: false });
-              `}
-            </Script>
+              `,
+              }}
+            />
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} />
             <Suspense fallback={null}>
               <GoogleAnalytics measurementId={gaMeasurementId} />
             </Suspense>
