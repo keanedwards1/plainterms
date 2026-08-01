@@ -21,7 +21,7 @@ export default function SampleReportPage() {
                 Sample report
               </p>
               <h1 className="mt-3 text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
-                Get the clarity most homeowners pay a lawyer hundreds for.
+                Get a review that costs hundreds when done by lawyers
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-[var(--pt-muted)]">
                 You get the same report structure as live paid results: At A Glance, Summary,
@@ -35,7 +35,7 @@ export default function SampleReportPage() {
                   href="/analyze"
                   className="pt-btn-primary inline-flex w-full items-center justify-center px-6 py-3 text-base font-semibold sm:w-auto"
                 >
-                  Check your own contract — free →
+                  Try it for yourself
                 </Link>
                 <p className="mt-2 text-xs text-[var(--pt-muted)]">
                   Get a risk score and red flags in minutes. No card required.

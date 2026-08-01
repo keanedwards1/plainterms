@@ -588,14 +588,14 @@ export default function SampleReportTabsPreview() {
 
           <div className="mt-5 flex flex-col items-start justify-between gap-3 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4 sm:flex-row sm:items-center">
             <div>
-              <p className="text-sm font-semibold text-[var(--pt-ink)]">This is a sample report.</p>
-              <p className="mt-0.5 text-sm text-[var(--pt-muted)]">Upload your own contract for a free risk preview — no card required.</p>
+              <p className="text-sm font-semibold text-[var(--pt-ink)]">Test before you buy</p>
+              <p className="mt-0.5 text-sm text-[var(--pt-muted)]">If you have a contract you need checking, upload it here.</p>
             </div>
             <Link
               href="/analyze"
-              className="shrink-0 rounded-lg bg-[var(--pt-accent)] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              className="shrink-0 rounded-lg bg-[var(--pt-accent)] px-4 py-2.5 text-sm font-semibold !text-white transition-opacity hover:opacity-90"
             >
-              Check my contract — free →
+              Test it out
             </Link>
           </div>
         </section>
