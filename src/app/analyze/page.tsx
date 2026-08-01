@@ -49,7 +49,7 @@ export default function AnalyzePage() {
   const [error, setError] = React.useState<string | null>(null);
   const [step, setStep] = React.useState<SubmitStep | null>(null);
   const [checkoutCanceled, setCheckoutCanceled] = React.useState(false);
-  const [reviewChoice, setReviewChoice] = React.useState<ReviewChoice>("report_69");
+  const [reviewChoice, setReviewChoice] = React.useState<ReviewChoice>("free");
   const [isDragging, setIsDragging] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -210,7 +210,7 @@ export default function AnalyzePage() {
                 }`}
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-lg font-semibold text-[var(--pt-ink)]">Free risk preview</p>
+                  <p className="text-lg font-semibold text-[var(--pt-ink)]">Free preview</p>
                   <p className="text-lg font-semibold text-[#2ba59f]">$0</p>
                 </div>
                 <p className="mt-1.5 text-sm leading-6 text-[var(--pt-muted)]">

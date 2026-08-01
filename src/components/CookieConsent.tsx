@@ -31,6 +31,8 @@ function loadStored(): ConsentPrefs | null {
 
 function savePrefs(prefs: ConsentPrefs) {
   localStorage.setItem(CONSENT_KEY, JSON.stringify(prefs));
+  // Lets the sticky mobile CTA take over this corner of the screen.
+  window.dispatchEvent(new Event("pt:cookie-consent"));
 }
 
 // Toggle switch — necessary cookies are always locked on
