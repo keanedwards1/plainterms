@@ -44,3 +44,7 @@ next-env.d.ts
 .aws-sam/
 .vscode
 .env*.local
+
+# Keep internal root-level Markdown notes out of the repository.
+/*.md
+!/README.md

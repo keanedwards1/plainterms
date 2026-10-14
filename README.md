@@ -1,332 +1,116 @@
 # PlainTerms
 
-PlainTerms is a contract explainer app that turns legal language into plain English.
+PlainTerms turns dense contracts into clear, useful explanations. Upload a contract, review its key terms in plain English, and understand what deserves attention before you sign.
 
-- Frontend: Next.js + TypeScript (App Router), deployed on Vercel
-- Backend: AWS SAM serverless stack (Lambda + API Gateway), deployed on AWS
+The project is built with Next.js and TypeScript. Its analysis and checkout services run on AWS through an AWS SAM serverless stack.
 
-## High-Level Architecture
+## Motivation
 
-- The Next.js frontend calls an AWS API Gateway base URL.
-- Lambda handlers process requests for uploads, analysis jobs, and results.
-- Infrastructure is managed with AWS SAM in `services/api/plainterms-api`.
+Contracts are written for precision, but that precision often makes them difficult to read. PlainTerms is designed to make important obligations, risks, deadlines, and next steps easier to understand without forcing people to decode legal language first.
 
-## Current Project Status
+PlainTerms is an informational tool, not a law firm or a substitute for advice from a qualified attorney.
 
-- AWS backend is deployed and reachable.
-- Vercel project and environment wiring are configured.
-- Frontend and backend are connected via `API_BASE_URL` through Next.js API proxy routes.
-- Local upload -> checkout -> result flow is implemented.
+## Quick Start
 
-The deployed backend base URL is configured via the `API_BASE_URL` environment
-variable (see Environment Variables below). It is not committed to the repo —
-pull the live value from your Vercel project settings or AWS deployment outputs.
+### Requirements
 
-The API Gateway base URL has the shape:
-`https://<your-api-id>.execute-api.<region>.amazonaws.com/Prod`
+- Node.js 20 or newer
+- npm
+- Access to the backend API for end-to-end analysis flows
 
-Health/test path:
-`https://<your-api-id>.execute-api.<region>.amazonaws.com/Prod/hello/`
-
-## Repo Structure
-
-- `src/`: Next.js application code
-- `services/api/plainterms-api/`: AWS SAM backend (template, handlers, deploy config)
-- `schemas/`: shared schema definitions
-
-## Local Development
-
-Install dependencies and start the frontend:
+Install dependencies and start the local development server:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Environment Variables
-
-Frontend expects:
+For local API-backed flows, create `.env.local` with the backend URL:
 
 ```bash
 API_BASE_URL=https://<your-api-id>.execute-api.<region>.amazonaws.com/Prod
-NEXT_PUBLIC_RESULT_RETENTION_DAYS=30
-NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
-# Recommended for metrics origin allowlist:
-# NEXT_PUBLIC_SITE_URL=https://www.plainterms.us
-# METRICS_ALLOWED_ORIGINS=https://www.plainterms.us,https://plainterms.us,http://localhost:3000
-# Use either of these for Search Console meta verification:
-# GOOGLE_SITE_VERIFICATION=your_verification_token
-# NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=your_verification_token
-# Optional: password-protect the whole site while changes are in progress
-# CONSTRUCTION_PASSWORD=temporary_password
-# Optional: webhook endpoint for 5xx API alerts from Next.js routes
-# ALERT_WEBHOOK_URL=https://hooks.slack.com/services/...
-# Optional fallback for legacy code paths:
-# NEXT_PUBLIC_API_BASE_URL=https://<your-api-id>.execute-api.<region>.amazonaws.com/Prod
 ```
 
-Set this in:
-- `.env.local` for local development
-- Vercel project environment variables for `Preview` and `Production`
+Additional optional environment variables are listed in [Environment variables](#environment-variables).
 
-`API_BASE_URL` is preferred because requests are proxied through Next.js API routes (avoids browser CORS issues).
-`NEXT_PUBLIC_RESULT_RETENTION_DAYS` controls user-facing retention messaging in the frontend.
-`NEXT_PUBLIC_GA_MEASUREMENT_ID` enables Google Analytics 4 tracking.
-`METRICS_ALLOWED_ORIGINS` and `NEXT_PUBLIC_SITE_URL` help `/api/metrics` enforce trusted origins.
-`GOOGLE_SITE_VERIFICATION` (or `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) adds the Search Console verification meta tag.
-`CONSTRUCTION_PASSWORD` turns on the temporary under-construction gate. Remove the env var to disable it.
+## Usage
 
-Quick Vercel CLI setup:
+### Analyze a contract
+
+1. Open `/analyze`.
+2. Upload a supported contract file.
+3. Continue through checkout when prompted.
+4. Review the generated result at `/result/<id>`.
+
+### Useful commands
 
 ```bash
-vercel env add API_BASE_URL preview
-vercel env add API_BASE_URL production
-vercel env add NEXT_PUBLIC_GA_MEASUREMENT_ID preview
-vercel env add NEXT_PUBLIC_GA_MEASUREMENT_ID production
-vercel env add GOOGLE_SITE_VERIFICATION preview
-vercel env add GOOGLE_SITE_VERIFICATION production
+npm run dev       # Start the development server
+npm run lint      # Run ESLint
+npm run build     # Create a production build
+npm run start     # Serve the production build locally
 ```
 
-## Google Analytics + Search Console
+### Environment variables
 
-After setting the env vars and deploying:
+The frontend supports these variables:
 
-1. Open your site and confirm requests are sent to `https://www.googletagmanager.com/gtag/js`.
-2. In GA4 Realtime, confirm a page view appears when loading `/` and when navigating between pages.
-3. In Search Console, use the URL-prefix property for your production URL and click Verify (meta-tag method).
+| Variable | Purpose |
+| --- | --- |
+| `API_BASE_URL` | Backend API Gateway base URL. |
+| `NEXT_PUBLIC_RESULT_RETENTION_DAYS` | Retention period shown in the UI. |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Optional Google Analytics 4 measurement ID. |
+| `NEXT_PUBLIC_SITE_URL` | Optional production site URL used for trusted-origin checks. |
+| `METRICS_ALLOWED_ORIGINS` | Optional comma-separated metrics origins. |
+| `GOOGLE_SITE_VERIFICATION` | Optional Search Console verification token. |
+| `CONSTRUCTION_PASSWORD` | Optional temporary password for the construction gate. |
 
-## Deployments
+Do not commit secrets or `.env.local` files. Vercel deployments should receive their environment variables through Vercel project settings.
 
-Frontend (Vercel):
+### Project structure
+
+```text
+src/                         Next.js application
+services/api/plainterms-api/ AWS SAM backend
+schemas/                     Shared schemas and examples
+scripts/                     Deployment and smoke-test utilities
+```
+
+### Deployment
+
+The frontend can be deployed with Vercel:
 
 ```bash
 vercel
 vercel --prod
 ```
 
-## Production Verification Checklist
-
-After deploy, verify one full flow on both Preview and Production:
-
-1. Open `/analyze`, upload a file, click Continue.
-2. Confirm network calls return 200 for:
-   - `POST /api/upload-url`
-   - `PUT <signed S3 uploadUrl>`
-   - `POST /api/precheck`
-   - `POST /api/checkout`
-   - `POST /api/checkout/verify` (via `/analyze/complete`)
-3. Confirm redirect to `/result/{id}` succeeds and renders summary content.
-4. If anything fails, check the on-screen error detail (status + backend message) and Vercel function logs:
-
-```bash
-vercel logs <deployment-url>
-```
-
-## Automated Smoke Test (Funnel)
-
-A scheduled GitHub Actions workflow runs `scripts/smoke-funnel.mjs` every 6 hours:
-- `.github/workflows/smoke-funnel.yml`
-
-What it verifies against your deployed frontend URL:
-1. `GET /analyze` returns success.
-2. `POST /api/upload-url` returns `uploadUrl` + `objectKey`.
-3. `PUT uploadUrl` uploads a tiny PDF directly to S3.
-4. `POST /api/precheck` validates file type/readability and returns `precheckToken`.
-5. `POST /api/checkout` returns Stripe checkout session fields.
-6. `POST /api/checkout/verify` returns expected unpaid status (`409`) or a valid paid result (`200`).
-   - On `200`, response now includes `resultId` and `accessKey`.
-
-Set repository variable:
-- `SMOKE_BASE_URL` (for example `https://www.plainterms.us`)
-
-Run locally:
-
-```bash
-SMOKE_BASE_URL=https://www.plainterms.us npm run smoke:funnel
-```
-
-## Funnel Metrics
-
-The frontend emits funnel events to `POST /api/metrics` so you can monitor conversion drop-offs:
-1. `upload_start` (user submitted a file on `/analyze`)
-2. `checkout_start` (frontend started checkout request)
-3. `checkout_success` (checkout verify succeeded on `/analyze/complete`)
-4. `result_viewed` (user reached successful `/result/{id}` render)
-
-Metrics are logged as structured JSON with `event: "funnel.metric"` in Vercel function logs.
-
-Suggested quick check after deploy:
-1. Open Vercel logs for your deployment.
-2. Filter for `funnel.metric`.
-3. Compare counts by metric event to identify drop-off points.
-
-Backend (AWS SAM, from `services/api/plainterms-api`):
+Build and deploy the AWS backend from `services/api/plainterms-api`:
 
 ```bash
 sam build
 sam deploy --guided
 ```
 
-Stripe checkout configuration (SAM parameters -> Lambda env):
-- `StripeMode` (`live` or `sandbox`)
-- `StripeSecretKeyParamName` (SSM secure string for Stripe secret key)
-- `StripeTestSecretKeyParamName` (SSM secure string for Stripe sandbox/test secret key)
-- `StripeReportPriceIdParamName` (SSM string for `Report ($79)` price ID)
-- `StripeScanPriceIdParamName` (SSM string for `Core ($29)` price ID)
-- `StripeProtectPriceIdParamName` (SSM string for `Protect ($149)` price ID)
-- `StripeAddonRewritePriceIdParamName` (SSM string for `Rewrite Contract` add-on price ID)
-- `StripeAddonUpdateEmailPriceIdParamName` (SSM string for `Create Update Email` add-on price ID)
-- `StripeTestReportPriceIdParamName` (SSM string for Stripe sandbox/test report price ID)
-- `StripeTestScanPriceIdParamName` (SSM string for Stripe sandbox/test scan price ID)
-- `StripeTestProtectPriceIdParamName` (SSM string for Stripe sandbox/test protect price ID)
-- `StripeTestAddonRewritePriceIdParamName` (SSM string for Stripe sandbox/test rewrite add-on price ID)
-- `StripeTestAddonUpdateEmailPriceIdParamName` (SSM string for Stripe sandbox/test update-email add-on price ID)
-- `StripePriceIdParamName` (legacy fallback; also defaults to report price path)
-- `AppBaseUrl` (for example `https://www.plainterms.us`)
-- `AppSecondaryBaseUrl` (for example `https://plainterms.us`)
-- `PrecheckTokenSecretParamName` (SSM secure string for precheck token signing)
-- Security controls (from SAM parameters):
-  - `ApiDefaultRateLimit` / `ApiDefaultBurstLimit` for stage-level throttling
-  - `EnableApiWaf` (`false` by default to reduce cost, set `true` to re-enable WAF)
-  - `WafGlobalIpLimitPer5Min` for WAF IP-based blocks (used when WAF is enabled)
-
-  > **TODO — enable WAF once the site gets real/steady traffic.** WAF is off by
-  > default to avoid its monthly cost. The current defenses (stage throttling,
-  > reserved concurrency, and `ANALYSIS_MODE=rules` so no LLM spend on free traffic)
-  > protect against cost-exhaustion and single-source floods, but per-IP blocking of a
-  > distributed (botnet) attack needs WAF. When traffic grows, redeploy with
-  > `EnableApiWaf=true` (see the WAF example under Manual SAM commands).
-  - `ApiRequestCountAlarmThreshold`, `Api4xxAlarmThreshold`, `Api5xxAlarmThreshold`
-  - `ApiAlarmPeriodSeconds`, `ApiAlarmEvaluationPeriods`
-  - `ApiAlarmSnsTopicArn` (optional SNS alerts target; leave empty to disable notifications)
-- LLM analysis (optional, via AWS SSM + Lambda env):
-  - `ANALYSIS_MODE` (from SAM parameter `AnalysisMode`) = `rules` (default) or `llm`
-  - `LLM_BASE_URL` (default `https://api.openai.com/v1`)
-  - `LLM_MODEL` (from SAM parameter `LlmModel`; default `gpt-4o-mini`; supported: `gpt-4o-mini`, `gpt-5-mini`, `gpt-5`, `gpt-5.2`)
-  - `LLM_API_KEY_PARAM` (default SSM parameter: `/plainterms/llm/api-key`)
-
-Enable LLM analysis (AWS):
+Before deploying, configure the required AWS, Stripe, and application environment values for your deployment. The repository also includes a funnel smoke test:
 
 ```bash
-aws ssm put-parameter \
-  --name /plainterms/llm/api-key \
-  --type SecureString \
-  --overwrite \
-  --value "<YOUR_LLM_API_KEY>"
+SMOKE_BASE_URL=https://www.example.com npm run smoke:funnel
 ```
 
-Clean switch examples:
+## Contributing
 
-From the repository root, use the npm shortcuts for routine Stripe mode switches:
+Contributions are welcome. A typical workflow is:
 
-```bash
-# Switch checkout to Stripe sandbox/test mode.
-npm run stripe:sandbox
+1. Create a focused branch from the default branch.
+2. Make the smallest change that addresses the issue.
+3. Run `npm run lint` and `npm run build` before opening a pull request.
+4. Describe the user impact, implementation details, and verification steps in the pull request.
 
-# Switch checkout back to Stripe live mode.
-npm run stripe:live
+Please avoid committing credentials, generated build output, private product notes, or other root-level Markdown files. Keep user-facing documentation in this README and place internal working notes outside the repository.
 
-# Build the SAM backend first, then switch modes.
-npm run stripe:sandbox:build
-npm run stripe:live:build
-```
+## License
 
-These commands reuse `services/api/plainterms-api/samconfig.toml`, swap only `StripeMode`, and run `sam deploy`. SAM will show a CloudFormation changeset and ask for confirmation before updating AWS.
-
-Manual SAM commands:
-
-```bash
-cd services/api/plainterms-api
-sam build
-
-# Live Stripe mode (all tiers enabled)
-sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=live AnalysisMode=rules LlmModel=gpt-4o-mini
-
-# LLM mode with GPT-5.2
-sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=live AnalysisMode=llm LlmModel=gpt-5.2
-
-# Sandbox Stripe mode (uses StripeTest* parameter names)
-sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=sandbox AnalysisMode=rules LlmModel=gpt-4o-mini
-
-# Re-enable WAF later (optional) and wire alarm notifications
-sam deploy --parameter-overrides AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us StripeMode=live AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=true WafGlobalIpLimitPer5Min=1500 ApiAlarmSnsTopicArn=arn:aws:sns:us-west-2:123456789012:plainterms-alarms
-```
-
-Stripe sandbox quick switch checklist:
-1. Store sandbox/test Stripe values in SSM:
-```bash
-aws ssm put-parameter --name /plainterms/stripe/test/secret-key --type SecureString --overwrite --value "<STRIPE_SK_TEST...>"
-aws ssm put-parameter --name /plainterms/stripe/test/price-id-report --type String --overwrite --value "price_test_report"
-aws ssm put-parameter --name /plainterms/stripe/test/price-id-scan --type String --overwrite --value "price_test_scan"
-aws ssm put-parameter --name /plainterms/stripe/test/price-id-protect --type String --overwrite --value "price_test_protect"
-aws ssm put-parameter --name /plainterms/stripe/test/price-id-addon-rewrite --type String --overwrite --value "price_test_rewrite"
-aws ssm put-parameter --name /plainterms/stripe/test/price-id-addon-update-email --type String --overwrite --value "price_test_update_email"
-```
-2. Deploy with `StripeMode=sandbox`.
-3. Switch back to `StripeMode=live` when ready for real charges.
-
-Quick UI switch for testing:
-- On `/analyze`, use the `Testing controls` card to choose:
-  - `Rules (no LLM)`
-  - `LLM` + model (`gpt-4o-mini`, `gpt-5-mini`, `gpt-5`, `gpt-5.2`)
-- The selection is stored in browser local storage and attached to checkout metadata, so each checkout run can use a different model without redeploying.
-
-If your stack was originally created with guided prompts, update `samconfig.toml` so
-`parameter_overrides` includes:
-
-```toml
-parameter_overrides = "AppBaseUrl=https://www.plainterms.us AppSecondaryBaseUrl=https://plainterms.us AnalysisMode=rules LlmModel=gpt-4o-mini EnableApiWaf=false ApiDefaultRateLimit=5 ApiDefaultBurstLimit=10"
-```
-
-Backend retention behavior:
-- DynamoDB TTL is enabled on attribute `expires_at`.
-- `VerifyCheckoutFunction` writes `expires_at` using `RESULT_TTL_DAYS` (default `30`).
-- `GetResultFunction` returns `410 expired` once a result passes its TTL window.
-
-## AWS Setup Notes
-
-- AWS account uses IAM user credentials (no root access keys).
-- Billing alerts are enabled.
-- Credentials were verified with `aws sts get-caller-identity`.
-- SAM deployment created Lambda, API Gateway, and IAM resources successfully.
-
-## Current Backend Endpoints
-
-- `POST /upload-url` -> create S3 presigned upload URL
-- `POST /precheck` -> validate file type/size/readability and issue `precheckToken`
-- `POST /checkout` -> create Stripe Checkout session
-- `POST /checkout/verify` -> verify paid session and create/reuse result; returns `resultId` + `accessKey`
-- `GET /result/{id}?k=<accessKey>` -> return result, `202` processing, or `410` expired
-
-## TODO
-
-- Implement pricing A/B split test:
-  - Assign persistent variant (`A` or `B`) with cookie (50/50)
-  - Render different pricing sets on `/` based on variant
-  - Include `variant` in funnel metrics events (`pricing_view`, `checkout_start`, `checkout_success`)
-  - Pass `variant` through checkout request and Stripe metadata
-  - Compare variants by revenue per visitor, conversion rate, and refunds before choosing winner
-
-- Feedback/testimonials — remaining security hardening:
-  - **Manual testimonial review (operational rule):** never auto-publish a testimonial. Always review before featuring a quote on the site — this single control neutralizes stored XSS, prompt injection, and offensive-content risk on the display path.
-  - **WAF per-IP rate limit:** enable the API WAF (`EnableApiWaf=true`) for per-IP throttling on `/feedback` and other routes. Deferred because it adds monthly cost (~$5/mo ACL + ~$1/rule + ~$0.60/M requests).
-  - **XSS guard on the testimonial display page:** when building the page that renders testimonials, rely on React's default text escaping and never use `dangerouslySetInnerHTML` for testimonial text/names.
-
-## Preview tab behaviour toggle
-
-**File:** `src/lib/previewConfig.ts`
-
-```ts
-export const TAB_CLICK_OPENS_MODAL = true;
-```
-
-Controls whether clicking a non-summary tab on `/preview/[id]` and `/sample-report` immediately opens the upgrade modal.
-
-| Value | Behaviour |
-|-------|-----------|
-| `true` | Clicking any non-summary tab opens the upgrade modal (current default) |
-| `false` | Tab click only switches content; modal only opens from the "Locked — choose a plan" pill |
-
-Change the constant in `src/lib/previewConfig.ts` — both pages pick it up automatically.
+No open-source license has been declared yet. Until a license is added, all rights are reserved.
