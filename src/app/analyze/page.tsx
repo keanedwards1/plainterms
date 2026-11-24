@@ -125,12 +125,12 @@ export default function AnalyzePage() {
         </Link>
 
       <section className="mt-6 3xl:mt-8">
-        <h1 className="text-3xl leading-tight text-[var(--pt-ink)] sm:text-4xl 3xl:text-5xl">
-          Analyze your contract
+        <h1 className="text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl 3xl:text-6xl">
+          Get your contract checked
         </h1>
-        <p className="mt-3 max-w-2xl text-base text-[var(--pt-muted)] 3xl:text-lg">
-          Upload a renovation or contractor agreement and get a risk score, red-flag count, and a
-          clause-by-clause review.
+        <p className="mt-3 max-w-2xl text-xl text-[var(--pt-muted)] 3xl:text-lg">
+          Upload a renovation or contractor agreement and learn about potential holes in
+          your contract that could shoot you in the foot down the road.
         </p>
       </section>
 

@@ -13,6 +13,7 @@
 
 # testing
 /coverage
+.scratch
 
 # next.js
 /.next/
@@ -24,6 +25,8 @@
 # misc
 .DS_Store
 *.pem
+plainterms-media
+Icon?
 
 # debug
 npm-debug.log*
