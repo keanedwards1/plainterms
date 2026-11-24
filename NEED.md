@@ -35,13 +35,13 @@ Until this is done, the site works signed out (upload, sample report, how it wor
 ## 3. Stripe (Pro subscription) — Blocking for upgrades
 
 Do these in **sandbox** first, then repeat in **live**.
-1. [ ] Create a product **PlainTerms Pro** with a **recurring monthly** price ($5, as you said).
-2. [ ] Save the price ID in AWS SSM (String):
+1. [x] Create a product **PlainTerms Pro** with a **recurring monthly** price ($5, as you said).
+2. [x] Save the price ID in AWS SSM (String). Done for both the live and the sandbox ("Plain Terms sandbox") price:
    ```
    aws ssm put-parameter --name /plainterms/stripe/test/price-id-pro --type String --value price_...
    aws ssm put-parameter --name /plainterms/stripe/price-id-pro      --type String --value price_...   # live
    ```
-3. [ ] After the backend is deployed, add a webhook endpoint at `<ApiUrl>/billing/webhook`. `ApiUrl` is printed by the deploy. Choose these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`. Save its signing secret:
+3. [x] Sandbox webhook done and verified against staging. [ ] Live webhook after the production deploy. After the backend is deployed, add a webhook endpoint at `<ApiUrl>/billing/webhook`. `ApiUrl` is printed by the deploy. Choose these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`. Save its signing secret:
    ```
    aws ssm put-parameter --name /plainterms/stripe/test/webhook-secret --type SecureString --value whsec_...
    aws ssm put-parameter --name /plainterms/stripe/webhook-secret      --type SecureString --value whsec_...   # live
