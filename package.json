@@ -12,7 +12,11 @@
     "stripe:sandbox": "node scripts/deploy-stripe-mode.mjs sandbox",
     "stripe:live": "node scripts/deploy-stripe-mode.mjs live",
     "stripe:sandbox:build": "node scripts/deploy-stripe-mode.mjs sandbox --build",
-    "stripe:live:build": "node scripts/deploy-stripe-mode.mjs live --build"
+    "stripe:live:build": "node scripts/deploy-stripe-mode.mjs live --build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:api": "npm --prefix services/api/plainterms-api/lambdas test"
   },
   "dependencies": {
     "@workos-inc/authkit-nextjs": "4.6.3",
@@ -22,13 +26,19 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.8",
+    "@types/node": "24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "jsdom": "31.0.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "5.1.0"
   }
 }

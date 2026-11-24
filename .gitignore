@@ -27,6 +27,8 @@
 *.pem
 plainterms-media
 Icon?
+/archive
+todo.md
 
 # debug
 npm-debug.log*
@@ -48,9 +50,12 @@ next-env.d.ts
 .vscode
 .env*.local
 
-# Keep internal root-level Markdown notes out of the repository.
-/*.md
-!/README.md
 
 # Keep vendored skill icon folders (the Icon? rule above matches "icons" on case-insensitive macOS)
 !.claude/skills/**/icons/
+
+# Test output
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
