@@ -2,31 +2,72 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AccountMenu from "@/components/AccountMenu";
 
-export default function SiteHeader() {
+export type HeaderUser = {
+  name: string;
+  email: string;
+  pictureUrl: string | null;
+};
+
+const NAV = [
+  { href: "/how-it-works", label: "How it works" },
+  { href: "/sample-report", label: "Example report" },
+] as const;
+
+export default function SiteHeader({ user }: { user: HeaderUser | null }) {
   const pathname = usePathname();
-  const isResultPage = pathname.startsWith("/result/");
+  if (pathname === "/construction") return null;
 
-  if (isResultPage) return null;
+  const signInHref = `/sign-in?returnTo=${encodeURIComponent(pathname || "/")}`;
 
   return (
-    <header className="pt-nav">
-      <div className="pt-page-pad pt-container-wide flex w-full items-center justify-between py-4">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[var(--pt-accent)] text-xs font-bold text-[var(--pt-accent-ink)]">
-            P
-          </span>
-          <span className="text-2xl font-semibold tracking-tight text-[var(--pt-ink)]">
-            PlainTerms
-          </span>
-        </Link>
+    <header className="pt-nav sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--pt-surface)_82%,transparent)]">
+      <div className="pt-page-pad pt-container-wide flex h-16 items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-6">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="PlainTerms home">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--pt-action)] text-sm font-bold text-white">
+              P
+            </span>
+            <span className="text-xl font-semibold tracking-tight text-[var(--pt-ink)]">PlainTerms</span>
+          </Link>
+          <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={pathname === item.href ? "page" : undefined}
+                className="rounded-full px-3 py-1.5 text-sm font-medium text-[var(--pt-ink-soft)] transition-colors hover:bg-[color-mix(in_oklab,var(--pt-ink)_6%,transparent)] aria-[current=page]:text-[var(--pt-ink)] aria-[current=page]:underline aria-[current=page]:underline-offset-8"
+              >
+                {item.label}
+              </Link>
+            ))}
+            {user ? (
+              <Link
+                href="/dashboard"
+                aria-current={pathname?.startsWith("/dashboard") ? "page" : undefined}
+                className="rounded-full px-3 py-1.5 text-sm font-medium text-[var(--pt-ink-soft)] transition-colors hover:bg-[color-mix(in_oklab,var(--pt-ink)_6%,transparent)] aria-[current=page]:text-[var(--pt-ink)] aria-[current=page]:underline aria-[current=page]:underline-offset-8"
+              >
+                Documents
+              </Link>
+            ) : null}
+          </nav>
+        </div>
 
-        <Link
-          href="/analyze"
-          className="pt-btn-primary inline-flex items-center px-5 py-2 text-sm font-semibold"
-        >
-          Get Started
-        </Link>
+        <div className="flex items-center gap-2">
+          {pathname !== "/" ? (
+            <Link href="/" className="pt-btn pt-btn-outline hidden px-4 py-2 text-sm sm:inline-flex">
+              New analysis
+            </Link>
+          ) : null}
+          {user ? (
+            <AccountMenu name={user.name} email={user.email} pictureUrl={user.pictureUrl} />
+          ) : (
+            <a href={signInHref} className="pt-btn pt-btn-solid px-4 py-2 text-sm">
+              Sign in
+            </a>
+          )}
+        </div>
       </div>
     </header>
   );

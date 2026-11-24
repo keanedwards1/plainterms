@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
+import { authHeaders, getSession } from "@/lib/auth";
 import { logApiError } from "@/lib/observability";
 import { z } from "zod";
 
@@ -23,6 +24,10 @@ type PostJsonProxyArgs<TReq, TRes> = {
   contractError: string;
   requestFailedError: string;
   logConfig?: ProxyLogConfig;
+  /** Forward the signed-in user's access token. "required" answers 401 when signed out. */
+  auth?: "optional" | "required";
+  /** Upstream error bodies with these `code` values are passed through to the browser. */
+  passThroughCodes?: string[];
 };
 
 function withRequestId<T extends Record<string, unknown>>(
@@ -74,6 +79,21 @@ async function maybeLogInternalError({
   });
 }
 
+// Errors the API returns with a stable `code` (limit reached, upload expired,
+// already on Pro, …) carry user-facing copy, so they are safe to pass through.
+function readKnownError(detail: string, codes: string[]): Record<string, unknown> | null {
+  if (!codes.length || !detail) return null;
+  try {
+    const json = JSON.parse(detail) as { error?: unknown; code?: unknown };
+    if (typeof json.code === "string" && codes.includes(json.code) && typeof json.error === "string") {
+      return { error: json.error, code: json.code };
+    }
+  } catch {
+    // Not JSON.
+  }
+  return null;
+}
+
 export async function postJsonProxy<TReq, TRes>({
   req,
   upstreamPath,
@@ -84,6 +104,8 @@ export async function postJsonProxy<TReq, TRes>({
   contractError,
   requestFailedError,
   logConfig,
+  auth,
+  passThroughCodes = [],
 }: PostJsonProxyArgs<TReq, TRes>): Promise<Response> {
   const ctx = logConfig?.ctx;
   const upstreamStage = logConfig?.upstreamStage ?? "upstream_request";
@@ -98,9 +120,16 @@ export async function postJsonProxy<TReq, TRes>({
       );
     }
 
+    const session = auth ? await getSession() : null;
+    if (auth === "required" && !session) {
+      return Response.json(withRequestId({ error: "Sign in to continue.", code: "sign_in_required" }, ctx), {
+        status: 401,
+      });
+    }
+
     const upstream = await fetch(`${getApiBaseUrl()}${upstreamPath}`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...authHeaders(session) },
       body: JSON.stringify(payload.data),
       cache: "no-store",
     });
@@ -108,6 +137,10 @@ export async function postJsonProxy<TReq, TRes>({
     if (!upstream.ok) {
       const detail = await upstream.text().catch(() => "");
       const trimmedDetail = detail.trim().slice(0, 500);
+      const known = readKnownError(detail, passThroughCodes);
+      if (known) {
+        return Response.json(withRequestId(known, ctx), { status: upstream.status });
+      }
       await maybeLogUpstreamError({
         ctx,
         stage: upstreamStage,

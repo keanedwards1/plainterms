@@ -147,6 +147,8 @@ export const PtDocumentRevision = z.object({
   generated_at: z.string().optional(),
   model: z.string().optional(),
   message: z.string().optional(),
+  /** Set when the revised draft is a Pro feature this viewer doesn't have. */
+  locked: z.boolean().optional(),
 });
 
 export const PtResultDocument = z.object({
@@ -205,6 +207,15 @@ export const SECTION_TITLES: Record<z.infer<typeof PtSection>["key"], string> = 
   source_map: "Source Map"
 };
 
+export const PtEntitlements = z.object({
+  plan: z.enum(["free", "pro"]),
+  rewrites: z.boolean(),
+  revised_document: z.boolean(),
+  history: z.boolean(),
+});
+
+export type PtEntitlements = z.infer<typeof PtEntitlements>;
+
 export const PtResult = z.object({
   schema_version: z.literal("pt.ui.v1"),
   result_id: z.string(),
@@ -218,7 +229,12 @@ export const PtResult = z.object({
   addons: PtAddons.optional(),
   notices: z.object({
     not_legal_advice: z.string()
-  })
+  }),
+  // Present on results created by a signed-in user (accounts model).
+  entitlements: PtEntitlements.optional(),
+  analysis_stage: z.enum(["refining", "complete"]).optional(),
+  owned: z.boolean().optional(),
+  expires_at: z.number().nullable().optional(),
 });
 
 export type PtResult = z.infer<typeof PtResult>;

@@ -25,7 +25,7 @@ export default function NotFound() {
             Back to home
           </Link>
           <Link
-            href="/analyze"
+            href="/"
             className="pt-btn-secondary inline-flex w-full items-center justify-center px-5 py-3 text-sm font-semibold sm:w-auto"
           >
             Review a contract

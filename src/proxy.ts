@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authkit, handleAuthkitHeaders } from "@workos-inc/authkit-nextjs";
 
 const COOKIE_NAME = "pt_construction_access";
 const TOKEN_PREFIX = "plainterms-construction:";
@@ -40,9 +41,44 @@ async function constructionToken(password: string) {
   return base64Url(digest);
 }
 
+function isAuthConfigured() {
+  return Boolean(
+    process.env.WORKOS_CLIENT_ID &&
+      process.env.WORKOS_API_KEY &&
+      (process.env.WORKOS_COOKIE_PASSWORD?.length ?? 0) >= 32 &&
+      process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI
+  );
+}
+
+// Signed-in-only areas. Everything else (including analyzing a document up to
+// the point of pressing Analyze) works signed out.
+function isProtectedPath(pathname: string) {
+  return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+}
+
+// Runs AuthKit so sessions refresh on every request, then continues with its
+// headers merged in. Without AuthKit configured, requests pass straight through.
+async function continueWithSession(request: NextRequest) {
+  if (!isAuthConfigured()) {
+    if (isProtectedPath(request.nextUrl.pathname)) {
+      const home = request.nextUrl.clone();
+      home.pathname = "/";
+      home.search = "";
+      return NextResponse.redirect(home);
+    }
+    return NextResponse.next();
+  }
+
+  const { session, headers, authorizationUrl } = await authkit(request);
+  if (isProtectedPath(request.nextUrl.pathname) && !session.user && authorizationUrl) {
+    return handleAuthkitHeaders(request, headers, { redirect: authorizationUrl });
+  }
+  return handleAuthkitHeaders(request, headers);
+}
+
 export async function proxy(request: NextRequest) {
   const password = process.env.CONSTRUCTION_PASSWORD?.trim();
-  if (!password) return NextResponse.next();
+  if (!password) return continueWithSession(request);
 
   const pathname = request.nextUrl.pathname;
   if (
@@ -55,7 +91,7 @@ export async function proxy(request: NextRequest) {
 
   const expectedToken = await constructionToken(password);
   const actualToken = request.cookies.get(COOKIE_NAME)?.value;
-  if (actualToken === expectedToken) return NextResponse.next();
+  if (actualToken === expectedToken) return continueWithSession(request);
 
   const redirectUrl = request.nextUrl.clone();
   redirectUrl.pathname = "/construction";
@@ -70,5 +106,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/:path*",
+  // Static files and images skip the proxy entirely.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|graphics/).*)"],
 };

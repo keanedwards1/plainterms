@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/apiBaseUrl";
+import { authHeaders, getSession } from "@/lib/auth";
 import { getLogContext, logApiError } from "@/lib/observability";
 import { PtResult } from "@/lib/plainterms-schema";
 
@@ -18,8 +19,10 @@ export async function GET(_req: Request, { params }: Props) {
       upstreamUrl.searchParams.set("k", accessKey.trim());
     }
 
+    const session = await getSession();
     const upstream = await fetch(upstreamUrl.toString(), {
       cache: "no-store",
+      headers: authHeaders(session),
     });
 
     if (upstream.status === 202 || upstream.status === 410 || upstream.status === 404) {
@@ -63,7 +66,6 @@ export async function GET(_req: Request, { params }: Props) {
       return Response.json(
         {
           error: "Upstream /result response violated PtResult schema.",
-          details: parsed.error.flatten(),
           requestId: ctx.requestId,
         },
         { status: 502 }

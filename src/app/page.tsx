@@ -1,56 +1,26 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
-import HeroBubbles from "@/components/HeroBubbles";
+import Workspace from "@/components/home/Workspace";
+import ExamplePreview from "@/components/home/ExamplePreview";
+import DocumentRow from "@/components/DocumentRow";
+import { getSession } from "@/lib/auth";
+import { getDocuments } from "@/lib/serverApi";
 
-const PRICING = [
-  {
-    name: "Core",
-    price: "$29",
-    popular: false,
-    color: "bg-[#35b8b1] text-white",
-    legalPackage: "Issue Spotting Brief",
-    attorneyCost: "$400-$900",
-    attorneyScope: "Often comparable to a short paid consult and first-pass issue list.",
-    items: [
-      "Initial issue spotting summary",
-      "Priority clause risks highlighted",
-      "Simple sign-or-negotiate guidance",
-    ],
+export const metadata: Metadata = {
+  title: "PlainTerms - Understand Your Contract Before You Sign",
+  description:
+    "Drop in a renovation or contractor agreement and get a plain-English verdict, the risky clauses, and exactly what to ask for. Free.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "PlainTerms - Know What You're Signing",
+    description:
+      "Drop in a renovation or contractor agreement and get a plain-English verdict, the risky clauses, and exactly what to ask for. Free.",
+    url: "/",
+    type: "website",
   },
-  {
-    name: "Report",
-    price: "$79",
-    popular: true,
-    color: "bg-[var(--pt-accent)] text-white",
-    legalPackage: "Review Memorandum",
-    attorneyCost: "$900-$1,800",
-    attorneyScope: "Often comparable to a written clause-by-clause attorney memo.",
-    items: [
-      "Everything in Core",
-      "Expanded red-flag analysis",
-      "Clause-by-clause plain-English breakdown",
-      "Negotiation talking points",
-    ],
-  },
-  {
-    name: "Protect",
-    price: "$149",
-    popular: false,
-    color: "bg-[var(--pt-teal-deep)] text-white",
-    legalPackage: "Negotiation Prep Package",
-    attorneyCost: "$1,800-$3,500+",
-    attorneyScope: "Often comparable to deeper revision notes and negotiation prep support.",
-    items: [
-      "Everything in Report",
-      "Fallback clause language options",
-      "Structured action plan",
-      "Negotiation-ready email draft",
-    ],
-  },
-] as const;
+};
 
-const ICON_PROPS = {
+const ICON = {
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
@@ -58,505 +28,104 @@ const ICON_PROPS = {
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
   className: "h-5 w-5",
+  "aria-hidden": true,
 };
 
-const PROJECT_TYPES = [
-  {
-    label: "Kitchen & bath remodels",
-    icon: (
-      <svg {...ICON_PROPS}><rect x="4" y="4" width="16" height="16" rx="2" /><circle cx="9" cy="9" r="1.4" /><circle cx="15" cy="9" r="1.4" /><path d="M7 15h10" /></svg>
-    ),
-  },
-  {
-    label: "Home additions & ADUs",
-    icon: (
-      <svg {...ICON_PROPS}><path d="M4 11l8-6 8 6" /><path d="M6 10v9h12v-9" /><path d="M10 19v-5h4v5" /></svg>
-    ),
-  },
-  {
-    label: "General contractor agreements",
-    icon: (
-      <svg {...ICON_PROPS}><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4h6v3H9z" /><path d="M9 12h6M9 16h4" /></svg>
-    ),
-  },
-  {
-    label: "Roofing & exterior work",
-    icon: (
-      <svg {...ICON_PROPS}><path d="M3 12l9-7 9 7" /><path d="M6 10v9h12v-9" /><path d="M16 6V4h2v3" /></svg>
-    ),
-  },
-  {
-    label: "Owner-builder subcontracts",
-    icon: (
-      <svg {...ICON_PROPS}><path d="M3 17a9 9 0 0 1 18 0z" /><path d="M9 8a3 3 0 0 1 6 0v2" /><path d="M2 17h20" /></svg>
-    ),
-  },
-] as const;
+const CHECKS = [
+  { label: "Deposits & payment schedule", icon: <svg {...ICON}><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18M7 15h3" /></svg> },
+  { label: "Change orders & overruns", icon: <svg {...ICON}><path d="M4 7h16M4 12h16M4 17h10" /><path d="M17 15l2 2-2 2" /></svg> },
+  { label: "Timelines & delays", icon: <svg {...ICON}><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg> },
+  { label: "Liens & warranties", icon: <svg {...ICON}><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /><path d="M9.5 12l1.8 1.8L15 10" /></svg> },
+  { label: "Liability & disputes", icon: <svg {...ICON}><path d="M12 4v16M6 8h12M4 14l2-6 2 6a2 2 0 0 1-4 0zM16 14l2-6 2 6a2 2 0 0 1-4 0z" /></svg> },
+  { label: "Missing protections", icon: <svg {...ICON}><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></svg> },
+];
 
-export const metadata: Metadata = {
-  title: "PlainTerms - Renovation Contract Review for Homeowners",
-  description:
-    "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
-  keywords: [
-    "renovation contract review",
-    "construction contract review",
-    "contractor agreement review",
-    "home remodel contract",
-    "review my contractor's contract",
-    "mechanics lien protection",
-    "renovation contract red flags",
-    "construction contract lawyer alternative",
-    "remodeling contract analysis",
-    "is my contractor's contract fair",
-  ],
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: "PlainTerms - Know What You're Signing",
-    description:
-      "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
-    url: "/",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "PlainTerms - Know What You're Signing",
-    description:
-      "Upload your renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, and the terms you should negotiate — in minutes.",
-  },
-};
-
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ hero?: string }>;
-}) {
-  const { hero } = await searchParams;
-  // Focused hero is the default; ?hero=classic switches back to the original.
-  const useClassicHero = hero === "classic";
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        name: "PlainTerms",
-        url: "https://www.plainterms.us",
-        description:
-          "Plain-English review of home renovation, remodeling, and construction contracts for homeowners.",
-      },
-      {
-        "@type": "Service",
-        name: "Renovation Contract Review",
-        serviceType: "Home renovation and construction contract review",
-        provider: { "@type": "Organization", name: "PlainTerms", url: "https://www.plainterms.us" },
-        areaServed: "US",
-        description:
-          "Upload a renovation or contractor agreement and get a plain-English breakdown of liens, deposits, change orders, warranties, and the terms to negotiate before you sign.",
-        offers: [
-          { "@type": "Offer", name: "Core", price: "29", priceCurrency: "USD" },
-          { "@type": "Offer", name: "Report", price: "79", priceCurrency: "USD" },
-          { "@type": "Offer", name: "Protect", price: "149", priceCurrency: "USD" },
-        ],
-      },
-      {
-        "@type": "FAQPage",
-        mainEntity: [
-          {
-            "@type": "Question",
-            name: "What does PlainTerms check in a renovation contract?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "PlainTerms reviews your home renovation or construction contract for risks like oversized deposits, missing mechanics-lien waivers, vague change-order terms, missing completion dates, uncapped allowances, and one-sided indemnification — then explains each in plain English with negotiation points.",
-            },
-          },
-          {
-            "@type": "Question",
-            name: "How much does a renovation contract review cost?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "PlainTerms reviews start at $29 — a fraction of the $400–$1,800 a construction attorney typically charges to review a contract.",
-            },
-          },
-          {
-            "@type": "Question",
-            name: "Is PlainTerms legal advice?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "No. PlainTerms is an informational tool that helps you understand your contract and spot risks before you sign. It is not a law firm and does not provide legal advice. For high-stakes decisions, consult a licensed attorney.",
-            },
-          },
-          {
-            "@type": "Question",
-            name: "What contracts can I upload?",
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: "Any home renovation, remodeling, addition, or general-contractor agreement in PDF or Word format — whether you hired a contractor or are managing the project as your own general contractor.",
-            },
-          },
-        ],
-      },
-    ],
-  };
+export default async function HomePage() {
+  const session = await getSession();
+  const recent = session ? await getDocuments(session, { limit: 4 }) : null;
+  const recentDocs = recent?.documents ?? [];
+  const firstName = session?.user.firstName?.trim();
 
   return (
-    <main className="pt-page-pad pb-12 pt-8 3xl:pb-20 3xl:pt-14">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <div className="pt-container-wide space-y-10 3xl:space-y-16">
-        {useClassicHero ? <ClassicHero /> : <FocusedHero />}
+    <main className="pt-page-pad pb-16 pt-6 sm:pt-10">
+      <div className="pt-container-wide">
+        <h1 className="max-w-4xl text-balance text-[2rem] leading-[1.1] text-(--pt-ink) sm:text-5xl">
+          {firstName ? `Welcome back, ${firstName}.` : "Understand your contract before you sign."}
+        </h1>
+        <p className="mt-3 max-w-2xl text-lg leading-7 text-(--pt-ink-soft)">
+          Add a renovation or contractor agreement. In seconds you&apos;ll get a verdict, the risky clauses, and exactly
+          what to ask for, in plain English.
+        </p>
 
-        <section className="pt-card p-7 3xl:p-12">
-          <h2 className="text-center text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Built for every kind of renovation contract</h2>
-          <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 3xl:mt-10 3xl:gap-6">
-            {PROJECT_TYPES.map((type) => (
-              <div
-                key={type.label}
-                className="flex flex-col items-center gap-3 rounded-xl border border-[var(--pt-border)] bg-white px-3 py-5 text-center"
-              >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--pt-accent)]/10 text-[var(--pt-accent)]">
-                  {type.icon}
-                </span>
-                <p className="text-sm font-semibold text-[var(--pt-ink)]">{type.label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        <div className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-8 xl:gap-10">
+          <div className="min-w-0">
+            <Workspace signedIn={Boolean(session)} />
 
-        <section id="how-it-works" className="pt-card p-7 3xl:p-12">
-          <h2 className="text-4xl text-[var(--pt-ink)] 3xl:text-5xl">How it works</h2>
-          <p className="mt-2 text-sm text-[var(--pt-muted)] 3xl:text-base 3xl:mt-3">From upload to negotiation-ready in minutes.</p>
-          <div className="mt-8 3xl:mt-12">
-            {/* Timeline connector row */}
-            <div className="relative hidden sm:flex items-center justify-between px-[calc(100%/6)]">
-              <div className="absolute left-[calc(100%/6)] right-[calc(100%/6)] top-1/2 h-px -translate-y-1/2 bg-[var(--pt-border)]" />
-              {["01", "02", "03"].map((n) => (
-                <div key={n} className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[var(--pt-accent)] bg-white text-sm font-bold text-[var(--pt-accent)]">
-                  {n}
+            {session ? (
+              <section aria-labelledby="recent-heading" className="pt-panel mt-6 p-2 sm:p-3">
+                <div className="flex items-center justify-between px-3 pb-1 pt-2">
+                  <h2 id="recent-heading" className="text-lg text-(--pt-ink)">
+                    Recent documents
+                  </h2>
+                  <Link href="/dashboard" className="text-sm font-semibold text-(--pt-action) underline-offset-4 hover:underline">
+                    View all
+                  </Link>
                 </div>
-              ))}
-            </div>
-
-            {/* Step content */}
-            <div className="mt-6 grid gap-4 sm:grid-cols-3 3xl:gap-8">
-              {[
-                {
-                  step: "01",
-                  title: "Upload your contract",
-                  body: "Securely upload any renovation, remodeling, or contractor agreement in PDF or Word format.",
-                },
-                {
-                  step: "02",
-                  title: "Get your analysis in minutes",
-                  body: "PlainTerms breaks down every clause in plain English, flags red flags, and scores overall risk.",
-                },
-                {
-                  step: "03",
-                  title: "Know what you're signing.",
-                  body: "Walk into negotiations armed with talking points, fallback language, and a ready-to-send email draft.",
-                },
-              ].map((step) => (
-                <article key={step.step} className="rounded-xl border border-[var(--pt-border)] bg-[var(--pt-surface)] p-5 sm:text-center 3xl:p-8">
-                  <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--pt-accent)] text-sm font-bold text-[var(--pt-accent)] sm:hidden">
-                    {step.step}
-                  </div>
-                  <h3 className="text-xl text-[var(--pt-ink)] 3xl:text-2xl">{step.title}</h3>
-                  <p className="mt-1 text-sm text-[var(--pt-muted)] 3xl:text-base 3xl:mt-3">{step.body}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="pricing" className="pt-card p-7 3xl:p-12">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-4xl text-[var(--pt-ink)] 3xl:text-5xl">Pricing</h2>
-              <p className="mt-2 text-sm text-[var(--pt-muted)] 3xl:text-base 3xl:mt-3">
-                Per-contract pricing, no subscription.
-              </p>
-            </div>
-            <Link
-              href="/analyze"
-              className="pt-btn-primary inline-block px-6 py-3 text-sm font-semibold 3xl:px-8 3xl:py-4 3xl:text-base"
-            >
-              Start Review
-            </Link>
-          </div>
-          <div className="mt-6 grid gap-4 lg:grid-cols-3 3xl:gap-8 3xl:mt-10">
-              {PRICING.map((tier) => (
-                <article
-                  key={tier.name}
-                  className={`flex h-full flex-col rounded-xl border bg-[var(--pt-surface)] p-5 lg:min-h-[430px] 3xl:p-8 3xl:min-h-130 ${
-                    tier.popular
-                      ? "border-[var(--pt-accent)] shadow-[0_14px_20px_-14px_rgba(241,118,93,0.45)]"
-                      : "border-[var(--pt-border)]"
-                  }`}
-                >
-                  <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold 3xl:text-sm 3xl:px-3 3xl:py-1.5 ${tier.color}`}>
-                    {tier.popular ? "Most Popular" : "Single Payment"}
-                  </span>
-                  <p className="mt-3 text-2xl font-semibold text-[var(--pt-ink)] 3xl:text-3xl">{tier.name}</p>
-                  <p className="mt-1 text-5xl leading-none text-[var(--pt-ink)] 3xl:text-6xl">{tier.price}</p>
-                  <p className="mt-2 text-sm font-semibold text-[var(--pt-ink)] 3xl:text-base">{tier.legalPackage}</p>
-                  <div className="mt-2 rounded-lg border border-dashed border-[var(--pt-border)] px-3 py-2">
-                    <p className="text-xs uppercase tracking-[0.12em] text-[var(--pt-muted)]">
-                      Typical lawyer cost:{" "}
-                      <span className="font-semibold normal-case tracking-normal text-[var(--pt-ink)]">
-                        {tier.attorneyCost}
-                      </span>
-                    </p>
-                    <p className="mt-1 text-xs text-[var(--pt-muted)]">{tier.attorneyScope}</p>
-                  </div>
-                  <ul className="mt-4 space-y-1.5 text-sm text-[var(--pt-muted)] 3xl:text-base 3xl:space-y-2.5 3xl:mt-6">
-                    {tier.items.map((item) => (
-                      <li key={item}>• {item}</li>
+                {recentDocs.length ? (
+                  <ul>
+                    {recentDocs.map((doc) => (
+                      <li key={doc.id}>
+                        <DocumentRow doc={doc} compact />
+                      </li>
                     ))}
                   </ul>
-                  <div className="mt-auto pt-5">
-                    <Link
-                      href="/analyze"
-                      className={`block rounded-lg px-4 py-2.5 text-center text-sm font-semibold ${
-                        tier.popular ? "pt-btn-primary" : "pt-btn-secondary"
-                      }`}
-                    >
-                      Get Started
-                    </Link>
-                  </div>
-                </article>
-              ))}
+                ) : (
+                  <p className="px-3 pb-3 pt-1 text-sm text-(--pt-muted)">
+                    Documents you analyze will appear here.
+                  </p>
+                )}
+              </section>
+            ) : null}
           </div>
+
+          <div className="min-w-0">
+            <ExamplePreview />
+          </div>
+        </div>
+
+        <section aria-labelledby="checks-heading" className="mt-14">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 id="checks-heading" className="text-2xl text-(--pt-ink) sm:text-3xl">
+              What we check
+            </h2>
+            <Link href="/how-it-works" className="text-sm font-semibold text-(--pt-ink-soft) underline underline-offset-4">
+              How it works
+            </Link>
+          </div>
+          <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {CHECKS.map((check) => (
+              <li key={check.label} className="pt-subtle-panel flex flex-col gap-3 p-4">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-(--pt-action) ring-1 ring-(--pt-line)">
+                  {check.icon}
+                </span>
+                <span className="text-sm font-semibold leading-5 text-(--pt-ink)">{check.label}</span>
+              </li>
+            ))}
+          </ul>
         </section>
 
-        <footer className="pt-card-soft px-6 py-5 3xl:px-10 3xl:py-7">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm font-medium text-[var(--pt-muted)] 3xl:text-base">
-              Informational analysis, not legal advice.
-            </p>
-            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--pt-muted)]">
-              <Link
-                href="/privacy"
-                className="rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-1 transition-colors hover:text-[var(--pt-ink)]"
-              >
-                Privacy
-              </Link>
-              <Link
-                href="/terms"
-                className="rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface)] px-3 py-1 transition-colors hover:text-[var(--pt-ink)]"
-              >
-                Terms
-              </Link>
-            </div>
-          </div>
+        <footer className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-(--pt-line) pt-6 text-sm text-(--pt-muted)">
+          <p>PlainTerms gives information to help you understand a contract. It isn&apos;t legal advice.</p>
+          <nav aria-label="Legal" className="flex gap-4 font-semibold">
+            <Link href="/privacy" className="hover:text-(--pt-ink)">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-(--pt-ink)">
+              Terms
+            </Link>
+          </nav>
         </footer>
       </div>
     </main>
-  );
-}
-
-function ClassicHero() {
-  return (
-        <section className="grid gap-6 lg:grid-cols-[1.45fr_0.95fr] lg:items-stretch 3xl:gap-8">
-          <article className="pt-card h-full overflow-hidden">
-            <div className="grid h-full lg:grid-cols-2">
-              <div className="flex h-full flex-col bg-[var(--pt-accent)] p-8 text-[var(--pt-accent-ink)] sm:p-10 3xl:p-16">
-                <p className="text-sm font-semibold uppercase tracking-[0.15em] text-[#ffe8df] 3xl:text-base">
-                  PlainTerms
-                </p>
-                <h1 className="mt-8 text-3xl leading-tight sm:text-4xl lg:text-[2.65rem] 3xl:text-6xl 3xl:mt-12">
-                  Get detailed contract analysis at a fraction of the cost of a lawyer.
-                </h1>
-                <p className="mt-5 max-w-xs text-base text-[#ffe8df] 3xl:text-lg 3xl:max-w-sm 3xl:mt-7">
-                  Contract review built for homeowners. Understand your renovation agreement and protect your money.
-                </p>
-                <div className="mt-auto flex flex-wrap items-center gap-3 pt-8 3xl:pt-12">
-                  <Link
-                    href="/analyze"
-                    className="inline-flex w-full items-center justify-center rounded-lg border border-[#e3b4a7] bg-[#fff8f3] px-5 py-3 text-sm font-semibold text-[#6f2f20]! transition-colors hover:bg-white sm:w-[250px] 3xl:w-70 3xl:py-4 3xl:text-base"
-                  >
-                    Get My Contract Reviewed
-                  </Link>
-                  <Link
-                    href="/sample-report"
-                    className="inline-flex w-full items-center justify-center rounded-lg border border-[var(--pt-accent-soft)] bg-[#e85f49] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--pt-accent)] sm:w-[250px] 3xl:w-70 3xl:py-4 3xl:text-base"
-                  >
-                    See Sample Report
-                  </Link>
-                </div>
-              </div>
-
-              <div className="relative min-h-[280px] overflow-hidden bg-[var(--pt-surface-soft)] sm:min-h-[340px] lg:min-h-0">
-                <div className="pointer-events-none absolute -left-12 top-8 h-48 w-48 rounded-full bg-[#ffd173]/28 blur-2xl" />
-                <div className="pointer-events-none absolute -right-14 bottom-[-40px] h-56 w-56 rounded-full bg-[#f39a63]/24 blur-2xl" />
-                <div className="pointer-events-none absolute right-5 top-5 z-20 hidden rounded-full border border-[var(--pt-border)] bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--pt-muted)] backdrop-blur lg:block">
-                  Identify Red-flags
-                </div>
-                <div className="pointer-events-none absolute bottom-5 left-0 right-0 z-20 hidden flex-col items-start gap-2 px-5 lg:flex xl:flex-row xl:items-center xl:justify-between">
-                  <div className="rounded-xl border border-[var(--pt-border)] bg-white/90 px-3 py-2 text-xs font-semibold text-[var(--pt-ink)] shadow-[0_10px_20px_-16px_rgba(31,43,61,0.6)] backdrop-blur whitespace-nowrap">
-                    Secure upload
-                  </div>
-                  <div className="rounded-xl border border-[var(--pt-border)] bg-white/90 px-3 py-2 text-xs font-semibold text-[var(--pt-ink)] shadow-[0_10px_20px_-16px_rgba(31,43,61,0.6)] backdrop-blur whitespace-nowrap">
-                    Plain-English summary
-                  </div>
-                </div>
-                <Image
-                  src="/graphics/creator-studio-1.png"
-                  alt="Contract review illustration"
-                  fill
-                  sizes="(min-width: 1024px) 42vw, 100vw"
-                  className="relative z-10 object-contain scale-[1.02] sm:scale-[1.12] lg:scale-[1.56]"
-                  priority
-                />
-              </div>
-            </div>
-          </article>
-
-          <aside id="sample-preview" className="pt-card h-full p-6 3xl:p-10">
-            <div className="flex h-full flex-col">
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--pt-muted)] 3xl:text-sm">
-                  Report preview
-                </p>
-                <span className="rounded-full bg-[var(--pt-surface-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--pt-muted)] 3xl:text-xs">
-                  Report {PRICING[1].price}
-                </span>
-              </div>
-
-              <h2 className="text-3xl leading-tight text-[var(--pt-ink)] 3xl:text-4xl">
-                Know exactly what to negotiate before you sign.
-              </h2>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {["Summary", "Insights", "Red Flags", "Key Terms", "Questions", "Full Report"].map((tab) => (
-                  <span key={tab} className="rounded-full border border-[var(--pt-border)] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--pt-muted)]">
-                    {tab}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-4 rounded-lg border border-dashed border-[var(--pt-border)] px-3 py-2">
-                <p className="text-xs uppercase tracking-[0.12em] text-[var(--pt-muted)]">
-                  Typical lawyer cost:{" "}
-                  <span className="font-semibold normal-case tracking-normal text-[var(--pt-ink)]">
-                    {PRICING[1].attorneyCost}
-                  </span>
-                </p>
-                <p className="mt-1 text-xs text-[var(--pt-muted)]">{PRICING[1].attorneyScope}</p>
-              </div>
-
-              <div className="mt-4 grid gap-3">
-                <div className="rounded-xl border border-[#f2d3a2] bg-[#fff8eb] px-3 py-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#8d6222]">Red Flags</p>
-                  <p className="mt-1 text-xs text-[#8d6222]/90">
-                    Contract risks highlighted with plain-English context and suggested fixes.
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <div className="pt-card-soft p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Risk</p>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2.5 py-1 text-[11px] font-semibold text-[#8c6526]">MEDIUM</span>
-                      <span className="text-sm font-semibold text-[var(--pt-ink)]">43/100</span>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e6d8c3]">
-                      <div className="h-full rounded-full bg-[#d8a84b]" style={{ width: "43%" }} />
-                    </div>
-                  </div>
-                  <div className="pt-card-soft p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Recommendation</p>
-                    <span className="mt-2 inline-flex rounded-full border border-[#ead3a1] bg-[#fff4df] px-2.5 py-1 text-[11px] font-semibold text-[#8c6526]">Negotiate</span>
-                    <p className="mt-2 text-sm leading-relaxed text-[var(--pt-ink)]/85">Important terms need clarification or balancing before signing.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-auto flex flex-wrap gap-3 pt-5">
-                <Link href="/analyze" className="pt-btn-primary inline-flex items-center px-5 py-2.5 text-sm font-semibold">
-                  Start Review
-                </Link>
-                <Link href="/sample-report" className="pt-btn-secondary inline-flex items-center px-5 py-2.5 text-sm font-semibold">
-                  Open Full Sample
-                </Link>
-              </div>
-            </div>
-          </aside>
-        </section>
-  );
-}
-
-function FocusedHero() {
-  return (
-    <section className="relative left-1/2 right-1/2 -mx-[50vw] -mt-8 w-screen overflow-hidden">
-      {/* Decorative background layer */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        {/* Soft color blooms */}
-        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-[#f1765d]/22 blur-[90px] sm:h-[26rem] sm:w-[26rem]" />
-        <div className="absolute -right-20 top-1/3 h-80 w-80 rounded-full bg-[#24b4ae]/18 blur-[90px] sm:h-[28rem] sm:w-[28rem]" />
-        <div className="absolute bottom-[-6rem] left-1/3 h-72 w-72 rounded-full bg-[#ffd173]/28 blur-[90px] sm:h-96 sm:w-96" />
-        {/* Faint dot grid */}
-        <div
-          className="absolute inset-0 opacity-[0.5]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(83,99,120,0.16) 1px, transparent 1px)",
-            backgroundSize: "26px 26px",
-            maskImage:
-              "radial-gradient(ellipse 70% 60% at 50% 45%, #000 30%, transparent 78%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 70% 60% at 50% 45%, #000 30%, transparent 78%)",
-          }}
-        />
-      </div>
-
-      {/* Interactive bubbles that drift and react to the cursor */}
-      <HeroBubbles />
-
-      {/* Content */}
-      <div className="pt-page-pad relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center py-20 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--pt-accent)] 3xl:text-base">
-          PlainTerms
-        </p>
-        <h1 className="mt-6 max-w-3xl text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl lg:text-6xl 3xl:max-w-5xl 3xl:text-7xl">
-          Get detailed contract analysis at a fraction of the cost of a lawyer.
-        </h1>
-        <p className="mt-5 max-w-xl text-lg text-[var(--pt-muted)] 3xl:max-w-2xl 3xl:text-xl">
-          Upload your renovation or contractor agreement and know exactly what to watch for — liens, deposits, change orders — before you sign.
-        </p>
-
-        <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:flex-row 3xl:mt-12">
-          <Link
-            href="/analyze"
-            className="pt-btn-primary inline-flex w-full items-center justify-center rounded-lg px-6 py-4 text-base font-semibold sm:w-auto sm:min-w-[260px] 3xl:py-5 3xl:text-lg"
-          >
-            Get My Contract Reviewed
-          </Link>
-          <Link
-            href="/sample-report"
-            className="pt-btn-secondary inline-flex w-full items-center justify-center rounded-lg px-6 py-4 text-base font-semibold sm:w-auto sm:min-w-[260px] 3xl:py-5 3xl:text-lg"
-          >
-            See Sample Report
-          </Link>
-        </div>
-
-        {/* Lawyer price comparison */}
-        <div className="mt-9 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-dashed border-[var(--pt-border)] bg-[var(--pt-surface)]/70 px-5 py-2.5 text-sm backdrop-blur 3xl:text-base">
-          <span className="font-semibold text-[var(--pt-ink)]">
-            PlainTerms Report {PRICING[1].price}
-          </span>
-          <span className="text-[var(--pt-muted)]">vs.</span>
-          <span className="text-[var(--pt-muted)]">
-            typical lawyer cost{" "}
-            <span className="font-semibold text-[var(--pt-ink)]">
-              {PRICING[1].attorneyCost}
-            </span>
-          </span>
-        </div>
-        <p className="mt-2 max-w-md text-xs text-[var(--pt-muted)] 3xl:text-sm">
-          {PRICING[1].attorneyScope}
-        </p>
-      </div>
-    </section>
   );
 }

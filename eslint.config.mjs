@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "services/api/plainterms-api/.aws-sam/**",
     "services/api/plainterms-api/lambdas/**/*.mjs",
     "services/api/node_modules/**",
+    // Vendored Claude Code skills (third-party scripts and assets):
+    ".claude/**",
   ]),
 ]);
 

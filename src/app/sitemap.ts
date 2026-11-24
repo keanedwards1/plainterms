@@ -10,7 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${SITE_URL}/analyze`,
+      url: `${SITE_URL}/how-it-works`,
       changeFrequency: "weekly",
       priority: 0.8,
     },

@@ -3,20 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import UpgradeModal, { type CheckoutProcessing } from "@/components/UpgradeModal";
+import ProUpgradeDialog from "@/components/ProUpgradeDialog";
+import TopFixes from "@/components/result/TopFixes";
 import ReportSidebar from "@/components/result/ReportSidebar";
 import QuickReadout from "@/components/result/QuickReadout";
 import ContractHealthSnapshot from "@/components/result/ContractHealthSnapshot";
-import { REPORT_TIER_NAMES, type ReportTierOption } from "@/lib/pricingOptions";
-import { getOrCreateFunnelId } from "@/lib/funnelMetrics";
-import {
-  ContractSubmitError,
-  PAID_STEP_ORDER,
-  stepLabel,
-  submitContract,
-  SUBMIT_STEP_DESCRIPTIONS,
-  type SubmitStep,
-} from "@/lib/contractSubmit";
 
 // ─── Static sample data ────────────────────────────────────────────────────────
 
@@ -72,16 +63,36 @@ const TABS: { key: TabKey; label: string; icon: string; count?: number | "all" }
   { key: "full",      label: "Full Report", icon: "/graphics/icon-doc.svg",    count: "all" },
 ];
 
-const LOCAL_STORAGE_REPORT_TIER_KEY = "pt.reportTier";
+const TOP_FIXES = [
+  "Lower the upfront deposit and tie payments to completed milestones.",
+  "Require lien waivers from the contractor and every subcontractor.",
+  "Add a firm completion date with a fair remedy for delays.",
+];
 
-function toProcessing(tier: ReportTierOption, step: SubmitStep): CheckoutProcessing {
-  return {
-    tier,
-    stepNames: PAID_STEP_ORDER.map(stepLabel),
-    stepIndex: PAID_STEP_ORDER.indexOf(step),
-    stepLabel: stepLabel(step),
-    stepDescription: SUBMIT_STEP_DESCRIPTIONS[step],
-  };
+// Same markup as the locked rows on the real result page (LockedDisclosure).
+function LockedRow({ title, description, onOpen }: { title: string; description: string; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group w-full rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2.5 text-left transition-colors hover:border-[var(--pt-accent)]"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-[var(--pt-ink)]">{title}</p>
+          <p className="mt-0.5 text-xs leading-5 text-[var(--pt-muted)]">{description}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="hidden text-xs text-[var(--pt-muted)] sm:inline">Pro</span>
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] text-[var(--pt-muted)] transition-colors group-hover:border-[var(--pt-accent)] group-hover:text-[var(--pt-accent)]">
+            <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5">
+              <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </div>
+      </div>
+    </button>
+  );
 }
 
 function severityClass(s: "high" | "medium" | "low") {
@@ -107,19 +118,12 @@ function LockedTease({ children }: { children: React.ReactNode; onUnlock: () => 
 
 type TabProps = { onUnlock: () => void };
 
-function SummaryTab() {
+function SummaryTab({ onDraftEmail }: { onDraftEmail: () => void }) {
   return (
     <div className="space-y-3">
       <QuickReadout riskScore={SAMPLE.risk.score} recommendationLabel={SAMPLE.recommendation.label} flagsFound={SAMPLE.flags.length} />
+      <TopFixes items={TOP_FIXES} onDraftEmail={onDraftEmail} emptyMessage="No priority changes were identified for this report." />
       <ContractHealthSnapshot riskScore={SAMPLE.risk.score} clearClauseCount={PRESENT_COUNT} totalClauseCount={TOTAL_COUNT} />
-      <article className="pt-card-soft p-3">
-        <h3 className="text-lg font-semibold text-[var(--pt-ink)]">Top Next Steps</h3>
-        <ul className="mt-2 space-y-2">
-          {["Lower the upfront deposit and tie payments to completed milestones.", "Require lien waivers from the contractor and every subcontractor.", "Add a firm completion date with a fair remedy for delays."].map((item) => (
-            <li key={item} className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-[15px] leading-6 text-[var(--pt-ink)]/90">{item}</li>
-          ))}
-        </ul>
-      </article>
       <article className="pt-card-soft p-3">
         <h3 className="text-lg font-semibold text-[var(--pt-ink)]">Top Flags Preview</h3>
         <ul className="mt-2 space-y-2">
@@ -210,7 +214,7 @@ function InsightsTab({ onUnlock }: TabProps) {
   );
 }
 
-function FlagsTab({ onUnlock }: TabProps) {
+function FlagsTab({ onUnlock, onPro }: TabProps & { onPro: (feature: string) => void }) {
   return (
     <LockedTease onUnlock={onUnlock}>
       <div className="space-y-3">
@@ -247,6 +251,12 @@ function FlagsTab({ onUnlock }: TabProps) {
             <p className="mt-2 text-[15px] leading-6 text-[var(--pt-ink)]/85">{flag.plain_note}</p>
           </article>
         ))}
+
+        <LockedRow
+          title="Rewrite options"
+          description="Open fallback language options and negotiating positions for the highest-priority risk areas."
+          onOpen={() => onPro("Rewrite options")}
+        />
       </div>
     </LockedTease>
   );
@@ -366,16 +376,12 @@ const SAMPLE_DOC_CHANGES = [
   },
 ];
 
-const SAMPLE_SEVERITY_CLASS = {
-  high: "bg-[#ffe8e3] text-[#9e3f2d] border-[#efc1b6]",
-  medium: "bg-[#fff4df] text-[#8c6526] border-[#ead3a1]",
-  low: "bg-[#e1f4ef] text-[#1d655f] border-[#b2ddd4]",
-};
-
-function DocumentTab() {
+// Mirrors the real Document tab for a free plan: Original is open, Track
+// Changes and Revised are Pro.
+function DocumentTab({ onPro }: { onPro: (feature: string) => void }) {
+  const example = SAMPLE_DOC_CHANGES[0];
   return (
     <div className="space-y-3">
-      {/* Toolbar */}
       <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -383,79 +389,57 @@ function DocumentTab() {
             <p className="text-xs text-[var(--pt-muted)]">{SAMPLE.wordCount} words · application/pdf</p>
           </div>
           <div className="flex items-center rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-[3px]">
-            {["Original", "Track Changes", "Revised"].map((label) => (
-              <span
+            <span className="rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-[var(--pt-ink)] shadow-sm">Original</span>
+            {["Track Changes", "Revised"].map((label) => (
+              <button
                 key={label}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${label === "Track Changes" ? "bg-white text-[var(--pt-ink)] shadow-sm" : "text-[var(--pt-muted)]"}`}
+                type="button"
+                onClick={() => onPro(label === "Revised" ? "Revised draft" : "Track changes")}
+                className="flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
               >
+                <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3 w-3"><path d="M5 7V5.2a3 3 0 0 1 6 0V7m-7 0h8v6H4z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 {label}
-              </span>
+              </button>
             ))}
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--pt-muted)]">
-          <del className="rounded-[2px] bg-[#fde8e5] px-1.5 py-0.5 text-[#9e3f2d] line-through no-underline">removed</del>
-          <ins className="rounded-[2px] bg-[#e8f5ee] px-1.5 py-0.5 text-[#1d655f] underline no-underline">inserted</ins>
-          <span>3 tracked changes · hover for reason</span>
-        </div>
       </article>
 
-      {/* Document paper */}
       <article className="relative overflow-hidden rounded-lg border border-[var(--pt-border)] shadow-sm">
-        <div className="max-h-[580px] overflow-auto bg-[#f0ede8] px-3 py-6 sm:px-10">
+        <div className="max-h-[340px] overflow-hidden bg-[#f0ede8] px-3 py-6 sm:px-10">
           <div
             className="mx-auto max-w-[680px] rounded-sm bg-white px-8 py-10 text-[15px] leading-[1.85] tracking-[0.003em] text-[#252830] shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] whitespace-pre-wrap select-text"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
-            <p>
-              3. Deposit and Payment Schedule. Owner shall pay a deposit of{" "}
-              <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]" style={{ textDecoration: "line-through" }}>fifty percent (50%) of the contract price upon execution, with the balance due upon completion.</span>
-              <span className="ml-[2px] rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#1d655f]" style={{ textDecoration: "underline", textDecorationColor: "rgba(29,101,95,0.5)" }}>ten percent (10%) upon signing, with the balance paid against completed, inspected milestones and a 10% retainage held until punch-list completion.</span>
-            </p>
-            <p className="mt-6">
-              5. Change Orders.{" "}
-              <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]" style={{ textDecoration: "line-through" }}>Contractor may perform additional work as reasonably necessary to complete the project, billed at Contractor&apos;s standard rates.</span>
-              <span className="ml-[2px] rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#1d655f]" style={{ textDecoration: "underline", textDecorationColor: "rgba(29,101,95,0.5)" }}>No additional work or cost is owed unless set out in a written change order signed by the Owner before that work begins.</span>
-            </p>
-            <p className="mt-6">
-              6. Schedule. Work shall commence on or about the date set forth above;{" "}
-              <span className="rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]" style={{ textDecoration: "line-through" }}>no completion date is specified.</span>
-              <span className="ml-[2px] rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#1d655f]" style={{ textDecoration: "underline", textDecorationColor: "rgba(29,101,95,0.5)" }}>Contractor shall reach substantial completion by a firm date set in this Agreement, with a per-day credit to the Owner for unexcused delay.</span>
-            </p>
+            {SAMPLE_DOC_CHANGES.map((change) => change.before).join("\n\n")}
+          </div>
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#f0ede8] to-transparent" />
+      </article>
+
+      <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-[var(--pt-ink)]">What Pro adds</p>
+          <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Example</span>
+        </div>
+        <p className="mt-1 text-xs text-[var(--pt-muted)]">Every risky clause rewritten in plain, balanced language — shown as tracked changes and a clean revised draft you can copy and send.</p>
+        <div className="mt-3 grid gap-1.5 text-[13px] sm:grid-cols-2">
+          <div className="rounded-md border border-[#f5c6c0] bg-[#fff0ee] px-2.5 py-2">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
+            <p className="text-[#7f2e1f]">{example.before}</p>
+          </div>
+          <div className="rounded-md border border-[#a8ddd0] bg-[#edf8f5] px-2.5 py-2">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
+            <p className="text-[#165a52]">{example.after}</p>
           </div>
         </div>
       </article>
 
-      {/* Suggested Changes */}
-      <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-[var(--pt-ink)]">Suggested Changes</p>
-          <div className="flex gap-1.5 text-[11px]">
-            <span className="rounded-full border border-[#efc1b6] bg-[#ffe8e3] px-2 py-0.5 text-[#9e3f2d]">2 high</span>
-            <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[#8c6526]">1 medium</span>
-          </div>
-        </div>
-        <ul className="mt-3 space-y-2">
-          {SAMPLE_DOC_CHANGES.map((change, idx) => (
-            <li key={idx} className="rounded-lg border border-[var(--pt-border)] px-3 py-2.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${SAMPLE_SEVERITY_CLASS[change.severity]}`}>{change.severity}</span>
-                <span className="text-xs text-[var(--pt-muted)]">{change.reason}</span>
-              </div>
-              <div className="mt-2 grid gap-1.5 text-[13px] sm:grid-cols-2">
-                <div className="rounded-md border border-[#f5c6c0] bg-[#fff0ee] px-2.5 py-2">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
-                  <p className="text-[#7f2e1f]">{change.before}</p>
-                </div>
-                <div className="rounded-md border border-[#a8ddd0] bg-[#edf8f5] px-2.5 py-2">
-                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
-                  <p className="text-[#165a52]">{change.after}</p>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </article>
+      <LockedRow
+        title="Unlock Track Changes & a revised draft"
+        description="See every risky clause in your contract rewritten, with a clean revised version you can copy and send."
+        onOpen={() => onPro("Revised draft")}
+      />
     </div>
   );
 }
@@ -504,54 +488,11 @@ function FullTab({ onUnlock }: TabProps) {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function SampleReportTabsPreview() {
+export default function SampleReportTabsPreview({ signedIn = false }: { signedIn?: boolean }) {
   const [activeTab, setActiveTab] = useState<TabKey>("summary");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [processing, setProcessing] = useState<CheckoutProcessing | null>(null);
-  const [pendingTier, setPendingTier] = useState<ReportTierOption | null>(null);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-
-  // Selecting a tier moves the modal into the inline upload step (instead of
-  // bouncing to /analyze). The localStorage write keeps the /analyze fallback
-  // pre-selected if the user prefers the full upload page.
-  function chooseTier(tier: ReportTierOption) {
-    try { window.localStorage.setItem(LOCAL_STORAGE_REPORT_TIER_KEY, tier); } catch { /* ignore */ }
-    setUploadError(null);
-    setUploadFile(null);
-    setPendingTier(tier);
-  }
-
-  async function startUpload() {
-    if (!pendingTier || !uploadFile) return;
-    setUploadError(null);
-    try {
-      const outcome = await submitContract({
-        file: uploadFile,
-        reviewChoice: pendingTier,
-        funnelId: getOrCreateFunnelId(),
-        onStep: (step) => setProcessing(toProcessing(pendingTier, step)),
-      });
-      window.location.assign(outcome.url);
-    } catch (err) {
-      setProcessing(null);
-      setUploadError(
-        err instanceof ContractSubmitError
-          ? `${stepLabel(err.step)}: ${err.message}`
-          : err instanceof Error
-            ? err.message
-            : "Unknown error",
-      );
-    }
-  }
-
-  function closeModal() {
-    if (processing) return;
-    setModalOpen(false);
-    setPendingTier(null);
-    setUploadFile(null);
-    setUploadError(null);
-  }
+  const [proFeature, setProFeature] = useState<string | null>(null);
+  // Free features in the sample point people at analyzing their own contract.
+  const tryItYourself = () => window.location.assign("/");
 
   return (
     <>
@@ -575,60 +516,34 @@ export default function SampleReportTabsPreview() {
             <h2 className="text-xl text-[var(--pt-ink)]">{TABS.find((t) => t.key === activeTab)?.label}</h2>
             <span className="inline-flex items-center rounded-full border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--pt-muted)]">Sample preview</span>
           </div>
-          <p className="mt-1 text-xs text-[var(--pt-muted)]">Sample data. Upload your contract to get a real analysis.</p>
+          <p className="mt-1 text-xs text-[var(--pt-muted)]">Sample data. Add your contract to get a real analysis.</p>
           <div className="mt-3">
-            {activeTab === "summary"   && <SummaryTab />}
-            {activeTab === "insights"  && <InsightsTab onUnlock={() => setModalOpen(true)} />}
-            {activeTab === "flags"     && <FlagsTab onUnlock={() => setModalOpen(true)} />}
-            {activeTab === "terms"     && <TermsTab onUnlock={() => setModalOpen(true)} />}
-            {activeTab === "questions" && <QuestionsTab onUnlock={() => setModalOpen(true)} />}
-            {activeTab === "document"  && <DocumentTab />}
-            {activeTab === "full"      && <FullTab onUnlock={() => setModalOpen(true)} />}
+            {activeTab === "summary"   && <SummaryTab onDraftEmail={() => setActiveTab("questions")} />}
+            {activeTab === "insights"  && <InsightsTab onUnlock={tryItYourself} />}
+            {activeTab === "flags"     && <FlagsTab onUnlock={tryItYourself} onPro={setProFeature} />}
+            {activeTab === "terms"     && <TermsTab onUnlock={tryItYourself} />}
+            {activeTab === "questions" && <QuestionsTab onUnlock={tryItYourself} />}
+            {activeTab === "document"  && <DocumentTab onPro={setProFeature} />}
+            {activeTab === "full"      && <FullTab onUnlock={tryItYourself} />}
           </div>
 
           <div className="mt-5 flex flex-col items-start justify-between gap-3 rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4 sm:flex-row sm:items-center">
             <div>
-              <p className="text-sm font-semibold text-[var(--pt-ink)]">Test before you buy</p>
-              <p className="mt-0.5 text-sm text-[var(--pt-muted)]">If you have a contract you need checking, upload it here.</p>
+              <p className="text-sm font-semibold text-[var(--pt-ink)]">See this for your own contract</p>
+              <p className="mt-0.5 text-sm text-[var(--pt-muted)]">It&apos;s free. Drop in a PDF or Word file, or paste the text.</p>
             </div>
-            <Link
-              href="/analyze"
-              className="shrink-0 rounded-lg bg-[var(--pt-accent)] px-4 py-2.5 text-sm font-semibold !text-white transition-opacity hover:opacity-90"
-            >
-              Test it out
+            <Link href="/" className="pt-btn pt-btn-solid shrink-0 px-4 py-2.5 text-sm">
+              Analyze my contract
             </Link>
           </div>
         </section>
       </section>
 
-      <UpgradeModal
-        open={modalOpen}
-        featureTitle={pendingTier ? "Upload your contract" : "Analyze your contract"}
-        featureDescription={
-          pendingTier
-            ? "Upload a PDF or DOCX to generate your real, private analysis."
-            : "Choose a plan and upload your contract to get a real, private analysis like this sample."
-        }
-        ctaPrefix="Get started with"
-        processing={processing}
-        error={uploadError}
-        uploadStage={
-          pendingTier && !processing
-            ? {
-                tierName: REPORT_TIER_NAMES[pendingTier],
-                file: uploadFile,
-                onFileChange: setUploadFile,
-                onStart: startUpload,
-                onBack: () => {
-                  setPendingTier(null);
-                  setUploadError(null);
-                },
-                fallbackHref: "/analyze",
-              }
-            : null
-        }
-        onSelectTier={chooseTier}
-        onClose={closeModal}
+      <ProUpgradeDialog
+        open={proFeature !== null}
+        feature={proFeature}
+        signedIn={signedIn}
+        onClose={() => setProFeature(null)}
       />
     </>
   );

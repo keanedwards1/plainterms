@@ -1,0 +1,373 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import Dialog from "@/components/ui/Dialog";
+import {
+  ACCEPTED_FILE_TYPES,
+  fileFromPastedText,
+  prepareUpload,
+  prettyFileSize,
+  resultPath,
+  signInPath,
+  startAnalysis,
+  stashPendingAnalysis,
+  takePendingAnalysis,
+  validateFile,
+  type PrepareStage,
+  type PreparedUpload,
+} from "@/lib/analyzeFlow";
+import { SAMPLE_CONTRACT_NAME, SAMPLE_CONTRACT_TEXT } from "@/lib/sampleContract";
+
+type Mode = "file" | "paste";
+type PrepareState = "idle" | PrepareStage | "ready" | "error";
+type DialogKind = null | "sign-in" | "limit";
+
+const MIN_PASTE_WORDS = 40;
+
+function wordCount(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function FileIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5M9 13h6M9 17h4" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 16V4M7 9l5-5 5 5" />
+      <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
+const STAGE_LABEL: Record<PrepareState, string> = {
+  idle: "",
+  uploading: "Uploading securely…",
+  checking: "Checking the file…",
+  ready: "Ready to analyze",
+  error: "",
+};
+
+export default function Workspace({ signedIn }: { signedIn: boolean }) {
+  const [mode, setMode] = useState<Mode>("file");
+  const [file, setFile] = useState<File | null>(null);
+  const [pasted, setPasted] = useState("");
+  const [prepareState, setPrepareState] = useState<PrepareState>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [dialog, setDialog] = useState<DialogKind>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const preparing = useRef<Promise<PreparedUpload> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pasteId = useId();
+  const statusId = useId();
+
+  const beginPrepare = useCallback((next: File) => {
+    setPrepareState("uploading");
+    setError(null);
+    const promise = prepareUpload(next, (stage) => setPrepareState(stage));
+    preparing.current = promise;
+    promise
+      .then(() => {
+        if (preparing.current === promise) setPrepareState("ready");
+      })
+      .catch((err: unknown) => {
+        if (preparing.current !== promise) return;
+        setPrepareState("error");
+        setError(err instanceof Error ? err.message : "We couldn't upload this file.");
+      });
+    return promise;
+  }, []);
+
+  function chooseFile(next: File | undefined | null) {
+    if (!next) return;
+    const problem = validateFile(next);
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    setFile(next);
+    void beginPrepare(next);
+  }
+
+  function clearFile() {
+    preparing.current = null;
+    setFile(null);
+    setPrepareState("idle");
+    setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  const runAnalysis = useCallback(async (prepared: PreparedUpload) => {
+    setAnalyzing(true);
+    setError(null);
+    const outcome = await startAnalysis(prepared);
+    if (outcome.ok) {
+      window.location.assign(resultPath(outcome.started.resultId));
+      return;
+    }
+    setAnalyzing(false);
+    const { failure } = outcome;
+    if (failure.kind === "sign_in_required") {
+      stashPendingAnalysis(prepared);
+      setDialog("sign-in");
+    } else if (failure.kind === "monthly_limit") {
+      setDialog("limit");
+    } else if (failure.kind === "upload_expired") {
+      preparing.current = null;
+      setPrepareState("idle");
+      setFile(null);
+      setError(failure.message);
+    } else {
+      setError(failure.message);
+    }
+  }, []);
+
+  async function onAnalyze() {
+    setError(null);
+    let promise = preparing.current;
+
+    if (mode === "paste") {
+      if (wordCount(pasted) < MIN_PASTE_WORDS) {
+        setError(`Paste the full contract text — at least ${MIN_PASTE_WORDS} words.`);
+        return;
+      }
+      const name = pasted.trim() === SAMPLE_CONTRACT_TEXT.trim() ? SAMPLE_CONTRACT_NAME : "Pasted contract.txt";
+      promise = beginPrepare(fileFromPastedText(pasted, name));
+    } else if (!file) {
+      setError("Add a contract first.");
+      return;
+    }
+
+    if (!promise) return;
+    setAnalyzing(true);
+    let prepared: PreparedUpload;
+    try {
+      prepared = await promise;
+    } catch {
+      setAnalyzing(false);
+      return;
+    }
+
+    if (!signedIn) {
+      setAnalyzing(false);
+      stashPendingAnalysis(prepared);
+      setDialog("sign-in");
+      return;
+    }
+    await runAnalysis(prepared);
+  }
+
+  // Coming back from sign-in: pick up the stashed upload and analyze it.
+  // Deferred to a task so state updates happen outside the effect body.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const url = new URL(window.location.href);
+      const resume = url.searchParams.get("resume") === "1";
+      const signinUnavailable = url.searchParams.get("signin") === "unavailable";
+      if (resume || signinUnavailable) {
+        url.searchParams.delete("resume");
+        url.searchParams.delete("signin");
+        window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+      }
+      if (signinUnavailable) {
+        setError("Sign-in is unavailable right now. Please try again in a few minutes.");
+        return;
+      }
+      if (!resume || !signedIn) return;
+      const pending = takePendingAnalysis();
+      if (pending) {
+        void runAnalysis(pending);
+      } else {
+        setError("Your upload expired while you were signing in. Add the contract again.");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [signedIn, runAnalysis]);
+
+  const canAnalyze = mode === "file" ? Boolean(file) && prepareState !== "error" : pasted.trim().length > 0;
+  const buttonLabel = analyzing
+    ? prepareState === "uploading" || prepareState === "checking"
+      ? "Preparing…"
+      : "Analyzing…"
+    : "Analyze contract";
+
+  return (
+    <section aria-label="Analyze a contract" className="pt-panel p-3 sm:p-4">
+      <div role="group" aria-label="How to add your contract" className="flex gap-1 rounded-full bg-[color-mix(in_oklab,var(--pt-ink)_5%,transparent)] p-1 sm:inline-flex">
+        {(
+          [
+            { key: "file", label: "Upload a file" },
+            { key: "paste", label: "Paste text" },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            aria-pressed={mode === tab.key}
+            onClick={() => {
+              setMode(tab.key);
+              setError(null);
+            }}
+            className="flex-1 rounded-full px-4 py-2 text-sm font-semibold text-(--pt-ink-soft) transition-colors aria-pressed:bg-white aria-pressed:text-(--pt-ink) aria-pressed:shadow-sm sm:flex-none"
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3">
+        {mode === "file" ? (
+          file ? (
+            <div className="pt-subtle-panel flex flex-wrap items-center gap-3 p-4">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-(--pt-action) ring-1 ring-(--pt-line)">
+                <FileIcon />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-(--pt-ink)" title={file.name}>
+                  {file.name}
+                </p>
+                <p id={statusId} role="status" className="mt-0.5 flex items-center gap-2 text-sm text-(--pt-muted)">
+                  <span>{prettyFileSize(file.size)}</span>
+                  {STAGE_LABEL[prepareState] ? (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className={prepareState === "ready" ? "font-medium text-(--pt-good)" : ""}>
+                        {prepareState === "uploading" || prepareState === "checking" ? (
+                          <span className="pt-spinner mr-1.5 align-[-2px] text-(--pt-muted)" aria-hidden="true" />
+                        ) : null}
+                        {STAGE_LABEL[prepareState]}
+                      </span>
+                    </>
+                  ) : null}
+                </p>
+              </div>
+              <button type="button" onClick={clearFile} disabled={analyzing} className="pt-btn pt-btn-ghost px-3 py-1.5 text-sm">
+                Change
+              </button>
+            </div>
+          ) : (
+            <label
+              data-dragging={dragging}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                chooseFile(e.dataTransfer.files?.[0]);
+              }}
+              className="pt-dropzone flex min-h-56 cursor-pointer flex-col items-center justify-center gap-3 px-6 py-10 text-center sm:min-h-64"
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-(--pt-action) shadow-sm ring-1 ring-(--pt-line)">
+                <UploadIcon />
+              </span>
+              <span className="text-lg font-semibold text-(--pt-ink)">Drop your contract here</span>
+              <span className="text-sm text-(--pt-muted)">
+                or <span className="font-semibold text-(--pt-action) underline underline-offset-4">choose a file</span> · PDF, Word or text, up to 25 MB
+              </span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_FILE_TYPES}
+                className="sr-only"
+                onChange={(e) => chooseFile(e.target.files?.[0])}
+              />
+            </label>
+          )
+        ) : (
+          <div>
+            <label htmlFor={pasteId} className="sr-only">
+              Contract text
+            </label>
+            <textarea
+              id={pasteId}
+              value={pasted}
+              onChange={(e) => setPasted(e.target.value)}
+              placeholder="Paste the full text of your contract here…"
+              className="block min-h-56 w-full resize-y rounded-2xl border border-(--pt-line) bg-(--pt-surface-soft) p-4 text-[15px] leading-6 text-(--pt-ink) placeholder:text-(--pt-muted) sm:min-h-64"
+            />
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm text-(--pt-muted)">
+              <span>{pasted.trim() ? `${wordCount(pasted)} words` : "Copy it from an email, a PDF or a contractor's portal."}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setPasted(SAMPLE_CONTRACT_TEXT);
+                  setError(null);
+                }}
+                className="font-semibold text-(--pt-action) underline underline-offset-4"
+              >
+                Use a sample contract
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {error ? (
+        <p role="alert" className="pt-alert-danger mt-3 px-3.5 py-2.5 text-sm">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="mt-3 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs leading-5 text-(--pt-muted) sm:max-w-sm">
+          Encrypted upload. Free documents are deleted after 30 days. Not legal advice.
+        </p>
+        <button
+          type="button"
+          onClick={onAnalyze}
+          disabled={!canAnalyze || analyzing}
+          aria-describedby={file ? statusId : undefined}
+          className="pt-btn pt-btn-solid px-6 py-3 text-base"
+        >
+          {analyzing ? <span className="pt-spinner" aria-hidden="true" /> : null}
+          {buttonLabel}
+        </button>
+      </div>
+
+      <Dialog
+        open={dialog === "sign-in"}
+        onClose={() => setDialog(null)}
+        title="Sign in to see your results"
+        description="It's free, with no card needed. Your contract is ready and will be analyzed as soon as you're in."
+      >
+        <div className="flex flex-col gap-2.5">
+          <a href={signInPath("/?resume=1")} className="pt-btn pt-btn-solid px-5 py-3 text-base" autoFocus>
+            Continue
+          </a>
+          <a href={signInPath("/?resume=1", "sign-up")} className="pt-btn pt-btn-outline px-5 py-3 text-base">
+            Create a free account
+          </a>
+          <p className="mt-1 text-center text-xs text-(--pt-muted)">Google, Microsoft, Apple or email.</p>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={dialog === "limit"}
+        onClose={() => setDialog(null)}
+        title="You've reached this month's free limit"
+        description="Pro lifts the limit and adds our most capable AI model, a revised draft with tracked changes, and long-term document history."
+      >
+        <div className="flex flex-col gap-2.5 sm:flex-row-reverse">
+          <Link href="/dashboard/billing" className="pt-btn pt-btn-solid px-5 py-3 text-base" autoFocus>
+            See Pro
+          </Link>
+          <button type="button" onClick={() => setDialog(null)} className="pt-btn pt-btn-outline px-5 py-3 text-base">
+            Not now
+          </button>
+        </div>
+      </Dialog>
+    </section>
+  );
+}

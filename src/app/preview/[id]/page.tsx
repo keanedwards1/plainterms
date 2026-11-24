@@ -111,7 +111,7 @@ export default async function PreviewPage({ params, searchParams }: Props) {
           <p className="mt-3 text-[var(--pt-muted)]">
             This preview requires the secure link created after upload.
           </p>
-          <Link href="/analyze" className="mt-5 inline-flex font-semibold underline">
+          <Link href="/" className="mt-5 inline-flex font-semibold underline">
             Upload a contract
           </Link>
         </div>
@@ -151,7 +151,7 @@ export default async function PreviewPage({ params, searchParams }: Props) {
       <div className="mx-auto w-full max-w-5xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <Link
-            href="/analyze"
+            href="/"
             className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:text-[var(--pt-ink)]"
           >
             <span aria-hidden="true" className="inline-block transition-transform duration-500 ease group-hover:-translate-x-0.5">←</span>

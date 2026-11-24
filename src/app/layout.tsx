@@ -4,7 +4,8 @@ import Script from "next/script";
 import { Suspense } from "react";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import CookieConsent from "@/components/CookieConsent";
-import SiteHeader from "@/components/SiteHeader";
+import SiteHeader, { type HeaderUser } from "@/components/SiteHeader";
+import { displayName, getSession } from "@/lib/auth";
 import "./globals.css";
 
 const headingFont = Fraunces({
@@ -67,11 +68,20 @@ export const metadata: Metadata = {
     : {}),
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
+  const headerUser: HeaderUser | null = session
+    ? {
+        name: displayName(session.user),
+        email: session.user.email,
+        pictureUrl: session.user.profilePictureUrl,
+      }
+    : null;
+
   return (
     <html lang="en">
       <body className={`${headingFont.variable} ${bodyFont.variable} pt-body antialiased`}>
@@ -112,7 +122,7 @@ export default function RootLayout({
             {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${metaPixelId}');fbq('track','PageView');`}
           </Script>
         ) : null}
-        <SiteHeader />
+        <SiteHeader user={headerUser} />
         {children}
         <CookieConsent />
       </body>

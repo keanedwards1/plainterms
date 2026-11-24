@@ -15,12 +15,15 @@ import {
 } from "@/lib/pricingOptions";
 import FeedbackToast from "@/components/FeedbackToast";
 import UpgradeModal from "@/components/UpgradeModal";
+import ProUpgradeDialog from "@/components/ProUpgradeDialog";
+import TopFixes from "@/components/result/TopFixes";
 
 type ResultWorkspaceProps = {
   data: PtResult;
   retentionDays: number;
   accessKey?: string;
   abVariant?: string;
+  signedIn?: boolean;
 };
 
 type ReportTab = "summary" | "insights" | "flags" | "terms" | "questions" | "document" | "full";
@@ -601,7 +604,7 @@ async function readCheckoutError(res: Response): Promise<string> {
   return res.statusText || "Unknown error";
 }
 
-export default function ResultWorkspace({ data, retentionDays, accessKey, abVariant }: ResultWorkspaceProps) {
+export default function ResultWorkspace({ data, retentionDays, accessKey, abVariant, signedIn = false }: ResultWorkspaceProps) {
   const [activeReportTab, setActiveReportTab] = useState<ReportTab>("summary");
   const [fullReportVisited, setFullReportVisited] = useState(false);
   const [activeBasicTab, setActiveBasicTab] = useState<BasicTab>("summary");
@@ -614,6 +617,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   const [upgradePrompt, setUpgradePrompt] = useState<UpgradePrompt | null>(null);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
   const [upgradeTier, setUpgradeTier] = useState<ReportTierOption | null>(null);
+  const [proFeature, setProFeature] = useState<string | null>(null);
 
   const supportingSections = useMemo(
     () => data.sections.filter((section) => section.key !== "summary"),
@@ -666,16 +670,17 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   const revisionLowCount = revisionChanges.filter((c) => c.severity === "low").length;
 
   useEffect(() => {
-    if (!accessKey || !data.result_id) return undefined;
+    if (!data.result_id) return undefined;
+    if (!accessKey && !data.owned) return undefined;
     if (effectiveDocumentRevision?.status !== "processing") return undefined;
 
     let stopped = false;
     const intervalId = window.setInterval(async () => {
       try {
-        const response = await fetch(
-          `/api/result/${encodeURIComponent(data.result_id)}?k=${encodeURIComponent(accessKey)}`,
-          { cache: "no-store" }
-        );
+        const query = accessKey ? `?k=${encodeURIComponent(accessKey)}` : "";
+        const response = await fetch(`/api/result/${encodeURIComponent(data.result_id)}${query}`, {
+          cache: "no-store",
+        });
         if (!response.ok) return;
         const json = await response.json();
         const parsed = PtResultSchema.safeParse(json);
@@ -693,14 +698,18 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
       stopped = true;
       window.clearInterval(intervalId);
     };
-  }, [accessKey, data.result_id, effectiveDocumentRevision?.status]);
+  }, [accessKey, data.owned, data.result_id, effectiveDocumentRevision?.status]);
 
   const redFlags = data.report?.red_flags ?? [];
   const clauseBreakdown = data.report?.clause_breakdown ?? [];
   const questionsToAsk = data.report?.questions_to_ask ?? [];
   const isLowRiskNoFlags = data.report?.risk.label === "low" && redFlags.length === 0;
   const reportTier = data.report?.tier ?? "report_69";
-  const isCoreTier = reportTier === "scan_39";
+  // Results from signed-in analyses carry plan entitlements; older pay-per-report
+  // results are gated by their purchased tier.
+  const entitlements = data.entitlements;
+  const accountMode = Boolean(entitlements);
+  const isCoreTier = !accountMode && reportTier === "scan_39";
   // Upgrades only charge the difference, so show that (not the full tier price).
   const tierAmount = (tier: ReportTierOption) =>
     Number(REPORT_TIER_PRICES[tier].replace(/[^0-9.]/g, ""));
@@ -708,12 +717,19 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
     const diff = tierAmount(tier) - tierAmount(reportTier);
     return diff > 0 ? `$${diff}` : REPORT_TIER_PRICES[tier];
   };
-  const isProtectTier = reportTier === "protect_99";
+  const isProtectTier = accountMode || reportTier === "protect_99";
+  const canSeeRewrites = entitlements ? entitlements.rewrites : isProtectTier;
+  const canSeeRevision = entitlements ? entitlements.revised_document : !isCoreTier;
+  const lockedMeta = (legacyTier: ReportTierOption) => (accountMode ? "Pro" : REPORT_TIER_NAMES[legacyTier]);
   const protectExtras = data.report?.protect_extras;
   const protectUpsell = data.report?.protect_upsell;
   const activeEmailDraft = addonDraft?.key === "update_email" ? addonDraft : null;
 
   function openUpgradePrompt(prompt: UpgradePrompt) {
+    if (accountMode) {
+      setProFeature(prompt.title);
+      return;
+    }
     setUpgradePrompt(prompt);
     setUpgradeError(null);
   }
@@ -1153,6 +1169,12 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
   return (
     <>
     <FeedbackToast resultId={data.result_id} externalTrigger={fullReportVisited} />
+    <ProUpgradeDialog
+      open={proFeature !== null}
+      feature={proFeature}
+      signedIn={signedIn}
+      onClose={() => setProFeature(null)}
+    />
     <UpgradeModal
       open={upgradePrompt !== null}
       featureTitle={upgradePrompt?.title ?? ""}
@@ -1254,33 +1276,29 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                     flagsFound={redFlags.length}
                   />
 
+                  <TopFixes
+                    items={actionItems}
+                    renderItem={(item, idx) => annotateLegalTerms(item, `summary-action-${idx}`)}
+                    onDraftEmail={
+                      isProtectTier
+                        ? () => {
+                            setActiveReportTab("questions");
+                            activateAddon("update_email");
+                          }
+                        : undefined
+                    }
+                    emptyMessage={
+                      isLowRiskNoFlags
+                        ? "Your contract looks strong. No urgent changes were found in this review."
+                        : "No priority changes were identified for this report."
+                    }
+                  />
+
                   <ContractHealthSnapshot
                     riskScore={data.report.risk.score}
                     clearClauseCount={presentClauseCount}
                     totalClauseCount={clauseBreakdown.length}
                   />
-
-                  <article className="pt-card-soft p-3">
-                    <h3 className="text-lg font-semibold text-[var(--pt-ink)]">Top Next Steps</h3>
-                    {actionItems.length > 0 ? (
-                      <ul className="mt-2 space-y-2">
-                        {actionItems.map((item, idx) => (
-                          <li
-                            key={`summary-action-${idx}`}
-                            className="rounded-lg border border-[var(--pt-border)] bg-white px-3 py-2 text-[15px] leading-6 text-[var(--pt-ink)]/90"
-                          >
-                            {annotateLegalTerms(item, `summary-action-${idx}`)}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-base text-emerald-900">
-                        {isLowRiskNoFlags
-                          ? "Your contract looks strong. No urgent negotiation steps were detected in this review."
-                          : "No priority action items were identified for this report."}
-                      </div>
-                    )}
-                  </article>
 
                   <article className="pt-card-soft p-3">
                     <h3 className="text-lg font-semibold text-[var(--pt-ink)]">Top Flags Preview</h3>
@@ -1623,7 +1641,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         />
                       )}
 
-                      {isProtectTier && protectExtras && protectExtras.deeper_rewrites.length > 0 && (
+                      {canSeeRewrites && protectExtras && protectExtras.deeper_rewrites.length > 0 && (
                         <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
                           <p className="text-sm font-semibold text-[var(--pt-ink)]">Rewrite Options</p>
                           <p className="mt-1 text-xs text-[var(--pt-muted)]">For each risk area — push hard, find middle ground, or hold the line.</p>
@@ -1655,7 +1673,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         </article>
                       )}
 
-                      {isProtectTier && protectExtras && protectExtras.fallback_positions.length > 0 && (
+                      {canSeeRewrites && protectExtras && protectExtras.fallback_positions.length > 0 && (
                         <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-4">
                           <p className="text-sm font-semibold text-[var(--pt-ink)]">Fallback Positions</p>
                           <p className="mt-1 text-xs text-[var(--pt-muted)]">Use these as your negotiating floor if the other side pushes back.</p>
@@ -1669,10 +1687,10 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         </article>
                       )}
 
-                      {!isProtectTier && (
+                      {!canSeeRewrites && (
                         <LockedDisclosure
                           title="Rewrite options"
-                          meta={REPORT_TIER_NAMES.protect_99}
+                          meta={lockedMeta("protect_99")}
                           description="Open fallback language options and negotiating positions for the highest-priority risk areas."
                           onOpen={() => openUpgradePrompt(rewriteOptionsPrompt)}
                         />
@@ -1848,7 +1866,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
               )}
 
               {activeReportTab === "document" && (
-                isCoreTier ? (
+                !canSeeRevision ? (
                   <>
                     {/* Real file toolbar; Track Changes / Revised are locked */}
                     <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
@@ -1863,7 +1881,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                             <button
                               key={label}
                               type="button"
-                              onClick={() => openUpgradePrompt(documentReviewPrompt)}
+                              onClick={() => openUpgradePrompt({ ...documentReviewPrompt, title: label === "Revised" ? "Revised draft" : "Track changes" })}
                               className="flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-[var(--pt-muted)] hover:text-[var(--pt-ink)]"
                             >
                               <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3 w-3"><path d="M5 7V5.2a3 3 0 0 1 6 0V7m-7 0h8v6H4z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -1892,7 +1910,9 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                     {/* Concrete example of what the upgrade adds */}
                     <article className="rounded-lg border border-[var(--pt-border)] bg-white p-4">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-[var(--pt-ink)]">What Report &amp; Protect add</p>
+                        <p className="text-sm font-semibold text-[var(--pt-ink)]">
+                          {accountMode ? "What Pro adds" : <>What Report &amp; Protect add</>}
+                        </p>
                         <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Example</span>
                       </div>
                       <p className="mt-1 text-xs text-[var(--pt-muted)]">Every risky clause rewritten in plain, balanced language — shown as tracked changes and a clean revised draft you can copy and send.</p>
@@ -1910,7 +1930,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
 
                     <LockedDisclosure
                       title="Unlock Track Changes & a revised draft"
-                      meta={REPORT_TIER_NAMES.report_69}
+                      meta={lockedMeta("report_69")}
                       description="See every risky clause in your contract rewritten, with a clean revised version you can copy and send."
                       onOpen={() => openUpgradePrompt(documentReviewPrompt)}
                     />
@@ -2223,9 +2243,11 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                   */}
 
                   <p className="text-xs text-[var(--pt-muted)]">
-                    This secure result link remains available for up to {retentionDays} days.
-                    Save or bookmark it to revisit your results during that period.
-                    Account-based result history is coming soon.
+                    {accountMode
+                      ? entitlements?.history
+                        ? "This document is saved to your account until you delete it."
+                        : `This document is saved to your account for ${retentionDays} days.`
+                      : `This secure result link remains available for up to ${retentionDays} days. Save or bookmark it to revisit your results during that period.`}
                   </p>
                 </>
               )}

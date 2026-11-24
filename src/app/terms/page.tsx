@@ -47,11 +47,15 @@ const sections = [
   },
   {
     title: "Payments and refunds",
-    body: "PlainTerms charges a one-time fee per analysis. Fees are displayed before checkout and processed securely by Stripe. Because AI analysis begins immediately after payment is confirmed, all sales are final and we do not offer refunds once a report has been generated. If you experience a technical failure that prevented delivery of your report, contact us at keanedwards1@gmail.com within 7 days and we will investigate and resolve the issue, including reprocessing your document or issuing a credit at our discretion.",
+    body: "PlainTerms is free to use, with fair-use limits on how many documents can be analyzed each month. Pro is a monthly subscription billed in advance through Stripe at the price shown before checkout. Your subscription renews automatically each month until you cancel. You can cancel at any time from Plan & billing; you keep Pro until the end of the period you've paid for, and we don't give partial-month refunds. If a technical failure stops you from getting an analysis you're entitled to, contact us at keanedwards1@gmail.com within 7 days and we will investigate and resolve it. Earlier one-time purchases remain governed by the terms in place when they were made.",
+  },
+  {
+    title: "Your account",
+    body: "You sign in with Google, Microsoft, Apple or an email link. You are responsible for activity on your account and for keeping access to your sign-in method secure. You can delete your account at any time from Account settings, which permanently deletes your documents and analyses and cancels any subscription.",
   },
   {
     title: "Uploaded content",
-    body: "You retain all ownership rights to documents you upload. By uploading a document you grant PlainTerms a limited, temporary licence to process it solely for the purpose of generating your analysis. We do not use your documents to train AI models or share them with third parties beyond what is necessary to deliver your report.",
+    body: "You retain all ownership rights to documents you upload. By uploading a document you grant PlainTerms a limited licence to store and process it solely to generate your analysis and show it to you, for as long as it is kept in your account. We do not use your documents to train AI models or share them with third parties beyond what is necessary to deliver your report.",
   },
   {
     title: "Intellectual property",
@@ -88,7 +92,7 @@ export default function TermsPage() {
         </Link>
 
       <h1 className="mt-5 text-4xl text-[var(--pt-ink)]">Terms of Use</h1>
-      <p className="mt-1 text-xs text-[var(--pt-muted)]">Effective June 20, 2026</p>
+      <p className="mt-1 text-xs text-[var(--pt-muted)]">Effective November 23, 2026</p>
       <p className="mt-4 text-sm text-[var(--pt-muted)]">
         PlainTerms is an informational tool, not a law firm. Please read these terms before using the service.
       </p>

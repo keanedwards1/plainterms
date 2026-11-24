@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SampleReportTabsPreview from "@/components/SampleReportTabsPreview";
 import StickyMobileCta from "@/components/StickyMobileCta";
+import { getSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Sample Report | PlainTerms",
-  description: "See what the real PlainTerms report experience looks like before you buy.",
+  description: "See exactly what a PlainTerms contract analysis looks like before you add your own.",
 };
 
-export default function SampleReportPage() {
+export default async function SampleReportPage() {
+  const session = await getSession();
   const tabs = ["Summary", "Insights", "Red Flags", "Key Terms", "Questions", "Full Report"];
 
   return (
@@ -21,24 +23,18 @@ export default function SampleReportPage() {
                 Sample report
               </p>
               <h1 className="mt-3 text-4xl leading-tight text-[var(--pt-ink)] sm:text-5xl">
-                Get a review that costs hundreds when done by lawyers
+                See exactly what you&apos;ll get
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-[var(--pt-muted)]">
-                You get the same report structure as live paid results: At A Glance, Summary,
-                Insights, Red Flags, Key Terms, Questions, and Full Report evidence.
-              </p>
-              <p className="mt-2 text-sm font-semibold text-[var(--pt-ink)]">
-                Typical attorney review memo: ~$900–$1,800.
+                This is the same report you get for your own contract: a verdict, your top fixes, red flags,
+                every key term in plain English, questions to ask, and a ready-to-send email.
               </p>
               <div className="mt-5">
-                <Link
-                  href="/analyze"
-                  className="pt-btn-primary inline-flex w-full items-center justify-center px-6 py-3 text-base font-semibold sm:w-auto"
-                >
-                  Try it for yourself
+                <Link href="/" className="pt-btn pt-btn-solid w-full px-6 py-3 text-base sm:w-auto">
+                  Analyze my contract free
                 </Link>
                 <p className="mt-2 text-xs text-[var(--pt-muted)]">
-                  Get a risk score and red flags in minutes. No card required.
+                  A first read in seconds, the full analysis in about a minute. No card needed.
                 </p>
               </div>
               <div className="mt-5 flex flex-wrap gap-2">
@@ -75,11 +71,11 @@ export default function SampleReportPage() {
           </div>
         </section>
 
-        <SampleReportTabsPreview />
+        <SampleReportTabsPreview signedIn={Boolean(session)} />
 
       </div>
 
-      <StickyMobileCta href="/analyze" label="Check your own contract — free →" />
+      <StickyMobileCta href="/" label="Check your own contract — free →" />
     </main>
   );
 }
