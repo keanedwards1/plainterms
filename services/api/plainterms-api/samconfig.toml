@@ -32,3 +32,21 @@ warm_containers = "EAGER"
 
 [default.local_start_lambda.parameters]
 warm_containers = "EAGER"
+
+# Staging: a separate stack in the same account for testing. Always Stripe
+# sandbox, stack-specific tables, no alarms. Deploy with: npm run deploy:staging
+[staging.global.parameters]
+stack_name = "plainterms-api-staging"
+region = "us-west-2"
+
+[staging.build.parameters]
+cached = true
+parallel = true
+
+[staging.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+resolve_s3 = true
+s3_prefix = "plainterms-api-staging"
+image_repositories = []
+parameter_overrides = "EnvironmentName=\"staging\" StripeMode=\"sandbox\" WorkosClientId=\"client_01M87S9Y7XTMJF24V10RRVBRE4\" AppBaseUrl=\"http://localhost:3000\" AppSecondaryBaseUrl=\"http://127.0.0.1:3000\" StripeSecretKeyParamName=\"/plainterms/stripe/secret-key\" StripeTestSecretKeyParamName=\"/plainterms/stripe/test/secret-key\" StripePriceIdParamName=\"/plainterms/stripe/price-id-report\" StripeReportPriceIdParamName=\"/plainterms/stripe/price-id-report\" StripeScanPriceIdParamName=\"/plainterms/stripe/price-id-scan\" StripeProtectPriceIdParamName=\"/plainterms/stripe/price-id-protect\" StripeAddonRewritePriceIdParamName=\"/plainterms/stripe/price-id\" StripeAddonUpdateEmailPriceIdParamName=\"/plainterms/stripe/price-id\" StripeTestReportPriceIdParamName=\"/plainterms/stripe/test/price-id-report\" StripeTestScanPriceIdParamName=\"/plainterms/stripe/test/price-id-scan\" StripeTestProtectPriceIdParamName=\"/plainterms/stripe/test/price-id-protect\" StripeTestAddonRewritePriceIdParamName=\"/plainterms/stripe/test/price-id-report\" StripeTestAddonUpdateEmailPriceIdParamName=\"/plainterms/stripe/test/price-id-report\" AnalysisMode=\"rules\" LlmModel=\"gpt-4o-mini\" LlmApiKeyParamName=\"/plainterms/llm/api-key\" PrecheckTokenSecretParamName=\"/plainterms/precheck/token-secret\" EnableApiWaf=\"false\" ApiDefaultRateLimit=\"5\" ApiDefaultBurstLimit=\"10\""

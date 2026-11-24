@@ -6,13 +6,13 @@ Never put keys or secrets in this file or in git. They go in `.env.local`, Verce
 
 ---
 
-## 1. Where to deploy the backend — Blocking, needs a decision
+## 1. Where to deploy the backend — Done: staging stack
 
-`npm run stripe:sandbox:build` redeploys the **production** stack (`samconfig.toml` has one stack). If it ran with `StripeMode=sandbox`, real customers' checkouts would switch to Stripe test mode. I didn't deploy anything.
-
-Pick one:
-- [ ] **A. Add a staging stack (recommended).** I'd add a `staging` environment to `samconfig.toml` and parameterize the three hard-coded table names (`PlainTermsResults`, `PlainTermsFeedback`, `PlainTermsTestimonials`) so two stacks can coexist. Then everything gets tested in sandbox without touching production. Tell me to go ahead.
-- [ ] **B. Deploy to production after you merge.** The changes add to what's there: new tables, new functions and one new index on the results table. Old links and the one-off checkout keep working. You'd test with real sign-ins on the live site.
+- [x] Staging stack `plainterms-api-staging` (us-west-2, same account, always Stripe sandbox, no alarms). API: `https://thkmz8kxi0.execute-api.us-west-2.amazonaws.com/Prod`.
+- Deploy staging with `npm run deploy:staging`. Production still uses `npm run stripe:live:build` / `stripe:sandbox:build`.
+- [x] Local `.env.local` points `API_BASE_URL` at staging. The production URLs are kept there as comments.
+- [ ] Vercel **Preview**: set `API_BASE_URL` to the staging URL above.
+- [ ] **When you deploy production after merging**, the change set prompt shows what will change. The three existing tables must say **Replacement: False**. The template keeps their exact names and now also sets `Retain`, so they can't be deleted or replaced by mistake.
 
 ## 2. WorkOS (sign-in) — Blocking
 

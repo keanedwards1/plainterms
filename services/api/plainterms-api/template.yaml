@@ -3,6 +3,13 @@ Transform: AWS::Serverless-2016-10-31
 Description: PlainTerms API
 
 Parameters:
+  EnvironmentName:
+    Type: String
+    Default: production
+    AllowedValues:
+      - production
+      - staging
+    Description: production keeps the original fixed table names and alarms. staging gets stack-specific table names and no alarms, so both stacks can live in one account.
   AppBaseUrl:
     Type: String
     Default: https://www.plainterms.us
@@ -211,6 +218,7 @@ Parameters:
     Description: SSM parameter name containing the sandbox Stripe webhook signing secret (SecureString).
 
 Conditions:
+  IsProduction: !Equals [!Ref EnvironmentName, "production"]
   EnableApiWafCondition: !Equals [!Ref EnableApiWaf, "true"]
   EnablePreviewReservedConcurrencyCondition: !Not [!Equals [!Ref PreviewMaxConcurrency, 0]]
   HasApiAlarmSnsTopic: !Not [!Equals [!Ref ApiAlarmSnsTopicArn, ""]]
@@ -252,6 +260,7 @@ Resources:
 
   PlainTermsAlertsTopic:
     Type: AWS::SNS::Topic
+    Condition: IsProduction
     Properties:
       TopicName: !Sub "${AWS::StackName}-alerts"
       Subscription:
@@ -276,7 +285,8 @@ Resources:
               - !Ref AppBaseUrl
               - !Ref AppSecondaryBaseUrl
               - https://plainterms.vercel.app
-              - http://localhost:3000
+              # Staging already lists localhost as its AppBaseUrl; CORS rules must be unique.
+              - !If [IsProduction, http://localhost:3000, !Ref "AWS::NoValue"]
               - https://plainterms-*.vercel.app
             AllowedMethods:
               - PUT
@@ -312,8 +322,12 @@ Resources:
 
   FeedbackTable:
     Type: AWS::DynamoDB::Table
+    # Keep customer data even if the table is ever removed from the template
+    # or would need replacing.
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
-      TableName: PlainTermsFeedback
+      TableName: !If [IsProduction, PlainTermsFeedback, !Ref "AWS::NoValue"]
       BillingMode: PAY_PER_REQUEST
       TimeToLiveSpecification:
         AttributeName: expires_at
@@ -331,8 +345,12 @@ Resources:
 
   TestimonialsTable:
     Type: AWS::DynamoDB::Table
+    # Keep customer data even if the table is ever removed from the template
+    # or would need replacing.
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
-      TableName: PlainTermsTestimonials
+      TableName: !If [IsProduction, PlainTermsTestimonials, !Ref "AWS::NoValue"]
       BillingMode: PAY_PER_REQUEST
       TimeToLiveSpecification:
         AttributeName: expires_at
@@ -346,8 +364,12 @@ Resources:
 
   ResultsTable:
     Type: AWS::DynamoDB::Table
+    # Keep customer data even if the table is ever removed from the template
+    # or would need replacing.
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
-      TableName: PlainTermsResults
+      TableName: !If [IsProduction, PlainTermsResults, !Ref "AWS::NoValue"]
       BillingMode: PAY_PER_REQUEST
       TimeToLiveSpecification:
         AttributeName: expires_at
@@ -386,6 +408,8 @@ Resources:
 
   UsersTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
@@ -473,6 +497,7 @@ Resources:
 
   PlainTermsApiRequestCountAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsProduction
     Properties:
       AlarmDescription: !Sub "High API request volume for ${AWS::StackName} (${PlainTermsApi})."
       Namespace: AWS/ApiGateway
@@ -495,6 +520,7 @@ Resources:
 
   PlainTermsApi4xxAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsProduction
     Properties:
       AlarmDescription: !Sub "Elevated 4XX responses for ${AWS::StackName} (${PlainTermsApi})."
       Namespace: AWS/ApiGateway
@@ -517,6 +543,7 @@ Resources:
 
   PlainTermsApi5xxAlarm:
     Type: AWS::CloudWatch::Alarm
+    Condition: IsProduction
     Properties:
       AlarmDescription: !Sub "Elevated 5XX responses for ${AWS::StackName} (${PlainTermsApi})."
       Namespace: AWS/ApiGateway
@@ -1153,13 +1180,13 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref PlainTermsApi
-            Path: /documents/{{id}}
+            Path: /documents/{id}
             Method: DELETE
         DocumentByIdOptions:
           Type: Api
           Properties:
             RestApiId: !Ref PlainTermsApi
-            Path: /documents/{{id}}
+            Path: /documents/{id}
             Method: OPTIONS
 
 Outputs:

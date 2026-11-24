@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:api": "npm --prefix services/api/plainterms-api/lambdas test"
+    "test:api": "npm --prefix services/api/plainterms-api/lambdas test",
+    "deploy:staging": "node scripts/deploy-stripe-mode.mjs sandbox --build --env staging"
   },
   "dependencies": {
     "@workos-inc/authkit-nextjs": "4.6.3",
