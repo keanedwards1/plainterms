@@ -16,12 +16,12 @@ Pick one:
 
 ## 2. WorkOS (sign-in) — Blocking
 
-1. [ ] Create a WorkOS account and an AuthKit application.
-2. [ ] In **Authentication**, turn on Google, Microsoft, Apple and Magic Auth (email link).
-3. [ ] In **Redirects**, add:
+1. [x] Create a WorkOS account and an AuthKit application. Staging is done and sign-in/out works locally.
+2. [ ] Check that **Authentication** has Google, Microsoft, Apple and Magic Auth (email link).
+3. [x] In **Redirects**, add (localhost done; add the production and preview URLs later):
    - Redirect URIs: `http://localhost:3000/callback` and `https://www.plainterms.us/callback`, plus your Vercel preview domain + `/callback` if you test on previews.
    - Sign-out redirect: `https://www.plainterms.us/` (and `http://localhost:3000/`).
-4. [ ] Add to `.env.local` **and** Vercel (Preview + Production):
+4. [x] `.env.local` done. [ ] Still needed in Vercel (Preview + Production):
    ```
    WORKOS_CLIENT_ID=client_...
    WORKOS_API_KEY=sk_...
