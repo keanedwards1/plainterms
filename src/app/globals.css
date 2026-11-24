@@ -112,10 +112,11 @@ button {
 }
 
 .pt-btn-primary {
-  border: 1px solid #d9654f;
+  /* Deeper coral so the white label meets WCAG AA contrast. */
+  border: 1px solid #c24a35;
   border-radius: 999px;
-  background: var(--pt-accent);
-  color: var(--pt-accent-ink);
+  background: #c24a35;
+  color: #fff;
   box-shadow: 0 12px 20px -14px var(--pt-shadow);
   transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
 }

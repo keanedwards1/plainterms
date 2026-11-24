@@ -25,8 +25,8 @@ export default function SiteHeader({ user }: { user: HeaderUser | null }) {
     <header className="pt-nav sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--pt-surface)_82%,transparent)]">
       <div className="pt-page-pad pt-container-wide flex h-16 items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-6">
-          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="PlainTerms home">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--pt-action)] text-sm font-bold text-white">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5">
+            <span aria-hidden="true" className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--pt-action)] text-sm font-bold text-white">
               P
             </span>
             <span className="text-xl font-semibold tracking-tight text-[var(--pt-ink)]">PlainTerms</span>

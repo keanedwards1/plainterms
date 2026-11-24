@@ -68,9 +68,11 @@ async function main() {
     logStep("Construction gate password detected — sending access cookie.");
   }
 
-  logStep("1) GET /analyze");
-  const analyzePage = await request("/analyze");
-  assert(analyzePage.ok, `GET /analyze failed (${analyzePage.status})`);
+  logStep("1) GET / (app-first workspace)");
+  const homePage = await request("/");
+  assert(homePage.ok, `GET / failed (${homePage.status})`);
+  const homeHtml = await homePage.text();
+  assert(homeHtml.includes("Drop your contract here"), "Home page is missing the upload workspace.");
 
   logStep("2) POST /api/upload-url");
   const timestamp = Date.now();
@@ -125,6 +127,20 @@ async function main() {
   const precheckJson = await readBody(precheckRes);
   assert(typeof precheckJson === "object" && precheckJson, "precheck response was not JSON.");
   assert(typeof precheckJson.precheckToken === "string", "precheck response missing precheckToken.");
+
+  logStep("4b) POST /api/analyze without signing in (expect 401)");
+  const analyzeRes = await request("/api/analyze", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      objectKey: uploadUrlJson.objectKey,
+      filename,
+      contentType: "application/pdf",
+      size: pdfBytes.length,
+      precheckToken: precheckJson.precheckToken,
+    }),
+  });
+  assert(analyzeRes.status === 401, `POST /api/analyze should require sign-in, got ${analyzeRes.status}`);
 
   logStep("5) POST /api/checkout");
   const checkoutRes = await request("/api/checkout", {

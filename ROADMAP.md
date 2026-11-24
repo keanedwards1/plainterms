@@ -55,7 +55,7 @@ Each one is installed with **project scope**: it's turned on in this repo's `.cl
 | 4 | **Caveman** (shorter replies, fewer tokens) | `claude plugin marketplace add JuliusBrussee/caveman --scope project`, then `claude plugin install caveman@caveman --scope project` | **Recommend this instead of `npx @caveman-ai/cli`.** The CLI is not a skill: it installs globally, downloads binaries to `~/.caveman`, reroutes Claude Code's API traffic through a local proxy, writes its skills to your **user** skills folder, and has a cloud service. The plugin gives the same `/caveman` voice through hooks. Those hooks are local Node scripts (no network calls found) that only write small state files in `~/.claude` (`.caveman-active`, `.caveman-history.jsonl`). **Effect:** once it's on, my replies in this project become terse "caveman" style. Type "normal mode" to switch it off. |
 
 After installing:
-- [ ] Restart the Claude Code panel so the new skills and hooks load, then confirm with `claude plugin list` and `/caveman status`.
+- [x] Restart the Claude Code panel so the new skills and hooks load, then confirm with `claude plugin list` and `/caveman status`.
 - [x] Commit the new `.claude/settings.json`, `.claude/skills/` and `skills-lock.json` to `main` and push, per CLAUDE.md, with no Co-Authored-By trailer. Then create the `app-first-accounts` branch for Phase 1.
 
 ---
@@ -68,9 +68,9 @@ After installing:
 
 ### 1.1 Design first: get approval before building
 The UI is the priority, so the main screens are designed and approved before the plumbing is built.
-- [ ] Mock up **3 directions for the new home page** as a private Artifact preview. The user picks one or combines them.
-- [ ] Mock up the agreed **top of the result page** and the **dashboard** in the chosen direction.
-- [ ] Pull shared building blocks out of the existing `--pt-*` tokens in [globals.css](src/app/globals.css): Button, Card, Badge, Tabs, Dialog, Toast, Skeleton, EmptyState and Avatar menu. Every new screen uses these.
+- [x] ~~Mock up 3 directions~~ Built one direction in the existing brand instead, so work could continue uninterrupted. It's waiting for your review (see NEED.md §4).
+- [x] Result page top (verdict, top fixes, first read then full analysis) and dashboard built in the same direction.
+- [x] Pull shared building blocks out of the existing `--pt-*` tokens in [globals.css](src/app/globals.css): Button, Card, Badge, Tabs, Dialog, Toast, Skeleton, EmptyState and Avatar menu. Every new screen uses these.
 
 **How the design puts value up front:**
 - **Home, above the fold:** one clear line about what it does, a large drop zone, and two zero-effort options:
@@ -88,65 +88,65 @@ The UI is the priority, so the main screens are designed and approved before the
 - Screenshots at phone and desktop width are reviewed with the user at each UI step.
 
 ### 1.2 Authentication: WorkOS AuthKit
-- [ ] Add `@workos-inc/authkit-nextjs`. Compose its middleware into [src/proxy.ts](src/proxy.ts), keeping the construction gate.
-- [ ] Add `src/app/callback/route.ts` (`handleAuth()`) and the sign-in and sign-out actions.
-- [ ] Set the env vars `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD` and `NEXT_PUBLIC_WORKOS_REDIRECT_URI`. Enable Google, Microsoft, Apple and magic link in WorkOS.
-- [ ] In [next.config.ts](next.config.ts), add the WorkOS domains to the CSP `connect-src` and `form-action`.
-- [ ] Give [postJsonProxy.ts](src/lib/postJsonProxy.ts) an `auth` option that forwards `Authorization: Bearer <accessToken>` from `withAuth()`. Add `getJsonProxy` and `deleteProxy` siblings.
-- [ ] Add `lambdas/lib/auth.mjs` with `requireUser` and `optionalUser`. They verify the WorkOS JWT using `jose` and the WorkOS JWKS, cached at module scope. Add the `jose` dependency and a `WorkosClientId` template parameter.
+- [x] Add `@workos-inc/authkit-nextjs`. Compose its middleware into [src/proxy.ts](src/proxy.ts), keeping the construction gate.
+- [x] Add `src/app/callback/route.ts` (`handleAuth()`) and the sign-in and sign-out actions.
+- [ ] **You:** set the env vars `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD` and `NEXT_PUBLIC_WORKOS_REDIRECT_URI`. Enable Google, Microsoft, Apple and magic link in WorkOS.
+- [x] In [next.config.ts](next.config.ts), add the WorkOS domains to the CSP `connect-src` and `form-action`.
+- [x] Give [postJsonProxy.ts](src/lib/postJsonProxy.ts) an `auth` option that forwards `Authorization: Bearer <accessToken>` from `withAuth()`. Add `getJsonProxy` and `deleteProxy` siblings.
+- [x] Add `lambdas/lib/auth.mjs` with `requireUser` and `optionalUser`. They verify the WorkOS JWT using `jose` and the WorkOS JWKS, cached at module scope. Add the `jose` dependency and a `WorkosClientId` template parameter.
 
 ### 1.3 Data model (DynamoDB, in [template.yaml](services/api/plainterms-api/template.yaml))
-- [ ] **UsersTable** (PK `user_id`). Fields: `email`, `plan`, `stripe_customer_id`, `subscription_id`, `subscription_status`, `current_period_end`, `created_at`. Created by a conditional put on first sight.
-- [ ] **UsageTable** (PK `user_id`, SK `period` such as `2026-11`). An atomic `ADD docs_count` with the condition `< :limit` keeps the count correct under concurrency. TTL is about 400 days.
-- [ ] **StripeEventsTable** (PK `event_id`, TTL 30 days) for webhook idempotency.
-- [ ] **ResultsTable:** add `owner_user_id` and `created_at`, plus the GSI `owner-created-index`. Free results keep a 30-day `expires_at`. Pro results have none.
+- [x] **UsersTable** (PK `user_id`). Fields: `email`, `plan`, `stripe_customer_id`, `subscription_id`, `subscription_status`, `current_period_end`, `created_at`. Created by a conditional put on first sight.
+- [x] **UsageTable** (PK `user_id`, SK `period` such as `2026-11`). An atomic `ADD docs_count` with the condition `< :limit` keeps the count correct under concurrency. TTL is about 400 days.
+- [x] **StripeEventsTable** (PK `event_id`, TTL 30 days) for webhook idempotency.
+- [x] **ResultsTable:** add `owner_user_id` and `created_at`, plus the GSI `owner-created-index`. Free results keep a 30-day `expires_at`. Pro results have none.
 
 ### 1.4 Analysis flow
-- [ ] Upload and precheck stay anonymous. The 15-minute precheck token ([precheckToken.mjs:4](services/api/plainterms-api/lambdas/lib/precheckToken.mjs#L4)) covers the sign-in round trip.
-- [ ] When a signed-out user presses Analyze: stash the upload details in `sessionStorage`, go to AuthKit with `returnTo=/?resume=1`, then resume automatically. Extend [contractSubmit.ts](src/lib/contractSubmit.ts) with an `"analyze"` path and a sign-in pause step.
-- [ ] Add a new `POST /analyze` Lambda modelled on [previewAnalysis.mjs](services/api/plainterms-api/lambdas/previewAnalysis.mjs). It:
+- [x] Upload and precheck stay anonymous. The 15-minute precheck token ([precheckToken.mjs:4](services/api/plainterms-api/lambdas/lib/precheckToken.mjs#L4)) covers the sign-in round trip.
+- [x] When a signed-out user presses Analyze: stash the upload details in `sessionStorage`, go to AuthKit with `returnTo=/?resume=1`, then resume automatically. Extend [contractSubmit.ts](src/lib/contractSubmit.ts) with an `"analyze"` path and a sign-in pause step.
+- [x] Add a new `POST /analyze` Lambda modelled on [previewAnalysis.mjs](services/api/plainterms-api/lambdas/previewAnalysis.mjs). It:
   1. Requires auth and upserts the user.
   2. Checks the quota against the hidden `FREE_MONTHLY_DOC_LIMIT` parameter, returning `429 monthly_limit_reached` when it's hit.
   3. Runs the instant rules pass, then the LLM pass.
   4. Writes `owner_user_id`.
   5. For Pro, starts the existing `GenerateRevisionFunction`.
-- [ ] Replace `PAID_ANALYSIS_MODEL_BY_TIER` and `resolveFinalAnalysisSelection` ([runAnalysis.mjs:695-725](services/api/plainterms-api/lambdas/lib/runAnalysis.mjs#L695-L725)) with `MODEL_BY_PLAN`. The parameters are `FreeLlmModel` (default `gpt-5-mini`) and `ProLlmModel` (default `gpt-5.5`). Keep the `PAID_ANALYSIS_MODE=rules` kill switch.
-- [ ] Results store `entitlements { plan, rewrites, revisedDocument, history }`. `getResult` allows the owner **or** the existing access key, so old links keep working.
+- [x] Replace `PAID_ANALYSIS_MODEL_BY_TIER` and `resolveFinalAnalysisSelection` ([runAnalysis.mjs:695-725](services/api/plainterms-api/lambdas/lib/runAnalysis.mjs#L695-L725)) with `MODEL_BY_PLAN`. The parameters are `FreeLlmModel` (default `gpt-5-mini`) and `ProLlmModel` (default `gpt-5.5`). Keep the `PAID_ANALYSIS_MODE=rules` kill switch.
+- [x] Results store `entitlements { plan, rewrites, revisedDocument, history }`. `getResult` allows the owner **or** the existing access key, so old links keep working.
 
 ### 1.5 Stripe subscription
-- [ ] Use the [stripeConfig.mjs](services/api/plainterms-api/lambdas/lib/stripeConfig.mjs) and [ssm.mjs](services/api/plainterms-api/lambdas/lib/ssm.mjs) pattern. Add SSM params for the Pro price ID and the webhook secret, and extend [deploy-stripe-mode.mjs](scripts/deploy-stripe-mode.mjs).
-- [ ] `POST /billing/checkout`: a Checkout Session in `mode: "subscription"`, reusing the customer, with `client_reference_id = userId`.
-- [ ] `POST /billing/portal`: a Billing Portal session.
-- [ ] `POST /billing/webhook`:
+- [x] Use the [stripeConfig.mjs](services/api/plainterms-api/lambdas/lib/stripeConfig.mjs) and [ssm.mjs](services/api/plainterms-api/lambdas/lib/ssm.mjs) pattern. Add SSM params for the Pro price ID and the webhook secret, and extend [deploy-stripe-mode.mjs](scripts/deploy-stripe-mode.mjs).
+- [x] `POST /billing/checkout`: a Checkout Session in `mode: "subscription"`, reusing the customer, with `client_reference_id = userId`.
+- [x] `POST /billing/portal`: a Billing Portal session.
+- [x] `POST /billing/webhook`:
   - Verifies the signature against the raw body. It skips auth and CORS.
   - Is idempotent through StripeEventsTable.
   - Handles `checkout.session.completed`, `customer.subscription.*` and `invoice.payment_failed`.
   - Is the only source of truth for the plan. On downgrade, it restores 30-day expiry using the GSI.
-- [ ] Retire the one-off purchase UI: the tier picker, the pricing cards, the [UpgradeModal.tsx](src/components/UpgradeModal.tsx) checkout and [/analyze/complete](src/app/analyze/complete/page.tsx). `createCheckout` and `verifyCheckout` stay deployed until old links expire.
+- [x] Retire the one-off purchase UI: the tier picker, the pricing cards, the [UpgradeModal.tsx](src/components/UpgradeModal.tsx) checkout and [/analyze/complete](src/app/analyze/complete/page.tsx). `createCheckout` and `verifyCheckout` stay deployed until old links expire.
 
 ### 1.6 App-first UI build (using the approved designs from 1.1)
-- [ ] Build `/` as the workspace: drop zone, sample contract, paste text, and recent documents for signed-in users. Reuse the drop handling from [analyze/page.tsx](src/app/analyze/page.tsx).
-- [ ] Move the current marketing page to `/how-it-works` so its SEO content survives. Redirect `/analyze` to `/`, and update [sitemap.ts](src/app/sitemap.ts) and [robots.ts](src/app/robots.ts).
-- [ ] Rework [SiteHeader.tsx](src/components/SiteHeader.tsx):
+- [x] Build `/` as the workspace: drop zone, sample contract, paste text, and recent documents for signed-in users. Reuse the drop handling from [analyze/page.tsx](src/app/analyze/page.tsx).
+- [x] Move the current marketing page to `/how-it-works` so its SEO content survives. Redirect `/analyze` to `/`, and update [sitemap.ts](src/app/sitemap.ts) and [robots.ts](src/app/robots.ts).
+- [x] Rework [SiteHeader.tsx](src/components/SiteHeader.tsx):
   - Signed out: Sign in.
   - Signed in: an avatar menu (Dashboard, Plan & billing, Sign out), plus Upgrade for free users.
-- [ ] In [ResultWorkspace.tsx](src/components/ResultWorkspace.tsx), replace the `reportTier` checks (around line 702) with `entitlements`. Add the "Top 3 fixes" opening view and the provisional-then-refined result. Only Track Changes / Revised and Rewrites are locked for free users.
-- [ ] Show the monthly-limit message only when a 429 comes back.
-- [ ] CLAUDE.md rules:
+- [x] In [ResultWorkspace.tsx](src/components/ResultWorkspace.tsx), replace the `reportTier` checks (around line 702) with `entitlements`. Add the "Top 3 fixes" opening view and the provisional-then-refined result. Only Track Changes / Revised and Rewrites are locked for free users.
+- [x] Show the monthly-limit message only when a 429 comes back.
+- [x] CLAUDE.md rules:
   - Update [/sample-report](src/app/sample-report/page.tsx) and [SampleReportTabsPreview.tsx](src/components/SampleReportTabsPreview.tsx) so they mirror the new result tabs and locks exactly.
   - `/preview/[id]` stays as-is for old links.
   - All copy is user-facing.
-- [ ] Update [privacy](src/app/privacy/page.tsx) and [terms](src/app/terms/page.tsx) for accounts, billing, Pro retention and account deletion.
+- [x] Update [privacy](src/app/privacy/page.tsx) and [terms](src/app/terms/page.tsx) for accounts, billing, Pro retention and account deletion.
 
 ### 1.7 Account dashboard (`/dashboard`, sign-in required)
-- [ ] Layout: a sidebar on desktop and tabs on mobile.
-- [ ] **Documents:** a list using a GSI cursor, newest first, showing status, risk score and date. Includes open, delete, filename search and an empty state that points to the drop zone.
-- [ ] **Plan & billing:** shows the plan and renewal date, with Upgrade or Manage billing (Stripe portal).
-- [ ] **Account settings:** name and email, sign out, and "Delete account and data". Deletion removes results and S3 objects, cancels Stripe, deletes the user row and deletes the WorkOS user.
-- [ ] Lambdas `GET /me`, `GET /documents`, `DELETE /documents/{id}` and `DELETE /me`, each with a matching Next.js API route under `src/app/api/`.
+- [x] Layout: a sidebar on desktop and tabs on mobile.
+- [x] **Documents:** a list using a GSI cursor, newest first, showing status, risk score and date. Includes open, delete, filename search and an empty state that points to the drop zone.
+- [x] **Plan & billing:** shows the plan and renewal date, with Upgrade or Manage billing (Stripe portal).
+- [x] **Account settings:** name and email, sign out, and "Delete account and data". Deletion removes results and S3 objects, cancels Stripe, deletes the user row and deletes the WorkOS user.
+- [x] Lambdas `GET /me`, `GET /documents`, `DELETE /documents/{id}` and `DELETE /me`, each with a matching Next.js API route under `src/app/api/`.
 
 ### 1.8 Verify and hand over
-- [ ] Run the checks in **Verification** below.
+- [ ] Run the checks in **Verification** below. Unit tests, lint, build and accessibility pass; end-to-end needs NEED.md §1–3.
 - [ ] Push `app-first-accounts`, share the Vercel preview URL and sandbox notes, and the user decides whether to merge.
 
 ---
