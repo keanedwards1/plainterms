@@ -44,7 +44,8 @@ const securityHeaders = [
       "font-src 'self' data: https://fonts.gstatic.com",
       `connect-src 'self' ${vercelLiveSrc}https://api.stripe.com https://checkout.stripe.com https://*.amazonaws.com https://*.execute-api.us-west-2.amazonaws.com https://www.google-analytics.com https://*.google-analytics.com https://*.clarity.ms https://www.facebook.com`,
       `frame-src ${vercelLiveSrc}https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com`,
-      "form-action 'self' https://checkout.stripe.com",
+      // WorkOS: sign-in and sign-out redirect through AuthKit after form posts.
+      "form-action 'self' https://checkout.stripe.com https://api.workos.com https://*.authkit.app",
       "upgrade-insecure-requests",
     ].join("; "),
   },
