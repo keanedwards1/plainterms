@@ -4,7 +4,6 @@ import { deleteUser, ensureUser, getUser } from "./lib/users.mjs";
 import { deleteUsageForUser, getMonthlyCount } from "./lib/usage.mjs";
 import { deleteResultAndUpload, getResultItem, listAllOwnerResultKeys } from "./lib/documents.mjs";
 import { entitlementsForPlan } from "./lib/plans.mjs";
-import { getStripe } from "./lib/billing.mjs";
 
 const METHODS = "GET,DELETE,OPTIONS";
 
@@ -36,6 +35,8 @@ async function deleteAccount(userId) {
 
   // Stop billing first so a failure later never leaves a paying, deleted user.
   if (user?.subscriptionId && user.subscriptionStatus !== "canceled") {
+    // Loaded only here, so GET /me doesn't pay the Stripe SDK's startup cost.
+    const { getStripe } = await import("./lib/billing.mjs");
     const stripe = await getStripe();
     try {
       await stripe.subscriptions.cancel(user.subscriptionId);
@@ -71,8 +72,10 @@ export const handler = async (event) => {
       return jsonResponse(event, 200, { deleted: true }, METHODS);
     }
 
-    const user = await ensureUser(auth.user.userId, auth.user.email);
-    const monthlyCount = await getMonthlyCount(user.userId);
+    const [user, monthlyCount] = await Promise.all([
+      ensureUser(auth.user.userId, auth.user.email),
+      getMonthlyCount(auth.user.userId),
+    ]);
     return jsonResponse(event, 200, serializeUser(user, monthlyCount), METHODS);
   } catch (err) {
     log("error", "account.request_failed", {

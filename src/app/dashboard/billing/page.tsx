@@ -83,14 +83,19 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
             <p className="mt-1 text-sm text-(--pt-muted)">
               {isPro
                 ? account.subscription.cancelAtPeriodEnd && periodEnd
-                  ? `Ends on ${periodEnd}. You won't be charged again.`
+                  ? `Cancelled. You keep Pro until ${periodEnd} and won't be charged again.`
                   : periodEnd
                     ? `${PRO_PRICE_LABEL} · renews on ${periodEnd}`
                     : PRO_PRICE_LABEL
                 : "Everything you need to understand a contract."}
             </p>
           </div>
-          <BillingActions isPro={isPro} hasBillingAccount={account.subscription.hasBillingAccount} />
+          <BillingActions
+            isPro={isPro}
+            hasBillingAccount={account.subscription.hasBillingAccount}
+            cancelAtPeriodEnd={account.subscription.cancelAtPeriodEnd}
+            periodEndLabel={periodEnd}
+          />
         </div>
       </section>
 

@@ -1058,6 +1058,55 @@ Resources:
             Path: /billing/portal
             Method: OPTIONS
 
+  BillingSubscriptionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: billingSubscription.handler
+      Timeout: 20
+      MemorySize: 512
+      Environment:
+        Variables:
+          STRIPE_MODE: !Ref StripeMode
+          STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
+          STRIPE_TEST_SECRET_KEY_PARAM: !Ref StripeTestSecretKeyParamName
+          USERS_TABLE: !Ref UsersTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestSecretKeyParamName}
+      Events:
+        BillingCancelPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /billing/cancel
+            Method: POST
+        BillingCancelOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /billing/cancel
+            Method: OPTIONS
+        BillingResumePost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /billing/resume
+            Method: POST
+        BillingResumeOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /billing/resume
+            Method: OPTIONS
+
   BillingWebhookFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1104,6 +1153,8 @@ Resources:
       CodeUri: lambdas/
       Handler: me.handler
       Timeout: 60
+      # More memory also means more CPU: faster cold starts for the dashboard.
+      MemorySize: 512
       Environment:
         Variables:
           STRIPE_MODE: !Ref StripeMode
@@ -1154,6 +1205,7 @@ Resources:
     Properties:
       CodeUri: lambdas/
       Handler: documents.handler
+      MemorySize: 512
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
