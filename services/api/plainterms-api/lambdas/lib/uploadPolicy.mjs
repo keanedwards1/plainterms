@@ -12,6 +12,12 @@ const SUPPORTED_UPLOADS = Object.freeze({
     normalizedContentType:
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   },
+  // Pasted contract text is uploaded as a .txt file through the same pipeline.
+  text: {
+    mimeTypes: new Set(["text/plain"]),
+    extensions: new Set([".txt"]),
+    normalizedContentType: "text/plain",
+  },
 });
 
 const DEFAULT_MAX_UPLOAD_BYTES = 25 * 1024 * 1024;

@@ -3,6 +3,10 @@
 import { DynamoDBClient, GetItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { jsonResponse, methodGuard } from "./lib/http.mjs";
 import { hashResultAccessKey, secureEqualStrings } from "./lib/resultAccessKey.mjs";
+import { optionalUser } from "./lib/auth.mjs";
+import { getUser } from "./lib/users.mjs";
+import { entitlementsForPlan, normalizePlan } from "./lib/plans.mjs";
+import { promoteUiResultToPro } from "./lib/runAnalysis.mjs";
 
 const db = new DynamoDBClient({});
 const METHODS = "GET,OPTIONS";
@@ -188,7 +192,52 @@ function buildPreviewResult(uiResult, abVariant) {
   };
 }
 
-export const handler = async (event) => {
+function parseJson(raw) {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * When the owner is now on Pro but this document was created on the free plan,
+ * restore the Pro-only content and start the revised draft. The conditional
+ * update makes concurrent GETs safe: only the first one promotes and queues.
+ */
+async function promoteToProIfNeeded(id, item, uiResult) {
+  const promoted = promoteUiResultToPro(uiResult, parseJson(item.full_report?.S));
+  try {
+    await db.send(
+      new UpdateItemCommand({
+        TableName: process.env.RESULTS_TABLE,
+        Key: { result_id: { S: id } },
+        UpdateExpression: "SET ui_result = :ui, #plan = :pro REMOVE expires_at",
+        ConditionExpression: "#plan = :free",
+        ExpressionAttributeNames: { "#plan": "plan" },
+        ExpressionAttributeValues: {
+          ":ui": { S: JSON.stringify(promoted) },
+          ":pro": { S: "pro" },
+          ":free": { S: "free" },
+        },
+      })
+    );
+  } catch (err) {
+    if (err?.name === "ConditionalCheckFailedException") return promoted;
+    throw err;
+  }
+  if (promoted?.document?.revision?.status === "processing") {
+    try {
+      await queueDocumentRevisionJob(id);
+    } catch {
+      // Non-fatal: the document view shows the failure state if it never starts.
+    }
+  }
+  return promoted;
+}
+
+export const handler = async (event, _context, deps = {}) => {
   const methodResponse = methodGuard(event, "GET", METHODS);
   if (methodResponse) return methodResponse;
 
@@ -202,43 +251,55 @@ export const handler = async (event) => {
   const accessKey = previewMode
     ? previewAccessKey
     : event?.queryStringParameters?.k ?? event?.queryStringParameters?.key;
-  if (typeof accessKey !== "string" || !accessKey.trim()) {
+  const hasAccessKey = typeof accessKey === "string" && accessKey.trim().length > 0;
+  const viewer = previewMode ? null : await (deps.optionalUser ?? optionalUser)(event);
+
+  if (!hasAccessKey && !viewer) {
     return jsonResponse(event, 401, { error: "Missing result access key." }, METHODS);
   }
 
   try {
-    const cmd = new GetItemCommand({
-      TableName: process.env.RESULTS_TABLE,
-      Key: {
-        result_id: { S: id },
-      },
-    });
-
-    const res = await db.send(cmd);
+    const res = await db.send(
+      new GetItemCommand({
+        TableName: process.env.RESULTS_TABLE,
+        Key: {
+          result_id: { S: id },
+        },
+      })
+    );
 
     if (!res.Item) {
       return jsonResponse(event, 404, { error: "Result not found", status: "not_found" }, METHODS);
     }
 
-    const expectedAccessKeyHash = previewMode
-      ? res.Item.access_key_hash_preview?.S ?? ""
-      : res.Item.access_key_hash?.S ?? "";
-    const previousAccessKeyHash = previewMode ? "" : res.Item.access_key_hash_previous?.S ?? "";
-    if (!expectedAccessKeyHash && !previousAccessKeyHash) {
-      return jsonResponse(event, 401, {
-        error: previewMode
-          ? "This preview requires a refreshed secure preview link. Please upload again."
-          : "This result requires a refreshed secure access link. Please verify checkout again.",
-      }, METHODS);
-    }
+    const ownerUserId = res.Item.owner_user_id?.S ?? "";
+    const isOwner = Boolean(viewer && ownerUserId && viewer.userId === ownerUserId);
 
-    if (
-      !matchesAnyAccessHash({
-        accessKey,
-        hashes: [expectedAccessKeyHash, previousAccessKeyHash],
-      })
-    ) {
-      return jsonResponse(event, 403, { error: "Invalid result access key." }, METHODS);
+    if (!isOwner) {
+      if (!hasAccessKey) {
+        // Signed in, but not this document's owner and no share key.
+        return jsonResponse(event, 404, { error: "Result not found", status: "not_found" }, METHODS);
+      }
+      const expectedAccessKeyHash = previewMode
+        ? res.Item.access_key_hash_preview?.S ?? ""
+        : res.Item.access_key_hash?.S ?? "";
+      const previousAccessKeyHash = previewMode ? "" : res.Item.access_key_hash_previous?.S ?? "";
+      if (!expectedAccessKeyHash && !previousAccessKeyHash) {
+        return jsonResponse(event, 401, {
+          error: previewMode
+            ? "This preview requires a refreshed secure preview link. Please upload again."
+            : "This result requires a refreshed secure access link. Please verify checkout again.",
+        }, METHODS);
+      }
+
+      if (
+        !matchesAnyAccessHash({
+          accessKey,
+          hashes: [expectedAccessKeyHash, previousAccessKeyHash],
+        })
+      ) {
+        return jsonResponse(event, 403, { error: "Invalid result access key." }, METHODS);
+      }
     }
 
     const nowEpoch = Math.floor(Date.now() / 1000);
@@ -278,10 +339,8 @@ export const handler = async (event) => {
       }, METHODS);
     }
 
-    let uiResult;
-    try {
-      uiResult = JSON.parse(res.Item.ui_result.S);
-    } catch {
+    let uiResult = parseJson(res.Item.ui_result.S);
+    if (!uiResult) {
       return jsonResponse(event, 500, {
         error: "Stored result payload is invalid. Please verify checkout again for a refreshed link.",
       }, METHODS);
@@ -292,6 +351,30 @@ export const handler = async (event) => {
       return jsonResponse(event, 200, buildPreviewResult(uiResult, abVariant), METHODS);
     }
 
+    const storedPlan = res.Item.plan?.S ? normalizePlan(res.Item.plan.S) : null;
+
+    // Plan-based results (accounts flow).
+    if (storedPlan) {
+      let effectivePlan = storedPlan;
+      if (isOwner && storedPlan === "free" && resultStatus === "complete") {
+        const owner = await (deps.getUser ?? getUser)(viewer.userId);
+        if (owner?.plan === "pro") {
+          uiResult = await promoteToProIfNeeded(id, res.Item, uiResult);
+          effectivePlan = "pro";
+        }
+      }
+      const effectiveExpiry = effectivePlan === "pro" ? null : expiresAt > 0 ? expiresAt : null;
+      return jsonResponse(event, 200, {
+        ...uiResult,
+        _ab_variant: abVariant,
+        entitlements: entitlementsForPlan(effectivePlan),
+        analysis_stage: resultStatus === "refining" ? "refining" : "complete",
+        owned: isOwner,
+        expires_at: effectiveExpiry,
+      }, METHODS);
+    }
+
+    // Legacy pay-per-report results.
     if (!uiResult?.document?.revision) {
       const nextRevision = buildInitialDocumentRevision(uiResult);
       uiResult = withRevision(uiResult, nextRevision);

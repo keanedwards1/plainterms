@@ -158,6 +158,58 @@ Parameters:
     Default: /plainterms/resend/api-key
     Description: SSM parameter name containing Resend API key for transactional email (SecureString). Leave unset to disable receipt emails.
 
+  WorkosClientId:
+    Type: String
+    Default: ""
+    Description: WorkOS AuthKit client ID (client_...). Lambdas verify user access tokens against this client's JWKS. Empty disables signed-in endpoints.
+  WorkosIssuer:
+    Type: String
+    Default: ""
+    Description: Optional expected `iss` claim of WorkOS access tokens. Leave empty to verify signature and expiry only.
+  FreeLlmModel:
+    Type: String
+    Default: gpt-5-mini
+    AllowedValues:
+      - gpt-4o-mini
+      - gpt-5-mini
+      - gpt-5
+      - gpt-5.2
+      - gpt-5.5
+    Description: AI model used for free-plan analyses.
+  ProLlmModel:
+    Type: String
+    Default: gpt-5.5
+    AllowedValues:
+      - gpt-5-mini
+      - gpt-5
+      - gpt-5.2
+      - gpt-5.5
+    Description: AI model used for Pro analyses.
+  FreeMonthlyDocLimit:
+    Type: Number
+    Default: 30
+    Description: Documents a free user can analyze per calendar month (UTC). Not shown in the UI until reached.
+  ProMonthlyDocLimit:
+    Type: Number
+    Default: 300
+    Description: Safety cap on documents a Pro user can analyze per calendar month (UTC).
+  StripeProPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/price-id-pro
+    Description: SSM parameter name containing the live Stripe recurring price ID for Pro (String).
+  StripeTestProPriceIdParamName:
+    Type: String
+    Default: /plainterms/stripe/test/price-id-pro
+    Description: SSM parameter name containing the sandbox Stripe recurring price ID for Pro (String).
+  StripeWebhookSecretParamName:
+    Type: String
+    Default: /plainterms/stripe/webhook-secret
+    Description: SSM parameter name containing the live Stripe webhook signing secret (SecureString).
+  StripeTestWebhookSecretParamName:
+    Type: String
+    Default: /plainterms/stripe/test/webhook-secret
+    Description: SSM parameter name containing the sandbox Stripe webhook signing secret (SecureString).
+
 Conditions:
   EnableApiWafCondition: !Equals [!Ref EnableApiWaf, "true"]
   EnablePreviewReservedConcurrencyCondition: !Not [!Equals [!Ref PreviewMaxConcurrency, 0]]
@@ -172,6 +224,8 @@ Globals:
       Variables:
         ALLOWED_ORIGIN: !Ref AppBaseUrl
         ALLOWED_ORIGINS: !Sub "${AppBaseUrl},${AppSecondaryBaseUrl},https://plainterms.vercel.app,http://localhost:3000,https://plainterms-*.vercel.app"
+        WORKOS_CLIENT_ID: !Ref WorkosClientId
+        WORKOS_ISSUER: !Ref WorkosIssuer
 
 Resources:
   PlainTermsApi:
@@ -182,8 +236,8 @@ Resources:
       BinaryMediaTypes:
         - multipart/form-data
       Cors:
-        AllowMethods: "'GET,POST,OPTIONS'"
-        AllowHeaders: "'content-type'"
+        AllowMethods: "'GET,POST,DELETE,OPTIONS'"
+        AllowHeaders: "'content-type,authorization,x-pt-user-email'"
         AllowOrigin: !Sub "'${AppBaseUrl}'"
       MethodSettings:
         - ResourcePath: "/*"
@@ -301,8 +355,87 @@ Resources:
       AttributeDefinitions:
         - AttributeName: result_id
           AttributeType: S
+        - AttributeName: owner_user_id
+          AttributeType: S
+        - AttributeName: created_at
+          AttributeType: S
       KeySchema:
         - AttributeName: result_id
+          KeyType: HASH
+      # Sparse index: only results that have an owner (signed-in analyses)
+      # appear in it. Powers the dashboard's newest-first document list.
+      GlobalSecondaryIndexes:
+        - IndexName: owner-created-index
+          KeySchema:
+            - AttributeName: owner_user_id
+              KeyType: HASH
+            - AttributeName: created_at
+              KeyType: RANGE
+          Projection:
+            ProjectionType: INCLUDE
+            NonKeyAttributes:
+              - status
+              - plan
+              - file_name
+              - risk_score
+              - risk_label
+              - recommendation_action
+              - recommendation_label
+              - flag_count
+              - expires_at
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: stripe_customer_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: stripe-customer-index
+          KeySchema:
+            - AttributeName: stripe_customer_id
+              KeyType: HASH
+          Projection:
+            ProjectionType: KEYS_ONLY
+
+  UsageTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: period
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: period
+          KeyType: RANGE
+
+  StripeEventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+      AttributeDefinitions:
+        - AttributeName: event_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: event_id
           KeyType: HASH
 
   PlainTermsApiWebAcl:
@@ -668,11 +801,14 @@ Resources:
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
+          USERS_TABLE: !Ref UsersTable
           RESULT_TTL_DAYS: "30"
           DOCUMENT_REVISION_FUNCTION_NAME: !Ref GenerateRevisionFunction
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
         - Statement:
             Effect: Allow
             Action:
@@ -722,6 +858,308 @@ Resources:
           Properties:
             RestApiId: !Ref PlainTermsApi
             Path: /feedback
+            Method: OPTIONS
+
+  AnalyzeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: analyze.handler
+      Timeout: 60
+      MemorySize: 1024
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+          USERS_TABLE: !Ref UsersTable
+          USAGE_TABLE: !Ref UsageTable
+          RESULT_TTL_DAYS: "30"
+          UPLOAD_BUCKET: !Ref UploadBucket
+          UPLOAD_MAX_BYTES: "26214400"
+          PRECHECK_TOKEN_SECRET_PARAM: !Ref PrecheckTokenSecretParamName
+          REFINE_ANALYSIS_FUNCTION_NAME: !Ref RefineAnalysisFunction
+          FREE_MONTHLY_DOC_LIMIT: !Ref FreeMonthlyDocLimit
+          PRO_MONTHLY_DOC_LIMIT: !Ref ProMonthlyDocLimit
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsageTable
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${PrecheckTokenSecretParamName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt RefineAnalysisFunction.Arn
+      Events:
+        AnalyzePost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /analyze
+            Method: POST
+        AnalyzeOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /analyze
+            Method: OPTIONS
+
+  RefineAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: refineAnalysis.handler
+      Timeout: 330
+      MemorySize: 1024
+      EventInvokeConfig:
+        MaximumRetryAttempts: 1
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+          RESULT_TTL_DAYS: "30"
+          UPLOAD_BUCKET: !Ref UploadBucket
+          ANALYSIS_MODE: llm
+          LLM_BASE_URL: "https://api.openai.com/v1"
+          LLM_MODEL: !Ref LlmModel
+          LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
+          FREE_LLM_MODEL: !Ref FreeLlmModel
+          PRO_LLM_MODEL: !Ref ProLlmModel
+          DOCUMENT_REVISION_FUNCTION_NAME: !Ref GenerateRevisionFunction
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt GenerateRevisionFunction.Arn
+
+  BillingCheckoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: billingCheckout.handler
+      Timeout: 20
+      Environment:
+        Variables:
+          STRIPE_MODE: !Ref StripeMode
+          STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
+          STRIPE_TEST_SECRET_KEY_PARAM: !Ref StripeTestSecretKeyParamName
+          STRIPE_PRO_PRICE_ID_PARAM: !Ref StripeProPriceIdParamName
+          STRIPE_TEST_PRO_PRICE_ID_PARAM: !Ref StripeTestProPriceIdParamName
+          APP_BASE_URL: !Ref AppBaseUrl
+          USERS_TABLE: !Ref UsersTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeProPriceIdParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestProPriceIdParamName}
+      Events:
+        BillingCheckoutPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /billing/checkout
+            Method: POST
+        BillingCheckoutOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /billing/checkout
+            Method: OPTIONS
+
+  BillingPortalFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: billingPortal.handler
+      Timeout: 20
+      Environment:
+        Variables:
+          STRIPE_MODE: !Ref StripeMode
+          STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
+          STRIPE_TEST_SECRET_KEY_PARAM: !Ref StripeTestSecretKeyParamName
+          APP_BASE_URL: !Ref AppBaseUrl
+          USERS_TABLE: !Ref UsersTable
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref UsersTable
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestSecretKeyParamName}
+      Events:
+        BillingPortalPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /billing/portal
+            Method: POST
+        BillingPortalOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /billing/portal
+            Method: OPTIONS
+
+  BillingWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: billingWebhook.handler
+      Timeout: 30
+      Environment:
+        Variables:
+          STRIPE_MODE: !Ref StripeMode
+          STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
+          STRIPE_TEST_SECRET_KEY_PARAM: !Ref StripeTestSecretKeyParamName
+          STRIPE_WEBHOOK_SECRET_PARAM: !Ref StripeWebhookSecretParamName
+          STRIPE_TEST_WEBHOOK_SECRET_PARAM: !Ref StripeTestWebhookSecretParamName
+          USERS_TABLE: !Ref UsersTable
+          RESULTS_TABLE: !Ref ResultsTable
+          STRIPE_EVENTS_TABLE: !Ref StripeEventsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StripeEventsTable
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeWebhookSecretParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestWebhookSecretParamName}
+      Events:
+        BillingWebhookPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /billing/webhook
+            Method: POST
+
+  MeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: me.handler
+      Timeout: 60
+      Environment:
+        Variables:
+          STRIPE_MODE: !Ref StripeMode
+          STRIPE_SECRET_KEY_PARAM: !Ref StripeSecretKeyParamName
+          STRIPE_TEST_SECRET_KEY_PARAM: !Ref StripeTestSecretKeyParamName
+          USERS_TABLE: !Ref UsersTable
+          USAGE_TABLE: !Ref UsageTable
+          RESULTS_TABLE: !Ref ResultsTable
+          UPLOAD_BUCKET: !Ref UploadBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsageTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - S3CrudPolicy:
+            BucketName: !Ref UploadBucket
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeSecretKeyParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${StripeTestSecretKeyParamName}
+      Events:
+        MeGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /me
+            Method: GET
+        MeDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /me
+            Method: DELETE
+        MeOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /me
+            Method: OPTIONS
+
+  DocumentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: documents.handler
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+          UPLOAD_BUCKET: !Ref UploadBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - S3CrudPolicy:
+            BucketName: !Ref UploadBucket
+      Events:
+        DocumentsGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /documents
+            Method: GET
+        DocumentsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /documents
+            Method: OPTIONS
+        DocumentByIdDelete:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /documents/{{id}}
+            Method: DELETE
+        DocumentByIdOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /documents/{{id}}
             Method: OPTIONS
 
 Outputs:

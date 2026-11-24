@@ -1,4 +1,4 @@
-import { DynamoDBClient, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import crypto from "node:crypto";
 import {
   assertPtUiV1Contract,
@@ -12,6 +12,15 @@ import { validateObjectKey, validateUploadMeta } from "./uploadPolicy.mjs";
 import { buildReportInsights } from "./reportEngine.mjs";
 import { createResultAccessKey, hashResultAccessKey } from "./resultAccessKey.mjs";
 import { ADDON_OPTIONS, REPORT_TIER_OPTIONS } from "./contractOptions.mjs";
+import {
+  PLAN_REPORT_TIER,
+  isLockedRevision,
+  lockedRevision,
+  modelForPlan,
+  normalizePlan,
+  retentionDaysForPlan,
+  stripProOnlyContent,
+} from "./plans.mjs";
 
 const db = new DynamoDBClient({});
 const REPORT_TIERS = new Set(REPORT_TIER_OPTIONS);
@@ -724,48 +733,61 @@ function resolveFinalAnalysisSelection(analysisSelection, reportTier, { paidAnal
   return { analysisMode: "llm", llmModel: model, abVariant: `paid_${reportTier}` };
 }
 
-export async function runAnalysis(payload, analysisSelection = {}, addonSelection = {}, runOptions = {}) {
-  const objectKeyCheck = validateObjectKey(payload?.objectKey);
-  if (!objectKeyCheck.ok) {
-    throw new Error(objectKeyCheck.error);
+function resolvePlanAnalysisSelection(plan, { rulesOnly = false } = {}) {
+  if (rulesOnly) {
+    return { analysisMode: "rules", llmModel: null, abVariant: `${plan}_instant` };
   }
-
-  const metaCheck = validateUploadMeta({
-    filename: payload?.filename,
-    contentType: payload?.contentType,
-    size: payload?.size,
-    requireSize: true,
-  });
-  if (!metaCheck.ok) {
-    throw new Error(metaCheck.error);
+  const paidMode = String(process.env.PAID_ANALYSIS_MODE ?? "llm").trim().toLowerCase();
+  if (paidMode === "rules") {
+    return { analysisMode: "rules", llmModel: null, abVariant: `${plan}_rules_locked` };
   }
+  return { analysisMode: "llm", llmModel: modelForPlan(plan), abVariant: `${plan}_llm` };
+}
 
-  const normalizedPayload = {
-    objectKey: objectKeyCheck.objectKey,
-    filename: metaCheck.filename,
-    contentType: metaCheck.contentType,
-    size: metaCheck.size,
+function documentSummaryAttributes(uiResult) {
+  const report = uiResult?.report ?? {};
+  const flags = asArray(report.red_flags);
+  const score = Number(report?.risk?.score);
+  return {
+    file_name: { S: String(uiResult?.document?.file_name ?? "Contract document").slice(0, 300) },
+    risk_score: { N: String(Number.isFinite(score) ? Math.round(score) : 0) },
+    risk_label: { S: String(report?.risk?.label ?? "medium") },
+    recommendation_action: { S: String(report?.recommendation?.action ?? "negotiate") },
+    recommendation_label: { S: String(report?.recommendation?.label ?? "").slice(0, 120) },
+    flag_count: { N: String(flags.length) },
   };
+}
 
-  const resultId = makeResultId();
-  const resultAccessKey = createResultAccessKey();
-  const resultAccessKeyHash = hashResultAccessKey(resultAccessKey);
-  const previewAccessKey = createResultAccessKey();
-  const previewAccessKeyHash = hashResultAccessKey(previewAccessKey);
-  const createdAt = new Date().toISOString();
-  const expiresAtEpoch = Math.floor(Date.now() / 1000) + getRetentionDays() * 24 * 60 * 60;
+/**
+ * Extracts, analyzes and shapes one document. Pure apart from the LLM calls
+ * and the S3 read; persistence is the caller's job.
+ */
+async function buildAnalysisArtifacts({
+  normalizedPayload,
+  resultId,
+  createdAt,
+  analysisSelection = {},
+  addonSelection = {},
+  runOptions = {},
+}) {
+  const plan = runOptions.plan ? normalizePlan(runOptions.plan) : null;
+  const rulesOnly = runOptions.rulesOnly === true;
+  const selectedTier = plan ? PLAN_REPORT_TIER : normalizeReportTier(analysisSelection?.reportTier);
 
-  const selectedTier = normalizeReportTier(analysisSelection?.reportTier);
-  // The free preview defers paid artifacts; a paid run does not. Use that to
-  // decide whether this analysis may use a paid LLM model.
-  const isPaidAnalysis = runOptions.paidAnalysis === true || runOptions.deferPaidArtifacts !== true;
-  const finalSelection = resolveFinalAnalysisSelection(analysisSelection, selectedTier, {
-    paidAnalysis: isPaidAnalysis,
-  });
+  let finalSelection;
+  if (plan) {
+    finalSelection = resolvePlanAnalysisSelection(plan, { rulesOnly });
+  } else {
+    // The free preview defers paid artifacts; a paid run does not. Use that to
+    // decide whether this analysis may use a paid LLM model.
+    const isPaidAnalysis = runOptions.paidAnalysis === true || runOptions.deferPaidArtifacts !== true;
+    finalSelection = resolveFinalAnalysisSelection(analysisSelection, selectedTier, {
+      paidAnalysis: isPaidAnalysis,
+    });
+  }
 
-  const bucket = process.env.UPLOAD_BUCKET;
   const extraction = await extractDocumentTextFromUpload({
-    bucket,
+    bucket: process.env.UPLOAD_BUCKET,
     objectKey: normalizedPayload.objectKey,
     filename: normalizedPayload.filename,
     contentType: normalizedPayload.contentType,
@@ -792,8 +814,13 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
     extractedText: extraction.extractedText,
     llmFields: llmAnalysis?.fields,
   });
-  const tieredReportInsights = applyTierToReport(reportInsights, selectedTier);
-  if (!runOptions.deferPaidArtifacts) {
+  let tieredReportInsights = applyTierToReport(reportInsights, selectedTier);
+  if (plan === "free") {
+    tieredReportInsights = stripProOnlyContent(tieredReportInsights);
+  }
+
+  const skipLlmEmail = plan ? rulesOnly || finalSelection.analysisMode !== "llm" : runOptions.deferPaidArtifacts;
+  if (!skipLlmEmail) {
     try {
       const llmEmailDraft = await generateNegotiationEmailDraftWithLlm({
         report: tieredReportInsights,
@@ -819,56 +846,251 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
   });
   assertPtV1Contract(ptV1);
   let uiResult = transformPtV1ToUiV1(ptV1);
-  const initialRevision = runOptions.deferPaidArtifacts ? null : buildInitialDocumentRevision(uiResult);
+
+  let initialRevision = null;
+  if (plan === "free") {
+    initialRevision = lockedRevision();
+  } else if (plan === "pro") {
+    // The instant pass leaves the revision for the refine pass to start.
+    initialRevision = rulesOnly ? null : buildInitialDocumentRevision(uiResult);
+  } else if (!runOptions.deferPaidArtifacts) {
+    initialRevision = buildInitialDocumentRevision(uiResult);
+  }
   if (initialRevision) {
     uiResult = withDocumentRevision(uiResult, initialRevision);
   }
   assertPtUiV1Contract(uiResult);
 
-  const cmd = new PutItemCommand({
-    TableName: process.env.RESULTS_TABLE,
-    Item: {
-      result_id: { S: resultId },
-      created_at: { S: createdAt },
-      expires_at: { N: String(expiresAtEpoch) },
-      object_key: { S: normalizedPayload.objectKey },
-      access_key_hash: { S: resultAccessKeyHash },
-      access_key_hash_preview: { S: previewAccessKeyHash },
-      status: { S: "complete" },
-      ab_variant: { S: finalSelection.abVariant },
-      pt_v1_result: { S: JSON.stringify(ptV1) },
-      ui_result: { S: JSON.stringify(uiResult) },
-      // Full, untiered report. Tier filtering is destructive (Core strips
-      // clauses/questions/flags), so upgrades re-tier from this to restore the
-      // complete analysis instead of re-filtering an already-reduced report.
-      full_report: { S: JSON.stringify(reportInsights) },
-    },
+  return { ptV1, uiResult, reportInsights, finalSelection, initialRevision };
+}
+
+async function markRevisionStartFailed(resultId, uiResult, err) {
+  const message = err instanceof Error ? err.message : "Revision generation could not be started.";
+  const failedUiResult = withDocumentRevision(uiResult, {
+    status: "failed",
+    message: `Background revision start failed: ${String(message).slice(0, 240)}`,
+  });
+  await db.send(
+    new UpdateItemCommand({
+      TableName: process.env.RESULTS_TABLE,
+      Key: {
+        result_id: { S: resultId },
+      },
+      UpdateExpression: "SET ui_result = :ui",
+      ExpressionAttributeValues: {
+        ":ui": { S: JSON.stringify(failedUiResult) },
+      },
+    })
+  );
+}
+
+/**
+ * Runs an analysis and stores the result.
+ *
+ * Plan-based options (accounts flow):
+ *   runOptions.plan          "free" | "pro"
+ *   runOptions.ownerUserId   WorkOS user id that owns the result
+ *   runOptions.rulesOnly     true for the instant first pass; the stored status
+ *                            becomes "refining" until refineStoredAnalysis runs
+ */
+export async function runAnalysis(payload, analysisSelection = {}, addonSelection = {}, runOptions = {}) {
+  const objectKeyCheck = validateObjectKey(payload?.objectKey);
+  if (!objectKeyCheck.ok) {
+    throw new Error(objectKeyCheck.error);
+  }
+
+  const metaCheck = validateUploadMeta({
+    filename: payload?.filename,
+    contentType: payload?.contentType,
+    size: payload?.size,
+    requireSize: true,
+  });
+  if (!metaCheck.ok) {
+    throw new Error(metaCheck.error);
+  }
+
+  const normalizedPayload = {
+    objectKey: objectKeyCheck.objectKey,
+    filename: metaCheck.filename,
+    contentType: metaCheck.contentType,
+    size: metaCheck.size,
+  };
+
+  const plan = runOptions.plan ? normalizePlan(runOptions.plan) : null;
+  const resultId = makeResultId();
+  const resultAccessKey = createResultAccessKey();
+  const resultAccessKeyHash = hashResultAccessKey(resultAccessKey);
+  const previewAccessKey = createResultAccessKey();
+  const previewAccessKeyHash = hashResultAccessKey(previewAccessKey);
+  const createdAt = new Date().toISOString();
+  const retentionDays = plan ? retentionDaysForPlan(plan) : getRetentionDays();
+  const expiresAtEpoch =
+    retentionDays === null ? null : Math.floor(Date.now() / 1000) + retentionDays * 24 * 60 * 60;
+
+  const { ptV1, uiResult, reportInsights, finalSelection, initialRevision } = await buildAnalysisArtifacts({
+    normalizedPayload,
+    resultId,
+    createdAt,
+    analysisSelection,
+    addonSelection,
+    runOptions,
   });
 
-  await db.send(cmd);
+  const status = plan && runOptions.rulesOnly ? "refining" : "complete";
+  const item = {
+    result_id: { S: resultId },
+    created_at: { S: createdAt },
+    object_key: { S: normalizedPayload.objectKey },
+    access_key_hash: { S: resultAccessKeyHash },
+    access_key_hash_preview: { S: previewAccessKeyHash },
+    status: { S: status },
+    ab_variant: { S: finalSelection.abVariant },
+    pt_v1_result: { S: JSON.stringify(ptV1) },
+    ui_result: { S: JSON.stringify(uiResult) },
+    // Full, untiered report. Tier filtering is destructive (Core strips
+    // clauses/questions/flags), so upgrades re-tier from this to restore the
+    // complete analysis instead of re-filtering an already-reduced report.
+    full_report: { S: JSON.stringify(reportInsights) },
+  };
+  if (expiresAtEpoch !== null) {
+    item.expires_at = { N: String(expiresAtEpoch) };
+  }
+  if (plan) {
+    Object.assign(item, documentSummaryAttributes(uiResult), {
+      plan: { S: plan },
+      upload_filename: { S: normalizedPayload.filename },
+      upload_content_type: { S: normalizedPayload.contentType },
+      upload_size: { N: String(normalizedPayload.size) },
+    });
+    if (runOptions.ownerUserId) {
+      item.owner_user_id = { S: String(runOptions.ownerUserId) };
+    }
+  }
+
+  await db.send(new PutItemCommand({ TableName: process.env.RESULTS_TABLE, Item: item }));
+
   if (initialRevision?.status === "processing") {
     try {
       await queueDocumentRevisionJob(resultId);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Revision generation could not be started.";
-      const failedUiResult = withDocumentRevision(uiResult, {
-        status: "failed",
-        message: `Background revision start failed: ${String(message).slice(0, 240)}`,
-      });
-      await db.send(
-        new UpdateItemCommand({
-          TableName: process.env.RESULTS_TABLE,
-          Key: {
-            result_id: { S: resultId },
-          },
-          UpdateExpression: "SET ui_result = :ui",
-          ExpressionAttributeValues: {
-            ":ui": { S: JSON.stringify(failedUiResult) },
-          },
-        })
-      );
+      await markRevisionStartFailed(resultId, uiResult, err);
     }
   }
-  return { resultId, accessKey: resultAccessKey, previewAccessKey };
+  return { resultId, accessKey: resultAccessKey, previewAccessKey, status };
 }
+
+/**
+ * Second pass for plan-based results: re-runs the analysis with the plan's AI
+ * model and replaces the instant rules result. Only acts while the stored
+ * status is "refining", so retried or duplicate invocations are no-ops.
+ */
+export async function refineStoredAnalysis(resultId) {
+  const record = await db.send(
+    new GetItemCommand({
+      TableName: process.env.RESULTS_TABLE,
+      Key: { result_id: { S: resultId } },
+      ConsistentRead: true,
+    })
+  );
+  const item = record?.Item;
+  if (!item) return { ok: false, reason: "not_found" };
+  if (item.status?.S !== "refining") return { ok: true, reason: "not_refining" };
+
+  const plan = normalizePlan(item.plan?.S);
+  const normalizedPayload = {
+    objectKey: item.object_key?.S ?? "",
+    filename: item.upload_filename?.S ?? "",
+    contentType: item.upload_content_type?.S ?? "",
+    size: Number(item.upload_size?.N ?? 0),
+  };
+
+  let artifacts;
+  try {
+    artifacts = await buildAnalysisArtifacts({
+      normalizedPayload,
+      resultId,
+      createdAt: item.created_at?.S ?? new Date().toISOString(),
+      runOptions: { plan },
+    });
+  } catch (err) {
+    // Keep the instant result; it is still a complete, usable report.
+    await db.send(
+      new UpdateItemCommand({
+        TableName: process.env.RESULTS_TABLE,
+        Key: { result_id: { S: resultId } },
+        UpdateExpression: "SET #status = :complete, refine_error = :err",
+        ConditionExpression: "#status = :refining",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":complete": { S: "complete" },
+          ":refining": { S: "refining" },
+          ":err": { S: String(err instanceof Error ? err.message : err).slice(0, 300) },
+        },
+      })
+    ).catch(() => {});
+    return { ok: false, reason: "refine_failed" };
+  }
+
+  const { ptV1, uiResult, reportInsights, finalSelection, initialRevision } = artifacts;
+  const summary = documentSummaryAttributes(uiResult);
+  try {
+    await db.send(
+      new UpdateItemCommand({
+        TableName: process.env.RESULTS_TABLE,
+        Key: { result_id: { S: resultId } },
+        UpdateExpression:
+          "SET #status = :complete, ui_result = :ui, pt_v1_result = :pt, full_report = :full, ab_variant = :ab, " +
+          "risk_score = :score, risk_label = :label, recommendation_action = :action, " +
+          "recommendation_label = :reclabel, flag_count = :flags",
+        ConditionExpression: "#status = :refining",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":complete": { S: "complete" },
+          ":refining": { S: "refining" },
+          ":ui": { S: JSON.stringify(uiResult) },
+          ":pt": { S: JSON.stringify(ptV1) },
+          ":full": { S: JSON.stringify(reportInsights) },
+          ":ab": { S: finalSelection.abVariant },
+          ":score": summary.risk_score,
+          ":label": summary.risk_label,
+          ":action": summary.recommendation_action,
+          ":reclabel": summary.recommendation_label,
+          ":flags": summary.flag_count,
+        },
+      })
+    );
+  } catch (err) {
+    if (err?.name === "ConditionalCheckFailedException") return { ok: true, reason: "already_refined" };
+    throw err;
+  }
+
+  if (initialRevision?.status === "processing") {
+    try {
+      await queueDocumentRevisionJob(resultId);
+    } catch (err) {
+      await markRevisionStartFailed(resultId, uiResult, err);
+    }
+  }
+  return { ok: true, reason: "refined" };
+}
+
+/**
+ * Re-shapes an existing result for Pro: restores the Pro-only report content
+ * from the stored untiered report and unlocks the revised document. Used when
+ * a free user upgrades and opens an older document.
+ */
+export function promoteUiResultToPro(uiResult, fullReport) {
+  const report = applyTierToReport(fullReport ?? uiResult?.report ?? {}, PLAN_REPORT_TIER);
+  const keepEmail = uiResult?.report?.negotiation_email_draft;
+  if (typeof keepEmail === "string" && keepEmail.trim()) {
+    report.negotiation_email_draft = keepEmail;
+  }
+  const promoted = { ...uiResult, report };
+  const revision = uiResult?.document?.revision;
+  if (!revision || isLockedRevision(revision)) {
+    return withDocumentRevision(promoted, buildInitialDocumentRevision(promoted));
+  }
+  return promoted;
+}
+
+export { queueDocumentRevisionJob };
