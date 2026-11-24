@@ -51,3 +51,6 @@ next-env.d.ts
 # Keep internal root-level Markdown notes out of the repository.
 /*.md
 !/README.md
+
+# Keep vendored skill icon folders (the Icon? rule above matches "icons" on case-insensitive macOS)
+!.claude/skills/**/icons/
