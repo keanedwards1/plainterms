@@ -605,11 +605,11 @@ html {
   margin: 0;
   padding: 0.375rem;
   min-inline-size: 15rem;
-  border: 1.5px solid var(--pt-ink);
-  border-radius: var(--pt-radius-pop);
-  background: var(--pt-paper);
+  border: 1px solid var(--pt-line);
+  border-radius: 14px;
+  background: var(--pt-surface);
   color: var(--pt-ink);
-  box-shadow: 4px 4px 0 var(--pt-ink);
+  box-shadow: 0 24px 48px -24px rgb(21 50 44 / 0.4);
 }
 
 @supports (position-area: block-end) {
@@ -634,7 +634,7 @@ html {
   inline-size: 100%;
   align-items: center;
   gap: 0.625rem;
-  border-radius: var(--pt-radius-control);
+  border-radius: 10px;
   padding: 0.55rem 0.7rem;
   font-size: 0.875rem;
   font-weight: 500;
