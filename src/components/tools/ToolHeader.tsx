@@ -50,7 +50,7 @@ export function DisabledDrop({ prompt, action }: { prompt: string; action: strin
         <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
       </svg>
       <span className="min-w-0 flex-1 text-[1.0625rem] text-(--pt-muted)">{prompt}</span>
-      <button type="button" disabled className="pt-btn pt-btn-solid h-11 rounded-[3px] px-5 text-[0.9375rem]">
+      <button type="button" disabled className="pt-btn pt-btn-solid h-11 px-5 text-[0.9375rem]">
         {action}
       </button>
     </div>

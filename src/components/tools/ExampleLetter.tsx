@@ -14,7 +14,7 @@ const WORDS = [
 export default function ExampleLetter() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <section className="flex items-center gap-6 rounded-[18px] bg-(--pt-ink) p-6 text-white">
+      <section className="flex items-center gap-6 rounded-(--pt-radius) bg-(--pt-ink) p-6 text-white">
         <p className="font-heading text-7xl font-semibold leading-none tracking-[-0.05em]">
           9<span className="mt-1 block text-center font-sans text-xs font-medium tracking-normal opacity-80">days</span>
         </p>
@@ -35,7 +35,7 @@ export default function ExampleLetter() {
         <h2 className="text-xl">Your options</h2>
         <ol className="mt-4 grid gap-2.5">
           {OPTIONS.map((option, i) => (
-            <li key={option.title} className="relative rounded-2xl bg-(--pt-surface-soft) py-3.5 pl-14 pr-4">
+            <li key={option.title} className="relative rounded-(--pt-radius-pop) bg-(--pt-surface-soft) py-3.5 pl-14 pr-4">
               <span className="absolute left-4 top-3.5 grid h-6 w-6 place-items-center rounded-full bg-(--pt-leaf) text-xs font-semibold">{i + 1}</span>
               <b className="font-medium">{option.title}</b>
               <p className="text-[0.9375rem] text-(--pt-muted)">{option.body}</p>

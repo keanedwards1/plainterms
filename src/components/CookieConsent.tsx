@@ -57,7 +57,7 @@ function Toggle({
         <p className="text-sm font-semibold text-[var(--pt-ink)]">
           {label}
           {locked && (
-            <span className="ml-2 rounded-full bg-[var(--pt-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--pt-muted)]">
+            <span className="ml-2 rounded-(--pt-radius-control) bg-[var(--pt-border)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--pt-muted)]">
               Always on
             </span>
           )}
@@ -142,8 +142,8 @@ export default function CookieConsent() {
         aria-label="Cookie preferences"
         className={`fixed z-[499] transition-all duration-200 ${
           showPrefs
-            ? "bottom-0 left-0 right-0 mx-auto max-w-lg rounded-t-[10px] sm:bottom-6 sm:left-auto sm:right-6 sm:rounded-[10px]"
-            : "bottom-20 left-4 right-4 mx-auto max-w-xl rounded-[10px] sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-sm"
+            ? "bottom-0 left-0 right-0 mx-auto max-w-lg rounded-t-(--pt-radius-pop) sm:bottom-6 sm:left-auto sm:right-6 sm:rounded-(--pt-radius-pop)"
+            : "bottom-20 left-4 right-4 mx-auto max-w-xl rounded-(--pt-radius-pop) sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-sm"
         } border-[1.5px] border-(--pt-ink) bg-(--pt-paper) shadow-[4px_4px_0_var(--pt-ink)]`}
       >
         {showPrefs ? (
@@ -155,7 +155,7 @@ export default function CookieConsent() {
                 type="button"
                 onClick={() => setShowPrefs(false)}
                 aria-label="Close preferences"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--pt-border)]/60 text-[var(--pt-muted)] transition-colors hover:bg-[var(--pt-border)]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-(--pt-radius-control) bg-[var(--pt-border)]/60 text-[var(--pt-muted)] transition-colors hover:bg-[var(--pt-border)]"
               >
                 <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5">
                   <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -200,14 +200,14 @@ export default function CookieConsent() {
               <button
                 type="button"
                 onClick={saveSelected}
-                className="pt-btn-primary flex-1 rounded-lg px-4 py-2 text-sm font-semibold"
+                className="pt-btn pt-btn-solid flex-1 px-4 py-2.5 text-sm"
               >
                 Save preferences
               </button>
               <button
                 type="button"
                 onClick={acceptAll}
-                className="flex-1 rounded-lg border border-[var(--pt-border)] px-4 py-2 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:border-[var(--pt-ink)]/30 hover:text-[var(--pt-ink)]"
+                className="pt-btn pt-btn-outline flex-1 px-4 py-2.5 text-sm"
               >
                 Accept all
               </button>
@@ -227,14 +227,14 @@ export default function CookieConsent() {
               <button
                 type="button"
                 onClick={acceptAll}
-                className="pt-btn-primary flex-1 rounded-lg px-4 py-2 text-sm font-semibold"
+                className="pt-btn pt-btn-solid flex-1 px-4 py-2.5 text-sm"
               >
                 Accept all
               </button>
               <button
                 type="button"
                 onClick={() => setShowPrefs(true)}
-                className="flex-1 rounded-lg border border-[var(--pt-border)] px-4 py-2 text-sm font-semibold text-[var(--pt-muted)] transition-colors hover:border-[var(--pt-ink)]/30 hover:text-[var(--pt-ink)]"
+                className="pt-btn pt-btn-outline flex-1 px-4 py-2.5 text-sm"
               >
                 Manage preferences
               </button>

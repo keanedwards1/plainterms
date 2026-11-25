@@ -41,7 +41,7 @@ export default function DocumentRow({ doc, compact = false }: { doc: DocumentSum
   return (
     <Link
       href={`/result/${encodeURIComponent(doc.id)}`}
-      className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-[color-mix(in_oklab,var(--pt-ink)_4%,transparent)]"
+      className="group flex items-center gap-3 rounded-(--pt-radius-pop) px-3 py-3 transition-colors hover:bg-[color-mix(in_oklab,var(--pt-ink)_4%,transparent)]"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--pt-surface-soft) text-(--pt-muted) ring-1 ring-(--pt-line)">
         <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

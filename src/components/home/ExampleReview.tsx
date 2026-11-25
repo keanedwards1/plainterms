@@ -51,7 +51,7 @@ export default function ExampleReview() {
         <h3 className="text-[1.1875rem]">Ask for these three changes</h3>
         <ol className="mt-4 grid gap-3">
           {FIXES.map((fix, i) => (
-            <li key={fix.title} className="grid grid-cols-[auto_1fr_auto] items-start gap-3.5 rounded-2xl bg-(--pt-surface-soft) p-4 max-sm:grid-cols-[1fr_auto]">
+            <li key={fix.title} className="grid grid-cols-[auto_1fr_auto] items-start gap-3.5 rounded-(--pt-radius-pop) bg-(--pt-surface-soft) p-4 max-sm:grid-cols-[1fr_auto]">
               <span className={`inline-flex h-6 items-center rounded-full px-2.5 text-xs font-semibold max-sm:col-span-2 max-sm:w-fit ${fix.tone}`}>{fix.level}</span>
               <div>
                 <b className="font-medium">{fix.title}</b>

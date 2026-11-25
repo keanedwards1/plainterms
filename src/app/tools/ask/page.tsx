@@ -51,7 +51,7 @@ export default function AskPage() {
               Your question
             </label>
             <input id="ask-input" disabled placeholder="Ask about your document" className="min-w-0 flex-1 bg-transparent text-[1.0625rem] outline-none disabled:cursor-not-allowed" />
-            <button type="button" disabled className="pt-btn pt-btn-solid h-11 rounded-[3px] px-5">
+            <button type="button" disabled className="pt-btn pt-btn-solid h-11 px-5">
               Ask
             </button>
           </div>

@@ -37,7 +37,7 @@ function SectionHead({ id, title, link }: { id: string; title: string; link?: { 
         {title}
       </h2>
       {link ? (
-        <Link href={link.href} className="rounded-full bg-(--pt-bg) px-3 py-1.5 text-sm text-(--pt-muted) ring-1 ring-(--pt-line) transition-colors hover:text-(--pt-ink)">
+        <Link href={link.href} className="pt-btn pt-btn-outline h-9 px-3.5 text-sm">
           {link.label}
         </Link>
       ) : null}

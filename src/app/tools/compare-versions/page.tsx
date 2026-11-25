@@ -44,7 +44,7 @@ export default function CompareVersionsPage() {
         </div>
         <div className="mt-4 flex items-center justify-end gap-3">
           <SoonChip />
-          <button type="button" disabled className="pt-btn pt-btn-solid h-11 rounded-[3px] px-5">
+          <button type="button" disabled className="pt-btn pt-btn-solid h-11 px-5">
             Compare
           </button>
         </div>

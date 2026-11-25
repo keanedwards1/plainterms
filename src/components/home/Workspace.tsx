@@ -214,7 +214,7 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
       onClick={onAnalyze}
       disabled={!canAnalyze || analyzing}
       aria-describedby={file ? statusId : undefined}
-      className="pt-btn pt-btn-solid h-11 shrink-0 rounded-[3px] px-5 text-[0.9375rem]"
+      className="pt-btn pt-btn-solid h-11 shrink-0 px-5 text-[0.9375rem]"
     >
       {analyzing ? <span className="pt-spinner" aria-hidden="true" /> : null}
       {buttonLabel}
@@ -291,7 +291,7 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
           <span className="min-w-0 flex-1 text-[1.0625rem] leading-snug text-(--pt-muted)">
             Drop a contract or lease here, or <span className="font-medium text-(--pt-ink) underline underline-offset-4">choose a file</span>
           </span>
-          <span className="pt-btn pt-btn-solid hidden h-11 shrink-0 rounded-[3px] px-5 text-[0.9375rem] sm:inline-flex">
+          <span className="pt-btn pt-btn-solid hidden h-11 shrink-0 px-5 text-[0.9375rem] sm:inline-flex">
             Read it
             <ArrowIcon />
           </span>

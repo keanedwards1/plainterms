@@ -26,7 +26,7 @@ export default async function DashboardDocumentsPage() {
       </div>
 
       {!isPro && account ? (
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--pt-line) bg-[linear-gradient(110deg,#fff3ee,#fffaf2)] px-4 py-3">
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-(--pt-radius) border border-(--pt-line) bg-[linear-gradient(110deg,#fff3ee,#fffaf2)] px-4 py-3">
           <p className="text-sm text-(--pt-ink-soft)">
             <span className="font-semibold text-(--pt-ink)">Keep every document with Pro,</span> plus revised drafts and our
             most capable AI.

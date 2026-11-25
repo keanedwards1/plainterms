@@ -29,7 +29,7 @@ export default function DeadlinesPage() {
         <ul className="pt-panel max-w-3xl divide-y divide-(--pt-line) px-5">
           {DATES.map((d) => (
             <li key={d.title} className="flex items-center gap-4 py-4">
-              <span className="grid h-14 w-12 place-items-center content-center rounded-[10px] bg-(--pt-leaf) font-heading text-xl font-semibold leading-none">
+              <span className="grid h-14 w-12 place-items-center content-center rounded-(--pt-radius-pop) bg-(--pt-leaf) font-heading text-xl font-semibold leading-none">
                 <small className="mb-1 font-mono text-[0.6875rem] font-medium uppercase tracking-wide opacity-70">{d.month}</small>
                 {d.day}
               </span>

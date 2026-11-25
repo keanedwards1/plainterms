@@ -121,7 +121,7 @@ export default function LetterWriter() {
               placeholder: field.placeholder,
               onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setValues((v) => ({ ...v, [field.key]: e.target.value })),
               className:
-                "w-full rounded-[10px] border border-(--pt-line) bg-(--pt-bg) px-3.5 py-3 text-base text-(--pt-ink) placeholder:text-(--pt-muted)/70 focus:border-(--pt-ink) focus:outline-none",
+                "w-full rounded-(--pt-radius-control) border border-(--pt-line-strong) bg-white px-3.5 py-3 text-base text-(--pt-ink) placeholder:text-(--pt-muted)/70 focus:border-(--pt-ink) focus:outline-none",
             };
             return (
               <div key={field.key} className="grid gap-1.5">
@@ -141,7 +141,7 @@ export default function LetterWriter() {
               value={name}
               placeholder="Alex Morgan"
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-[10px] border border-(--pt-line) bg-(--pt-bg) px-3.5 py-3 text-base placeholder:text-(--pt-muted)/70 focus:border-(--pt-ink) focus:outline-none"
+              className="w-full rounded-(--pt-radius-control) border border-(--pt-line-strong) bg-white px-3.5 py-3 text-base placeholder:text-(--pt-muted)/70 focus:border-(--pt-ink) focus:outline-none"
             />
           </div>
         </form>

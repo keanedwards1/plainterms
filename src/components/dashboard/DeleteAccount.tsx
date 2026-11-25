@@ -63,7 +63,7 @@ export default function DeleteAccount({ isPro }: { isPro: boolean }) {
           onChange={(e) => setTyped(e.target.value)}
           autoComplete="off"
           autoFocus
-          className="mt-2 w-full rounded-xl border border-(--pt-line) bg-(--pt-surface-soft) px-3 py-2.5 text-(--pt-ink)"
+          className="mt-2 w-full rounded-(--pt-radius-control) border border-(--pt-line-strong) bg-white px-3 py-2.5 text-(--pt-ink)"
         />
         {error ? (
           <p role="alert" className="pt-alert-danger mt-3 px-3 py-2 text-sm">

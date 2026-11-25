@@ -60,7 +60,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       <p className="mt-1 text-(--pt-muted)">Manage your plan, payment method and invoices.</p>
 
       {upgraded === "1" ? (
-        <p role="status" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
+        <p role="status" className="mt-5 rounded-(--pt-radius-pop) border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
           {isPro
             ? "Welcome to Pro. Your documents now open with every Pro feature."
             : "Thanks! Your payment is being confirmed. This page will show Pro within a minute. Refresh if it doesn't."}

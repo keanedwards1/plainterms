@@ -34,10 +34,10 @@ export default function CheckContractorPage() {
           ].map(([label, placeholder]) => (
             <label key={label} className="grid gap-1.5 text-sm font-medium">
               {label}
-              <input disabled placeholder={placeholder} className="rounded-[10px] border border-(--pt-line) bg-(--pt-bg) px-3.5 py-2.5 font-normal disabled:cursor-not-allowed" />
+              <input disabled placeholder={placeholder} className="rounded-(--pt-radius-control) border border-(--pt-line-strong) bg-white px-3.5 py-2.5 font-normal disabled:cursor-not-allowed" />
             </label>
           ))}
-          <button type="button" disabled className="pt-btn pt-btn-solid h-11 rounded-[3px] px-5">
+          <button type="button" disabled className="pt-btn pt-btn-solid h-11 px-5">
             Check
           </button>
         </form>

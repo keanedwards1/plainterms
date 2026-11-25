@@ -177,7 +177,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
               <button
                 type="button"
                 onClick={() => submitRating(0)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-red-300 hover:bg-red-50"
+                className="flex h-10 w-10 items-center justify-center rounded-(--pt-radius-control) border-[1.5px] border-(--pt-ink) bg-white text-xl transition-colors hover:border-red-300 hover:bg-red-50"
                 aria-label="Poor experience"
               >
                 ☹️
@@ -185,7 +185,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
               <button
                 type="button"
                 onClick={() => submitRating(1)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pt-border)] bg-white text-xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
+                className="flex h-10 w-10 items-center justify-center rounded-(--pt-radius-control) border-[1.5px] border-(--pt-ink) bg-white text-xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
                 aria-label="Good experience"
               >
                 😊
@@ -256,7 +256,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
         role="dialog"
         aria-modal="true"
         aria-label={header.title}
-        className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(21,50,44,0.6)]"
+        className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-(--pt-radius-pop) border-[1.5px] border-(--pt-ink) bg-white shadow-[6px_6px_0_var(--pt-ink)]"
       >
         {/* Header band */}
         <div className="relative overflow-hidden bg-gradient-to-br from-[#fff8f4] via-[#fef3ec] to-[#fdeae0] px-6 py-5 sm:px-8">
@@ -264,7 +264,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
           <div className="absolute -bottom-16 right-16 h-40 w-40 rounded-full bg-[#ffd4c2]/40 blur-2xl" />
           <div className="relative flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--pt-accent)]/12 ring-1 ring-[var(--pt-accent)]/20">
+              <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-(--pt-radius-control) bg-[var(--pt-accent)]/12 ring-1 ring-[var(--pt-accent)]/20">
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 text-[var(--pt-accent)]">
                   <path
                     d="M4 5h16v11H8l-4 3z"
@@ -287,7 +287,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
               type="button"
               onClick={closeFeedback}
               aria-label="Close"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--pt-ink)]/8 text-[var(--pt-muted)] transition-colors hover:bg-[var(--pt-ink)]/14"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-(--pt-radius-control) bg-[var(--pt-ink)]/8 text-[var(--pt-muted)] transition-colors hover:bg-[var(--pt-ink)]/14"
             >
               <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4">
                 <path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -303,7 +303,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
               <button
                 type="button"
                 onClick={() => submitRating(0)}
-                className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-white text-3xl transition-colors hover:border-red-300 hover:bg-red-50"
+                className="flex h-16 w-16 items-center justify-center rounded-(--pt-radius-pop) border-[1.5px] border-(--pt-ink) bg-white text-3xl transition-colors hover:border-red-300 hover:bg-red-50"
                 aria-label="Poor experience"
               >
                 ☹️
@@ -311,7 +311,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
               <button
                 type="button"
                 onClick={() => submitRating(1)}
-                className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--pt-border)] bg-white text-3xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
+                className="flex h-16 w-16 items-center justify-center rounded-(--pt-radius-pop) border-[1.5px] border-(--pt-ink) bg-white text-3xl transition-colors hover:border-emerald-400 hover:bg-emerald-50"
                 aria-label="Good experience"
               >
                 😊

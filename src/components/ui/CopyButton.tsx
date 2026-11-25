@@ -19,7 +19,7 @@ export default function CopyButton({ text, label }: { text: string; label: strin
           setCopied(false);
         }
       }}
-      className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] border border-(--pt-line) bg-white text-(--pt-muted) transition-colors hover:border-(--pt-line-strong) hover:text-(--pt-ink)"
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-(--pt-radius-control) border border-(--pt-line-strong) bg-white text-(--pt-muted) transition-colors hover:border-(--pt-line-strong) hover:text-(--pt-ink)"
     >
       {copied ? (
         <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

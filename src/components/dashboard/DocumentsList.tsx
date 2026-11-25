@@ -66,7 +66,7 @@ export default function DocumentsList({ initial, isPro }: DocumentsListProps) {
   if (!documents.length && !error) {
     return (
       <div className="pt-panel flex flex-col items-center px-6 py-14 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-(--pt-surface-soft) text-(--pt-action) ring-1 ring-(--pt-line)">
+        <span className="flex h-14 w-14 items-center justify-center rounded-(--pt-radius-pop) bg-(--pt-surface-soft) text-(--pt-action) ring-1 ring-(--pt-line)">
           <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M12 12v6M9 15h6" />
           </svg>
@@ -96,7 +96,7 @@ export default function DocumentsList({ initial, isPro }: DocumentsListProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by file name"
-            className="w-full rounded-full border border-(--pt-line) bg-(--pt-surface-soft) py-2 pl-9 pr-4 text-sm text-(--pt-ink) placeholder:text-(--pt-muted)"
+            className="w-full rounded-(--pt-radius-control) border border-(--pt-line-strong) bg-white py-2 pl-9 pr-4 text-sm text-(--pt-ink) placeholder:text-(--pt-muted)"
           />
         </label>
         <p className="text-sm text-(--pt-muted)">

@@ -31,7 +31,9 @@
   --pt-teal: #4f9a62;
   --pt-teal-deep: #15322c;
   --pt-shadow: rgb(21 50 44 / 0.16);
-  --pt-radius: 14px;
+  --pt-radius: 10px;
+  --pt-radius-control: 4px;
+  --pt-radius-pop: 6px;
 
   --pt-action: #15322c;
   --pt-action-hover: #21473f;
@@ -165,7 +167,7 @@ html {
   justify-items: center;
   gap: 0.3rem;
   width: 4.25rem;
-  border-radius: 14px;
+  border-radius: 6px;
   padding: 0.55rem 0;
   font-size: 0.75rem;
   font-weight: 500;
@@ -177,7 +179,7 @@ html {
   width: 2.5rem;
   height: 2rem;
   padding: 0.3rem 0.55rem;
-  border-radius: 10px;
+  border-radius: var(--pt-radius-control);
 }
 
 .pt-rail-link:hover {
@@ -193,13 +195,19 @@ html {
   background: var(--pt-leaf);
 }
 
-.pt-rail-new {
+.pt-rail-foot {
   margin-top: auto;
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+}
+
+.pt-rail-new {
   display: grid;
   place-items: center;
   width: 2.75rem;
   height: 2.75rem;
-  border-radius: 14px;
+  border-radius: var(--pt-radius-control);
   background: var(--pt-action);
   color: #fff;
   transition: transform 150ms ease, background-color 150ms ease;
@@ -224,8 +232,8 @@ html {
   align-items: center;
   gap: 0.625rem;
   height: 2.6rem;
-  border: 1px solid var(--pt-line);
-  border-radius: 12px;
+  border: 1px solid var(--pt-line-strong);
+  border-radius: var(--pt-radius-control);
   background: var(--pt-surface);
   padding: 0 0.875rem;
   font-size: 0.9375rem;
@@ -241,17 +249,19 @@ html {
   display: inline-flex;
   align-items: center;
   height: 2.25rem;
-  border-radius: 999px;
-  background: #d6e9f3;
-  padding: 0 0.95rem;
+  border: 1.5px solid var(--pt-ink);
+  border-radius: var(--pt-radius-control);
+  background: var(--pt-surface);
+  padding: 0 0.875rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #173a4d;
-  transition: background-color 150ms ease;
+  color: var(--pt-ink);
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .pt-pro-chip:hover {
-  background: #c6e0ee;
+  background: var(--pt-ink);
+  color: #fff;
 }
 
 @media (max-width: 819px) {
@@ -276,6 +286,10 @@ html {
     display: none;
   }
 
+  .pt-rail-foot {
+    margin-top: 0;
+  }
+
   .pt-rail-nav {
     flex: 1;
     flex-direction: row;
@@ -284,7 +298,7 @@ html {
 
   .pt-rail-link {
     width: auto;
-    min-width: 3.75rem;
+    min-width: 3.25rem;
     font-size: 0.6875rem;
   }
 
@@ -310,27 +324,27 @@ html {
 
 .pt-card-soft {
   border: 1px solid var(--pt-line);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--pt-surface-soft);
 }
 
 .pt-panel {
   border: 1px solid var(--pt-line);
-  border-radius: 18px;
+  border-radius: var(--pt-radius);
   background: var(--pt-surface);
   box-shadow: 0 1px 2px rgb(21 50 44 / 0.05);
 }
 
 .pt-subtle-panel {
   border: 1px solid var(--pt-line);
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--pt-surface-soft);
 }
 
 /* The signature frame: ink outline with a hard offset shadow. */
 .pt-framed {
   border: 1.5px solid var(--pt-ink);
-  border-radius: 6px;
+  border-radius: var(--pt-radius-pop);
   background: var(--pt-paper);
   box-shadow: 4px 4px 0 var(--pt-ink);
 }
@@ -339,8 +353,8 @@ html {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  border-radius: 999px;
-  border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius-control);
+  border: 1px solid var(--pt-line-strong);
   background: var(--pt-surface);
   padding: 0.3rem 0.72rem;
   font-family: var(--font-mono);
@@ -352,8 +366,8 @@ html {
 }
 
 .pt-pill {
-  border: 1px solid var(--pt-line);
-  border-radius: 999px;
+  border: 1px solid var(--pt-line-strong);
+  border-radius: var(--pt-radius-control);
   background: var(--pt-surface);
   padding: 0.25rem 0.65rem;
   font-family: var(--font-mono);
@@ -371,27 +385,27 @@ html {
 
 .pt-alert-danger {
   border: 1px solid #efc1b0;
-  border-radius: 10px;
+  border-radius: var(--pt-radius-pop);
   background: var(--pt-bad-bg);
   color: #8a2f17;
 }
 
 .pt-alert-warn {
   border: 1px solid #ecd9a6;
-  border-radius: 10px;
+  border-radius: var(--pt-radius-pop);
   background: #fbf2d9;
   color: #6e4a08;
 }
 
 .pt-teal-panel {
   border: 1px solid #b9dcc1;
-  border-radius: 14px;
+  border-radius: var(--pt-radius);
   background: #e3f1e5;
 }
 
 .pt-ink-panel {
   border: 1px solid var(--pt-ink);
-  border-radius: 14px;
+  border-radius: var(--pt-radius);
   background: var(--pt-ink);
   color: #e8f0ea;
 }
@@ -405,7 +419,7 @@ html {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 10px;
+  border-radius: var(--pt-radius-control);
   font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
@@ -439,12 +453,13 @@ html {
 .pt-btn-secondary {
   background: var(--pt-surface);
   color: var(--pt-ink);
-  border: 1px solid var(--pt-line);
+  border: 1.5px solid var(--pt-ink);
 }
 
 .pt-btn-outline:not(:disabled):hover,
 .pt-btn-secondary:not(:disabled):hover {
-  border-color: var(--pt-line-strong);
+  background: var(--pt-ink);
+  color: #fff;
 }
 
 .pt-btn-ghost {
@@ -468,7 +483,7 @@ html {
   align-items: center;
   height: 2.25rem;
   border: 1.5px solid var(--pt-ink);
-  border-radius: 3px;
+  border-radius: var(--pt-radius-control);
   background: var(--pt-surface);
   padding: 0 0.875rem;
   font-family: var(--font-mono);
@@ -490,7 +505,7 @@ html {
 
 .pt-dropzone {
   border: 1.5px dashed var(--pt-line-strong);
-  border-radius: 12px;
+  border-radius: var(--pt-radius-pop);
   background: var(--pt-surface-soft);
   transition: border-color 150ms ease, background-color 150ms ease;
 }
@@ -572,7 +587,7 @@ html {
   max-block-size: min(100dvh - 2rem, 44rem);
   padding: 0;
   border: 1.5px solid var(--pt-ink);
-  border-radius: 10px;
+  border-radius: var(--pt-radius-pop);
   background: var(--pt-paper);
   color: var(--pt-ink);
   box-shadow: 6px 6px 0 var(--pt-ink);
@@ -594,11 +609,11 @@ html {
   margin: 0;
   padding: 0.375rem;
   min-inline-size: 15rem;
-  border: 1px solid var(--pt-line);
-  border-radius: 14px;
-  background: var(--pt-surface);
+  border: 1.5px solid var(--pt-ink);
+  border-radius: var(--pt-radius-pop);
+  background: var(--pt-paper);
   color: var(--pt-ink);
-  box-shadow: 0 24px 48px -24px rgb(21 50 44 / 0.4);
+  box-shadow: 4px 4px 0 var(--pt-ink);
 }
 
 @supports (position-area: block-end) {
@@ -623,7 +638,7 @@ html {
   inline-size: 100%;
   align-items: center;
   gap: 0.625rem;
-  border-radius: 10px;
+  border-radius: var(--pt-radius-control);
   padding: 0.55rem 0.7rem;
   font-size: 0.875rem;
   font-weight: 500;
