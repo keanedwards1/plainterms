@@ -34,6 +34,8 @@
   --pt-radius: 10px;
   --pt-radius-control: 4px;
   --pt-radius-pop: 6px;
+  --pt-rail-active: #fbe3d2;
+  --pt-rail-hover: #efede4;
 
   --pt-action: #15322c;
   --pt-action-hover: #21473f;
@@ -167,30 +169,36 @@ html {
   justify-items: center;
   gap: 0.3rem;
   width: 4.25rem;
-  border-radius: 6px;
-  padding: 0.55rem 0;
+  padding: 0.4rem 0;
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--pt-muted);
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: color 150ms ease;
 }
 
 .pt-rail-link svg {
-  width: 2.5rem;
+  width: 3rem;
   height: 2rem;
-  padding: 0.3rem 0.55rem;
-  border-radius: var(--pt-radius-control);
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  transition: background-color 150ms ease;
 }
 
 .pt-rail-link:hover {
-  background: var(--pt-surface-soft);
   color: var(--pt-ink);
 }
 
-.pt-rail-link[aria-current="page"],
-.pt-rail-link[aria-current="page"]:hover {
-  background: var(--pt-leaf);
+.pt-rail-link:hover svg {
+  background: var(--pt-rail-hover);
+}
+
+.pt-rail-link[aria-current="page"] {
   color: var(--pt-ink);
+  font-weight: 600;
+}
+
+.pt-rail-link[aria-current="page"] svg {
+  background: var(--pt-rail-active);
 }
 
 .pt-rail-foot {
