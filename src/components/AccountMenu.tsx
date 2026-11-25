@@ -56,15 +56,15 @@ export default function AccountMenu({ name, email, pictureUrl }: AccountMenuProp
         popoverTarget={popoverId}
         aria-expanded="false"
         aria-label={`Account: ${name}`}
-        className="flex h-9 items-center gap-2 rounded-(--pt-radius-control) border-[1.5px] border-(--pt-ink) bg-white p-0.5 pr-2 transition-colors hover:bg-(--pt-surface-soft)"
+        className="flex items-center gap-2 rounded-full border border-[var(--pt-line)] bg-white p-1 pr-2.5 transition-colors hover:border-[color-mix(in_oklab,var(--pt-ink)_25%,var(--pt-line))]"
       >
         {pictureUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- remote avatar from the identity provider
-          <img src={pictureUrl} alt="" width={28} height={28} className="h-7 w-7 object-cover" />
+          <img src={pictureUrl} alt="" width={28} height={28} className="h-7 w-7 rounded-full object-cover" />
         ) : (
           <span
             aria-hidden="true"
-            className="flex h-7 w-7 items-center justify-center bg-(--pt-ink) text-[11px] font-bold text-white"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--pt-teal-deep)] text-[11px] font-bold text-white"
           >
             {initials(name)}
           </span>

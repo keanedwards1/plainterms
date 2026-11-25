@@ -187,12 +187,10 @@ html {
   color: var(--pt-ink);
 }
 
-.pt-rail-link[aria-current="page"] {
-  color: var(--pt-ink);
-}
-
-.pt-rail-link[aria-current="page"] svg {
+.pt-rail-link[aria-current="page"],
+.pt-rail-link[aria-current="page"]:hover {
   background: var(--pt-leaf);
+  color: var(--pt-ink);
 }
 
 .pt-rail-foot {
@@ -249,19 +247,17 @@ html {
   display: inline-flex;
   align-items: center;
   height: 2.25rem;
-  border: 1.5px solid var(--pt-ink);
-  border-radius: var(--pt-radius-control);
-  background: var(--pt-surface);
-  padding: 0 0.875rem;
+  border-radius: 999px;
+  background: #d6e9f3;
+  padding: 0 0.95rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--pt-ink);
-  transition: background-color 150ms ease, color 150ms ease;
+  color: #173a4d;
+  transition: background-color 150ms ease;
 }
 
 .pt-pro-chip:hover {
-  background: var(--pt-ink);
-  color: #fff;
+  background: #c6e0ee;
 }
 
 @media (max-width: 819px) {
