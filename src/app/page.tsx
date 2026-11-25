@@ -5,6 +5,7 @@ import HeroWidgets from "@/components/art/HeroWidgets";
 import Stipple from "@/components/art/Stipple";
 import { formatDocumentDate, VerdictBadge } from "@/components/DocumentRow";
 import Demos from "@/components/home/Demos";
+import Showcase from "@/components/home/Showcase";
 import ToolRow from "@/components/home/ToolRow";
 import Workspace from "@/components/home/Workspace";
 import { getSession } from "@/lib/auth";
@@ -158,6 +159,8 @@ export default async function HomePage() {
             ))}
           </ul>
         </section>
+
+        <Showcase />
       </div>
     </main>
   );

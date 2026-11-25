@@ -111,7 +111,7 @@ html {
 }
 
 .pt-container-wide {
-  width: min(100%, 90rem);
+  width: min(100%, 140rem);
   margin-inline: auto;
 }
 
