@@ -28,7 +28,7 @@ export default async function DeadlinesPage() {
           icon="dates"
           label="Dates"
           title="All your dates"
-          line="Our software scans your documents for dates and adds them as reminders here. You can add them to your calendar or have us send you reminders."
+          line="Our software scans your documents for dates and adds them as reminders here. You can add them to your calendar or set up reminders."
           soon
         />
         <ExampleLabel>Example</ExampleLabel>
