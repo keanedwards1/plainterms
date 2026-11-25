@@ -4,7 +4,7 @@ import ToolHeader, { ExampleLabel } from "@/components/tools/ToolHeader";
 
 export const metadata: Metadata = {
   title: "Dates",
-  description: "Every deadline in your contracts, leases and letters on one calendar.",
+  description: "Dates from your contracts, leases and letters, gathered as reminders you can add to your calendar.",
 };
 
 const DATES = [
@@ -21,8 +21,8 @@ export default function DeadlinesPage() {
         <ToolHeader
           icon="dates"
           label="Dates"
-          title="Every date, in one place"
-          line="Reply-by dates, payment milestones, renewal windows and warranty ends we find in your documents, ready for your calendar."
+          title="All your dates"
+          line="Our software scans your documents for dates and adds them as reminders here. You can add them to your calendar or have us send you reminders."
           soon
         />
         <ExampleLabel>Example</ExampleLabel>
@@ -41,6 +41,15 @@ export default function DeadlinesPage() {
             </li>
           ))}
         </ul>
+        <div className="mt-5 flex max-w-3xl flex-wrap gap-2.5">
+          <button type="button" disabled className="pt-btn pt-btn-outline h-11 px-4 text-[0.9375rem]">
+            Add to your calendar
+          </button>
+          <button type="button" disabled className="pt-btn pt-btn-solid h-11 px-4 text-[0.9375rem]">
+            Send me reminders
+            <span className="rounded-[3px] bg-white/90 px-1.5 py-0.5 font-mono text-[0.6875rem] font-medium text-(--pt-ink)">Pro</span>
+          </button>
+        </div>
         <p className="mt-8 text-(--pt-muted)">
           Dates start showing up here when you{" "}
           <Link href="/#start" className="font-medium text-(--pt-ink) underline underline-offset-4">
