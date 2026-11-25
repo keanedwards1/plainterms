@@ -38,6 +38,14 @@ function FileIcon() {
   );
 }
 
+function ArrowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
 function UploadIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -137,7 +145,7 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
 
     if (mode === "paste") {
       if (wordCount(pasted) < MIN_PASTE_WORDS) {
-        setError(`Paste the full contract text — at least ${MIN_PASTE_WORDS} words.`);
+        setError(`Paste the full text, at least ${MIN_PASTE_WORDS} words.`);
         return;
       }
       const name = pasted.trim() === SAMPLE_CONTRACT_TEXT.trim() ? SAMPLE_CONTRACT_NAME : "Pasted contract.txt";
@@ -198,143 +206,137 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
     ? prepareState === "uploading" || prepareState === "checking"
       ? "Preparing…"
       : "Analyzing…"
-    : "Analyze contract";
+    : "Read it";
+
+  const readButton = (
+    <button
+      type="button"
+      onClick={onAnalyze}
+      disabled={!canAnalyze || analyzing}
+      aria-describedby={file ? statusId : undefined}
+      className="pt-btn pt-btn-solid h-11 shrink-0 rounded-[3px] px-5 text-[0.9375rem]"
+    >
+      {analyzing ? <span className="pt-spinner" aria-hidden="true" /> : null}
+      {buttonLabel}
+      {analyzing ? null : <ArrowIcon />}
+    </button>
+  );
 
   return (
-    <section aria-label="Analyze a contract" className="pt-panel p-3 sm:p-4">
-      <div role="group" aria-label="How to add your contract" className="flex gap-1 rounded-full bg-[color-mix(in_oklab,var(--pt-ink)_5%,transparent)] p-1 sm:inline-flex">
-        {(
-          [
-            { key: "file", label: "Upload a file" },
-            { key: "paste", label: "Paste text" },
-          ] as const
-        ).map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            aria-pressed={mode === tab.key}
-            onClick={() => {
-              setMode(tab.key);
-              setError(null);
-            }}
-            className="flex-1 rounded-full px-4 py-2 text-sm font-semibold text-(--pt-ink-soft) transition-colors aria-pressed:bg-white aria-pressed:text-(--pt-ink) aria-pressed:shadow-sm sm:flex-none"
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-3">
-        {mode === "file" ? (
-          file ? (
-            <div className="pt-subtle-panel flex flex-wrap items-center gap-3 p-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-(--pt-action) ring-1 ring-(--pt-line)">
-                <FileIcon />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-(--pt-ink)" title={file.name}>
-                  {file.name}
-                </p>
-                <p id={statusId} role="status" className="mt-0.5 flex items-center gap-2 text-sm text-(--pt-muted)">
-                  <span>{prettyFileSize(file.size)}</span>
-                  {STAGE_LABEL[prepareState] ? (
-                    <>
-                      <span aria-hidden="true">·</span>
-                      <span className={prepareState === "ready" ? "font-medium text-(--pt-good)" : ""}>
-                        {prepareState === "uploading" || prepareState === "checking" ? (
-                          <span className="pt-spinner mr-1.5 align-[-2px] text-(--pt-muted)" aria-hidden="true" />
-                        ) : null}
-                        {STAGE_LABEL[prepareState]}
-                      </span>
-                    </>
-                  ) : null}
-                </p>
-              </div>
-              <button type="button" onClick={clearFile} disabled={analyzing} className="pt-btn pt-btn-ghost px-3 py-1.5 text-sm">
-                Change
-              </button>
-            </div>
-          ) : (
-            <label
-              data-dragging={dragging}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                chooseFile(e.dataTransfer.files?.[0]);
-              }}
-              className="pt-dropzone flex min-h-56 cursor-pointer flex-col items-center justify-center gap-3 px-6 py-10 text-center sm:min-h-64"
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-(--pt-action) shadow-sm ring-1 ring-(--pt-line)">
-                <UploadIcon />
-              </span>
-              <span className="text-lg font-semibold text-(--pt-ink)">Drop your contract here</span>
-              <span className="text-sm text-(--pt-muted)">
-                or <span className="font-semibold text-(--pt-action) underline underline-offset-4">choose a file</span> · PDF, Word or text, up to 25 MB
-              </span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPTED_FILE_TYPES}
-                className="sr-only"
-                onChange={(e) => chooseFile(e.target.files?.[0])}
-              />
-            </label>
-          )
-        ) : (
-          <div>
-            <label htmlFor={pasteId} className="sr-only">
-              Contract text
-            </label>
-            <textarea
-              id={pasteId}
-              value={pasted}
-              onChange={(e) => setPasted(e.target.value)}
-              placeholder="Paste the full text of your contract here…"
-              className="block min-h-56 w-full resize-y rounded-2xl border border-(--pt-line) bg-(--pt-surface-soft) p-4 text-[15px] leading-6 text-(--pt-ink) placeholder:text-(--pt-muted) sm:min-h-64"
-            />
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm text-(--pt-muted)">
-              <span>{pasted.trim() ? `${wordCount(pasted)} words` : "Copy it from an email, a PDF or a contractor's portal."}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setPasted(SAMPLE_CONTRACT_TEXT);
-                  setError(null);
-                }}
-                className="font-semibold text-(--pt-action) underline underline-offset-4"
-              >
-                Use a sample contract
-              </button>
-            </div>
+    <section id="start" aria-label="Read a document" className="w-full max-w-[47.5rem] scroll-mt-24">
+      {mode === "paste" ? (
+        <div className="pt-framed overflow-hidden bg-white text-left">
+          <label htmlFor={pasteId} className="sr-only">
+            Document text
+          </label>
+          <textarea
+            id={pasteId}
+            value={pasted}
+            onChange={(e) => setPasted(e.target.value)}
+            placeholder="Paste the full text of your contract or lease here"
+            className="block min-h-44 w-full resize-y border-0 bg-transparent p-4 text-[15px] leading-6 text-(--pt-ink) placeholder:text-(--pt-muted) focus:outline-none"
+          />
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-(--pt-line) py-2 pl-4 pr-2">
+            <span className="text-sm text-(--pt-muted)">{pasted.trim() ? `${wordCount(pasted)} words` : "Copy it from an email, a PDF or a portal."}</span>
+            {readButton}
           </div>
-        )}
+        </div>
+      ) : file ? (
+        <div className="pt-framed flex flex-wrap items-center gap-3 bg-white py-2 pl-4 pr-2 text-left">
+          <span className="text-(--pt-accent)">
+            <FileIcon />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold text-(--pt-ink)" title={file.name}>
+              {file.name}
+            </p>
+            <p id={statusId} role="status" className="flex items-center gap-2 text-sm text-(--pt-muted)">
+              <span>{prettyFileSize(file.size)}</span>
+              {STAGE_LABEL[prepareState] ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className={prepareState === "ready" ? "font-medium text-(--pt-good)" : ""}>
+                    {prepareState === "uploading" || prepareState === "checking" ? (
+                      <span className="pt-spinner mr-1.5 align-[-2px] text-(--pt-muted)" aria-hidden="true" />
+                    ) : null}
+                    {STAGE_LABEL[prepareState]}
+                  </span>
+                </>
+              ) : null}
+            </p>
+          </div>
+          <button type="button" onClick={clearFile} disabled={analyzing} className="pt-btn pt-btn-ghost px-3 py-2 text-sm">
+            Change
+          </button>
+          {readButton}
+        </div>
+      ) : (
+        <label
+          data-dragging={dragging}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            chooseFile(e.dataTransfer.files?.[0]);
+          }}
+          className="pt-framed flex min-h-16 cursor-pointer items-center gap-3.5 bg-white py-2 pl-5 pr-2 text-left transition-colors data-[dragging=true]:bg-[#fff4ec]"
+        >
+          <span className="text-(--pt-muted)">
+            <UploadIcon />
+          </span>
+          <span className="min-w-0 flex-1 text-[1.0625rem] leading-snug text-(--pt-muted)">
+            Drop a contract or lease here, or <span className="font-medium text-(--pt-ink) underline underline-offset-4">choose a file</span>
+          </span>
+          <span className="pt-btn pt-btn-solid hidden h-11 shrink-0 rounded-[3px] px-5 text-[0.9375rem] sm:inline-flex">
+            Read it
+            <ArrowIcon />
+          </span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_FILE_TYPES}
+            className="sr-only"
+            onChange={(e) => chooseFile(e.target.files?.[0])}
+          />
+        </label>
+      )}
+
+      <div className="mt-3.5 flex flex-wrap justify-center gap-2">
+        <button
+          type="button"
+          className="pt-btn-tag"
+          onClick={() => {
+            setMode("paste");
+            setPasted(SAMPLE_CONTRACT_TEXT);
+            setError(null);
+          }}
+        >
+          Try a sample contract
+        </button>
+        <button
+          type="button"
+          className="pt-btn-tag"
+          aria-pressed={mode === "paste"}
+          onClick={() => {
+            setMode(mode === "paste" ? "file" : "paste");
+            setError(null);
+          }}
+        >
+          Paste text
+        </button>
       </div>
 
       {error ? (
-        <p role="alert" className="pt-alert-danger mt-3 px-3.5 py-2.5 text-sm">
+        <p role="alert" className="pt-alert-danger mx-auto mt-3 max-w-xl px-3.5 py-2.5 text-sm">
           {error}
         </p>
       ) : null}
 
-      <div className="mt-3 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs leading-5 text-(--pt-muted) sm:max-w-sm">
-          Encrypted upload. Free documents are deleted after 30 days. Not legal advice.
-        </p>
-        <button
-          type="button"
-          onClick={onAnalyze}
-          disabled={!canAnalyze || analyzing}
-          aria-describedby={file ? statusId : undefined}
-          className="pt-btn pt-btn-solid px-6 py-3 text-base"
-        >
-          {analyzing ? <span className="pt-spinner" aria-hidden="true" /> : null}
-          {buttonLabel}
-        </button>
-      </div>
+      <p className="mt-3 text-xs leading-5 text-(--pt-muted)">PDF, Word or text, up to 25 MB. Encrypted upload. Free documents are deleted after 30 days.</p>
 
       <Dialog
         open={dialog === "sign-in"}

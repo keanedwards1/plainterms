@@ -1,7 +1,7 @@
 /**
  * TAB_CLICK_OPENS_MODAL
  *
- * Controls whether clicking a tab on the preview/sample-report pages
+ * Controls whether clicking a tab on the legacy preview page
  * immediately opens the upgrade modal, or just switches the tab
  * (modal only opens via the "Locked — choose a plan" pill).
  *

@@ -3,8 +3,7 @@ import { reportFreePreviewCompleted } from "@/lib/gtag";
 import { type ReportTierOption } from "@/lib/pricingOptions";
 
 // Shared contract upload → validate → preview/checkout pipeline.
-// Used by both the dedicated /analyze page and the inline upload flow in the
-// upgrade modal on the sample-report page.
+// Used by the legacy /analyze flow and its upgrade modal.
 
 export type ReviewChoice = "free" | ReportTierOption;
 

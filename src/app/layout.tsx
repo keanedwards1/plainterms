@@ -1,21 +1,29 @@
 import type { Metadata } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Figtree, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import CookieConsent from "@/components/CookieConsent";
-import SiteHeader, { type HeaderUser } from "@/components/SiteHeader";
+import ShellFrame from "@/components/shell/ShellFrame";
+import SiteFooter from "@/components/shell/SiteFooter";
+import type { HeaderUser } from "@/components/shell/TopBar";
 import { displayName, getSession } from "@/lib/auth";
 import "./globals.css";
 
-const headingFont = Fraunces({
+const displayFont = Inter_Tight({
   subsets: ["latin"],
-  variable: "--font-heading",
+  variable: "--font-display",
 });
 
-const bodyFont = Plus_Jakarta_Sans({
+const bodyFont = Figtree({
   subsets: ["latin"],
   variable: "--font-body",
+});
+
+const labelFont = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-label",
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.plainterms.us";
@@ -32,7 +40,7 @@ export const metadata: Metadata = {
     template: "%s | PlainTerms",
   },
   description:
-    "Calm, plain-English explanations of home renovation, remodeling, and construction contracts.",
+    "Contracts, leases, bids and the letters that come after them, explained in plain English.",
   manifest: "/site.webmanifest",
   icons: {
     icon: [
@@ -51,13 +59,13 @@ export const metadata: Metadata = {
     siteName: "PlainTerms",
     title: "PlainTerms",
     description:
-      "Calm, plain-English explanations of home renovation, remodeling, and construction contracts.",
+      "Contracts, leases, bids and the letters that come after them, explained in plain English.",
   },
   twitter: {
     card: "summary_large_image",
     title: "PlainTerms",
     description:
-      "Calm, plain-English explanations of home renovation, remodeling, and construction contracts.",
+      "Contracts, leases, bids and the letters that come after them, explained in plain English.",
   },
   ...(googleSiteVerification
     ? {
@@ -84,7 +92,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${headingFont.variable} ${bodyFont.variable} pt-body antialiased`}>
+      <body className={`${displayFont.variable} ${bodyFont.variable} ${labelFont.variable} pt-body antialiased`}>
         {gaMeasurementId ? (
           <>
             <script
@@ -122,8 +130,9 @@ export default async function RootLayout({
             {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${metaPixelId}');fbq('track','PageView');`}
           </Script>
         ) : null}
-        <SiteHeader user={headerUser} />
-        {children}
+        <ShellFrame user={headerUser} footer={<SiteFooter />}>
+          {children}
+        </ShellFrame>
         <CookieConsent />
       </body>
     </html>

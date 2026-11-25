@@ -1,130 +1,163 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import HeroClouds from "@/components/art/HeroClouds";
+import HeroWidgets from "@/components/art/HeroWidgets";
+import Stipple from "@/components/art/Stipple";
+import { formatDocumentDate, VerdictBadge } from "@/components/DocumentRow";
+import Demos from "@/components/home/Demos";
+import ToolRow from "@/components/home/ToolRow";
 import Workspace from "@/components/home/Workspace";
-import ExamplePreview from "@/components/home/ExamplePreview";
-import DocumentRow from "@/components/DocumentRow";
 import { getSession } from "@/lib/auth";
-import { getDocuments } from "@/lib/serverApi";
+import { getDocuments, type DocumentSummary } from "@/lib/serverApi";
+import { HOME_TEMPLATES } from "@/lib/templates";
+import "@/components/home/home.css";
 
 export const metadata: Metadata = {
-  title: "PlainTerms - Understand Your Contract Before You Sign",
+  title: "PlainTerms: know what you're signing",
   description:
-    "Drop in a renovation or contractor agreement and get a plain-English verdict, the risky clauses, and exactly what to ask for. Free.",
+    "Drop in a contract, lease or contractor bid and get a plain-English verdict, the risky clauses and what to ask for. Free.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "PlainTerms - Know What You're Signing",
+    title: "PlainTerms: know what you're signing",
     description:
-      "Drop in a renovation or contractor agreement and get a plain-English verdict, the risky clauses, and exactly what to ask for. Free.",
+      "Drop in a contract, lease or contractor bid and get a plain-English verdict, the risky clauses and what to ask for. Free.",
     url: "/",
     type: "website",
   },
 };
 
-const ICON = {
-  viewBox: "0 0 24 24",
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.6,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-  className: "h-5 w-5",
-  "aria-hidden": true,
-};
+const STIPPLE_FADE = "linear-gradient(180deg,transparent 0,#000 22%)";
+const STIPPLE_FADE_BOTH = "linear-gradient(180deg,transparent 0,#000 22%,#000 78%,transparent 100%)";
 
-const CHECKS = [
-  { label: "Deposits & payment schedule", icon: <svg {...ICON}><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18M7 15h3" /></svg> },
-  { label: "Change orders & overruns", icon: <svg {...ICON}><path d="M4 7h16M4 12h16M4 17h10" /><path d="M17 15l2 2-2 2" /></svg> },
-  { label: "Timelines & delays", icon: <svg {...ICON}><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg> },
-  { label: "Liens & warranties", icon: <svg {...ICON}><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /><path d="M9.5 12l1.8 1.8L15 10" /></svg> },
-  { label: "Liability & disputes", icon: <svg {...ICON}><path d="M12 4v16M6 8h12M4 14l2-6 2 6a2 2 0 0 1-4 0zM16 14l2-6 2 6a2 2 0 0 1-4 0z" /></svg> },
-  { label: "Missing protections", icon: <svg {...ICON}><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></svg> },
-];
+function SectionHead({ id, title, link }: { id: string; title: string; link?: { href: string; label: string } }) {
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-3">
+      <h2 id={id} className="text-[clamp(2.25rem,4vw,3.75rem)] leading-none tracking-[-0.05em]">
+        {title}
+      </h2>
+      {link ? (
+        <Link href={link.href} className="rounded-full bg-(--pt-bg) px-3 py-1.5 text-sm text-(--pt-muted) ring-1 ring-(--pt-line) transition-colors hover:text-(--pt-ink)">
+          {link.label}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+function RecentDocuments({ docs }: { docs: DocumentSummary[] }) {
+  return (
+    <section aria-labelledby="recent-heading" className="pt-legal-pad mt-16">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 id="recent-heading" className="text-[1.75rem] tracking-[-0.045em]">
+          Pick up where you left off
+        </h2>
+        <Link href="/dashboard" className="text-sm text-(--pt-muted) hover:text-(--pt-ink)">
+          All documents
+        </Link>
+      </div>
+      {docs.length ? (
+        <ul className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {docs.map((doc) => (
+            <li key={doc.id}>
+              <Link href={`/result/${encodeURIComponent(doc.id)}`} className="pt-doc">
+                <span className="pt-doc-thumb" aria-hidden="true">
+                  <span className="truncate font-heading text-[0.8125rem] font-semibold">{doc.fileName}</span>
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span className="truncate font-medium">{doc.fileName}</span>
+                <span className="text-sm text-(--pt-muted)">{formatDocumentDate(doc.createdAt)}</span>
+                <span className="mt-2 flex items-center justify-between gap-2">
+                  <VerdictBadge action={doc.recommendationAction} refining={doc.status === "refining"} />
+                  {doc.status === "refining" ? null : (
+                    <span className="text-sm text-(--pt-muted)">
+                      {doc.flagCount} red flag{doc.flagCount === 1 ? "" : "s"}
+                    </span>
+                  )}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-(--pt-muted)">Documents you read will show up here.</p>
+      )}
+    </section>
+  );
+}
 
 export default async function HomePage() {
   const session = await getSession();
   const recent = session ? await getDocuments(session, { limit: 4 }) : null;
-  const recentDocs = recent?.documents ?? [];
-  const firstName = session?.user.firstName?.trim();
 
   return (
-    <main className="pt-page-pad pb-16 pt-6 sm:pt-10">
+    <main className="pt-page-pad">
       <div className="pt-container-wide">
-        <h1 className="max-w-4xl text-balance text-[2rem] leading-[1.1] text-(--pt-ink) sm:text-5xl">
-          {firstName ? `Welcome back, ${firstName}.` : "Understand your contract before you sign."}
-        </h1>
-        <p className="mt-3 max-w-2xl text-lg leading-7 text-(--pt-ink-soft)">
-          Add a renovation or contractor agreement. In seconds you&apos;ll get a verdict, the risky clauses, and exactly
-          what to ask for, in plain English.
-        </p>
-
-        <div className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-8 xl:gap-10">
-          <div className="min-w-0">
+        <section aria-labelledby="hero-heading" className="relative isolate pb-14 pt-12 text-center sm:pt-20">
+          <div className="absolute inset-x-[-2.5rem] -top-24 -z-10">
+            <HeroClouds />
+          </div>
+          <HeroWidgets />
+          <div className="relative flex flex-col items-center">
+            <h1 id="hero-heading" className="text-balance text-[clamp(3.25rem,7.4vw,7rem)] font-semibold leading-[0.9] tracking-[-0.055em]">
+              What are you
+              <br />
+              about to sign?
+            </h1>
+            <p className="mx-auto mb-8 mt-6 max-w-[52ch] text-lg text-(--pt-muted)">
+              Leases, contractor bids, freelance contracts and the letters that come after them. Drop one in and get it back
+              in plain English.
+            </p>
             <Workspace signedIn={Boolean(session)} />
-
-            {session ? (
-              <section aria-labelledby="recent-heading" className="pt-panel mt-6 p-2 sm:p-3">
-                <div className="flex items-center justify-between px-3 pb-1 pt-2">
-                  <h2 id="recent-heading" className="text-lg text-(--pt-ink)">
-                    Recent documents
-                  </h2>
-                  <Link href="/dashboard" className="text-sm font-semibold text-(--pt-action) underline-offset-4 hover:underline">
-                    View all
-                  </Link>
-                </div>
-                {recentDocs.length ? (
-                  <ul>
-                    {recentDocs.map((doc) => (
-                      <li key={doc.id}>
-                        <DocumentRow doc={doc} compact />
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="px-3 pb-3 pt-1 text-sm text-(--pt-muted)">
-                    Documents you analyze will appear here.
-                  </p>
-                )}
-              </section>
-            ) : null}
           </div>
+        </section>
 
-          <div className="min-w-0">
-            <ExamplePreview />
-          </div>
-        </div>
+        <ToolRow />
 
-        <section aria-labelledby="checks-heading" className="mt-14">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 id="checks-heading" className="text-2xl text-(--pt-ink) sm:text-3xl">
-              What we check
-            </h2>
-            <Link href="/how-it-works" className="text-sm font-semibold text-(--pt-ink-soft) underline underline-offset-4">
-              How it works
-            </Link>
+        {session ? <RecentDocuments docs={recent?.documents ?? []} /> : null}
+
+        <section aria-labelledby="get-heading" className="relative isolate mt-10 pb-16">
+          <div
+            className="absolute -inset-x-10 -top-10 -z-10 h-[32.5rem] max-sm:h-[21rem] max-sm:opacity-35"
+            style={{ maskImage: STIPPLE_FADE, WebkitMaskImage: STIPPLE_FADE }}
+          >
+            <Stipple kind="ribbon" className="h-full w-full [image-rendering:pixelated]" />
           </div>
-          <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {CHECKS.map((check) => (
-              <li key={check.label} className="pt-subtle-panel flex flex-col gap-3 p-4">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-(--pt-action) ring-1 ring-(--pt-line)">
-                  {check.icon}
-                </span>
-                <span className="text-sm font-semibold leading-5 text-(--pt-ink)">{check.label}</span>
+          <div className="flex min-h-[16.25rem] items-end pb-7 max-sm:min-h-[9rem]">
+            <SectionHead id="get-heading" title="What you get back" />
+          </div>
+          <Demos />
+        </section>
+
+        <section aria-labelledby="templates-heading" className="relative isolate pb-[25rem] pt-14 max-sm:pb-64">
+          <div
+            className="absolute inset-x-[-2.5rem] bottom-0 -z-10 h-[26rem] max-sm:h-72"
+            style={{ maskImage: STIPPLE_FADE_BOTH, WebkitMaskImage: STIPPLE_FADE_BOTH }}
+          >
+            <Stipple kind="domes" className="h-full w-full [image-rendering:pixelated]" />
+          </div>
+          <SectionHead id="templates-heading" title="Start from a template" link={{ href: "/templates", label: "See all templates" }} />
+          <ul className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+            {HOME_TEMPLATES.map((tpl) => (
+              <li key={tpl.slug}>
+                <Link href={`/templates#${tpl.slug}`} className="pt-tpl grid gap-1.5">
+                  <span className="pt-tpl-paper" aria-hidden="true">
+                    <b className="font-heading text-[0.8125rem] font-semibold">{tpl.name}</b>
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <span className="mt-2 font-medium">{tpl.name}</span>
+                  <span className="text-sm leading-snug text-(--pt-muted)">{tpl.line}</span>
+                </Link>
               </li>
             ))}
           </ul>
         </section>
-
-        <footer className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-(--pt-line) pt-6 text-sm text-(--pt-muted)">
-          <p>PlainTerms gives information to help you understand a contract. It isn&apos;t legal advice.</p>
-          <nav aria-label="Legal" className="flex gap-4 font-semibold">
-            <Link href="/privacy" className="hover:text-(--pt-ink)">
-              Privacy
-            </Link>
-            <Link href="/terms" className="hover:text-(--pt-ink)">
-              Terms
-            </Link>
-          </nav>
-        </footer>
       </div>
     </main>
   );

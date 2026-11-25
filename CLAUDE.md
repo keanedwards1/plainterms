@@ -1,18 +1,12 @@
 # PlainTerms — Claude Instructions
 
-## /sample-report must mirror the result page
+## Design system: Meadow Mosaic
 
-`/result/[id]` is the source of truth for every tab's layout and content format.
+The UI follows the approved "Meadow Mosaic" direction. Tokens live in `src/app/globals.css` (`--pt-*`); component classes (`.pt-btn`, `.pt-panel`, `.pt-framed`, ...) sit in `@layer components` so Tailwind utilities can override them. The app frame is `src/components/shell/` (left rail on tablet and up, bottom tab bar on phones, top bar, footer with the dithered glow). Decorative art is `src/components/art/` and never carries words.
 
-The `/sample-report` page teases the same tabs with locked/blurred placeholder content — but the **shape, structure, and UI patterns** of what's shown (before the lock overlay) must be identical to what the real results page renders for that tab.
+There is no sample report or how-it-works page any more; the home page is the app. `/result/[id]` is the source of truth for the result layout.
 
-- Questions tab → real tab uses numbered `<details>` accordions with question text + "Why ask this" body + email draft card. Sample must match that shape.
-- Document tab → real tab uses a file toolbar with Original / Track Changes / Revised segmented control, then document prose. Sample must match that shape.
-- Flags, Terms, Insights, Full Report tabs → same rule: match the real result tab's layout exactly, just blur/lock the content.
-
-**Never invent a different layout for a tab on sample-report.** If you're unsure what a tab looks like on the result page, read `src/components/ResultWorkspace.tsx` first.
-
-**`/preview/[id]` is deliberately exempt.** It is NOT a tabbed mirror of the result page. It is a single-page free readout (real risk score, health snapshot, red-flag titles, next steps, one rewrite example) ending in one checkout CTA — no tabs, no locked/blurred placeholders, no mid-content unlock prompts. See `src/components/PreviewUnlockPanel.tsx`. Do not restore the old tabbed/locked preview.
+**`/preview/[id]` is deliberately exempt.** It is a single-page free readout (real risk score, health snapshot, red-flag titles, next steps, one rewrite example) ending in one checkout CTA — no tabs, no locked/blurred placeholders, no mid-content unlock prompts. See `src/components/PreviewUnlockPanel.tsx`. Do not restore the old tabbed/locked preview.
 
 ## No developer-facing copy on the live UI
 
