@@ -22,7 +22,7 @@ export default function ContractHealthSnapshot({
             <span>{strengthPct}%</span>
           </div>
           <div className="mt-2 h-2 rounded-full bg-[#f1ddd5]">
-            <div className="h-2 rounded-full bg-[#2ba59f]" style={{ width: `${strengthPct}%` }} />
+            <div className="h-2 rounded-full bg-[#4f9a62]" style={{ width: `${strengthPct}%` }} />
           </div>
           <p className="mt-2 text-sm leading-6 text-[var(--pt-ink)]/85">
             Lower risk score means stronger current contract posture.
@@ -35,7 +35,7 @@ export default function ContractHealthSnapshot({
           </div>
           <div className="mt-2 h-2 rounded-full bg-[#e7effc]">
             <div
-              className="h-2 rounded-full bg-[#5d73c8]"
+              className="h-2 rounded-full bg-[#4c93c4]"
               style={{ width: `${Math.max(clarityPct, totalClauseCount ? 8 : 0)}%` }}
             />
           </div>

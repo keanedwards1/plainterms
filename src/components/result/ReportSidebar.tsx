@@ -56,8 +56,8 @@ export default function ReportSidebar({
             onClick={() => onSelectTab(tab.key)}
             className={`flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
               activeKey === tab.key
-                ? "border-[#de8f79] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.15)]"
-                : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#de8f79] hover:text-[var(--pt-ink)]"
+                ? "border-[#e9a07a] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.15)]"
+                : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#e9a07a] hover:text-[var(--pt-ink)]"
             }`}
             aria-label={tabAriaLabel ? tabAriaLabel(tab.label) : undefined}
           >
@@ -91,7 +91,7 @@ export default function ReportSidebar({
               </span>
               <span className="text-sm font-semibold text-[var(--pt-ink)]">{risk.score}/100</span>
             </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e6d8c3]">
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e3e0d4]">
               <div
                 className={`h-full rounded-full ${riskMeterClass(risk.label)}`}
                 style={{ width: `${Math.max(risk.score, 6)}%` }}
@@ -103,12 +103,12 @@ export default function ReportSidebar({
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Risk</p>
             <div className="pointer-events-none mt-2 select-none blur-[3px]">
               <div className="flex items-center justify-between gap-2">
-                <span className="rounded-full border border-[#e6d8c3] bg-[#fef3e2] px-2.5 py-1 text-[11px] font-semibold text-[#8c6526]">
+                <span className="rounded-full border border-[#e3e0d4] bg-[#fef3e2] px-2.5 py-1 text-[11px] font-semibold text-[#8a5a0b]">
                   ——
                 </span>
                 <span className="text-sm font-semibold text-[var(--pt-ink)]">—/100</span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e6d8c3]">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e3e0d4]">
                 <div className="h-full w-1/2 rounded-full bg-[#d4a05a]" />
               </div>
             </div>
@@ -136,7 +136,7 @@ export default function ReportSidebar({
           <div className="pt-card-soft relative overflow-hidden p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--pt-muted)]">Recommendation</p>
             <div className="pointer-events-none mt-2 select-none space-y-2 blur-[3px]">
-              <div className="h-5 w-32 rounded-full bg-[#e6d8c3]" />
+              <div className="h-5 w-32 rounded-full bg-[#e3e0d4]" />
               <div className="h-3 w-full rounded bg-[#ede6db]" />
               <div className="h-3 w-4/5 rounded bg-[#ede6db]" />
             </div>

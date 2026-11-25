@@ -168,7 +168,7 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
       <div
         role="dialog"
         aria-label="Experience feedback"
-        className="fixed bottom-5 left-1/2 z-[200] w-[min(92vw,440px)] -translate-x-1/2 rounded-lg border border-[var(--pt-border)] bg-white p-4 shadow-[0_18px_40px_-24px_rgba(31,43,61,0.55)]"
+        className="fixed bottom-5 left-1/2 z-[200] w-[min(92vw,440px)] -translate-x-1/2 rounded-lg border border-[var(--pt-border)] bg-white p-4 shadow-[0_18px_40px_-24px_rgba(21,50,44,0.55)]"
       >
         {stage === "prompt" && (
           <div className="flex items-center justify-between gap-3">
@@ -249,14 +249,14 @@ export default function FeedbackToast({ resultId, externalTrigger = false }: Pro
         type="button"
         aria-label="Close feedback dialog"
         onClick={closeFeedback}
-        className="fixed inset-0 bg-[#1f2b3d]/55 backdrop-blur-sm"
+        className="fixed inset-0 bg-[#15322c]/55 backdrop-blur-sm"
       />
 
       <div
         role="dialog"
         aria-modal="true"
         aria-label={header.title}
-        className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(31,43,61,0.6)]"
+        className="relative z-10 w-full max-w-[480px] overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(21,50,44,0.6)]"
       >
         {/* Header band */}
         <div className="relative overflow-hidden bg-gradient-to-br from-[#fff8f4] via-[#fef3ec] to-[#fdeae0] px-6 py-5 sm:px-8">

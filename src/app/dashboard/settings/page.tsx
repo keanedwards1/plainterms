@@ -60,7 +60,7 @@ export default async function SettingsPage() {
         </form>
       </section>
 
-      <section aria-labelledby="danger-heading" className="mt-4 rounded-[20px] border border-[#efc1b6] bg-white p-5 sm:p-6">
+      <section aria-labelledby="danger-heading" className="mt-4 rounded-[20px] border border-[#efc1b0] bg-white p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 id="danger-heading" className="text-xl text-(--pt-ink)">Delete account</h2>

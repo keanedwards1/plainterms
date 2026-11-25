@@ -131,7 +131,7 @@ export default function CookieConsent() {
       {showPrefs && (
         <div
           aria-hidden
-          className="fixed inset-0 z-[498] bg-[#1f2b3d]/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[498] bg-[#15322c]/40 backdrop-blur-sm"
           onClick={() => setShowPrefs(false)}
         />
       )}
@@ -142,9 +142,9 @@ export default function CookieConsent() {
         aria-label="Cookie preferences"
         className={`fixed z-[499] transition-all duration-200 ${
           showPrefs
-            ? "bottom-0 left-0 right-0 mx-auto max-w-lg rounded-t-2xl sm:bottom-6 sm:left-auto sm:right-6 sm:rounded-2xl"
-            : "bottom-4 left-4 right-4 mx-auto max-w-xl rounded-2xl sm:left-auto sm:right-6 sm:max-w-sm"
-        } border border-[var(--pt-border)] bg-white shadow-[0_8px_40px_-12px_rgba(31,43,61,0.35)]`}
+            ? "bottom-0 left-0 right-0 mx-auto max-w-lg rounded-t-[10px] sm:bottom-6 sm:left-auto sm:right-6 sm:rounded-[10px]"
+            : "bottom-20 left-4 right-4 mx-auto max-w-xl rounded-[10px] sm:bottom-6 sm:left-auto sm:right-6 sm:max-w-sm"
+        } border-[1.5px] border-(--pt-ink) bg-(--pt-paper) shadow-[4px_4px_0_var(--pt-ink)]`}
       >
         {showPrefs ? (
           /* ── Preferences panel ── */

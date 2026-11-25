@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <main className="pt-page-pad flex min-h-[70vh] items-center justify-center py-12">
-      <section className="w-full max-w-md rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-white p-8 text-center shadow-[0_24px_56px_-34px_rgba(31,43,61,0.5)]">
+      <section className="w-full max-w-md rounded-[var(--pt-radius)] border border-[var(--pt-border)] bg-white p-8 text-center shadow-[0_24px_56px_-34px_rgba(21,50,44,0.5)]">
         <p className="pt-kicker mx-auto">Error 404</p>
         <h1 className="mt-5 text-4xl leading-tight text-[var(--pt-ink)]">
           We couldn&apos;t find that page.

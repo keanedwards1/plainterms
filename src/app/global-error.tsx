@@ -19,7 +19,7 @@ export default function GlobalError({
           alignItems: "center",
           justifyContent: "center",
           background: "#fffef9",
-          color: "#1f2b3d",
+          color: "#15322c",
           fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
           padding: "1.5rem",
         }}
@@ -30,7 +30,7 @@ export default function GlobalError({
           </h1>
           <p style={{ color: "#536378", margin: "0 0 1.5rem", lineHeight: 1.6 }}>
             Sorry about that. Please try again, or email{" "}
-            <a href="mailto:keanedwards1@gmail.com" style={{ color: "#1f2b3d" }}>
+            <a href="mailto:keanedwards1@gmail.com" style={{ color: "#15322c" }}>
               keanedwards1@gmail.com
             </a>{" "}
             if it keeps happening.
@@ -42,7 +42,7 @@ export default function GlobalError({
               cursor: "pointer",
               border: "1px solid #d9654f",
               borderRadius: "999px",
-              background: "#f1765d",
+              background: "#e9783a",
               color: "#fff8f2",
               padding: "0.75rem 1.5rem",
               fontSize: "0.875rem",

@@ -280,12 +280,12 @@ export default function PreviewUnlockPanel({
         </div>
 
         {canceled && !error ? (
-          <p className="rounded-xl border border-[#ead3a1] bg-[#fbf6ea] px-4 py-3 text-sm text-[#8a6413]">
+          <p className="rounded-xl border border-[#ecd9a6] bg-[#fbf6ea] px-4 py-3 text-sm text-[#8a6413]">
             Checkout was canceled. Your preview is still here whenever you&apos;re ready.
           </p>
         ) : null}
         {error ? (
-          <p className="rounded-xl border border-[#efc1b6] bg-[#fdeae4] px-4 py-3 text-sm text-[#a53a22]">{error}</p>
+          <p className="rounded-xl border border-[#efc1b0] bg-[#fdeae4] px-4 py-3 text-sm text-[#a53a22]">{error}</p>
         ) : null}
 
         {/* Single CTA */}

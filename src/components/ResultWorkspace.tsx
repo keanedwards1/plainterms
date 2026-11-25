@@ -144,20 +144,20 @@ const LEGAL_DISCLAIMER_FOOTER = (
 );
 
 function clauseStatusClass(status: "present" | "unclear" | "missing") {
-  if (status === "missing") return "bg-[#ffe8e3] text-[#9e3f2d]";
-  if (status === "unclear") return "bg-[#fff4df] text-[#8c6526]";
-  return "bg-[#e1f4ef] text-[#1d655f]";
+  if (status === "missing") return "bg-[#fbe1d6] text-[#a63a1e]";
+  if (status === "unclear") return "bg-[#f9ebc6] text-[#8a5a0b]";
+  return "bg-[#d9eddc] text-[#23604a]";
 }
 
 function sectionStatusClass(status: "present" | "unclear") {
-  if (status === "unclear") return "bg-[#fff4df] text-[#8c6526]";
+  if (status === "unclear") return "bg-[#f9ebc6] text-[#8a5a0b]";
   return "bg-[#ffe8df] text-[#9e4f3d]";
 }
 
 function flagSeverityClass(severity: "low" | "medium" | "high") {
-  if (severity === "high") return "bg-[#ffe8e3] text-[#9e3f2d]";
-  if (severity === "medium") return "bg-[#fff4df] text-[#8c6526]";
-  return "bg-[#e1f4ef] text-[#1d655f]";
+  if (severity === "high") return "bg-[#fbe1d6] text-[#a63a1e]";
+  if (severity === "medium") return "bg-[#f9ebc6] text-[#8a5a0b]";
+  return "bg-[#d9eddc] text-[#23604a]";
 }
 
 
@@ -320,9 +320,9 @@ function pickSeverityFromClauseStatus(status: "present" | "unclear" | "missing")
 
 
 function annotationSeverityClass(severity: AnnotationSeverity) {
-  if (severity === "high") return "bg-[#ffe8e3] text-[#9e3f2d] border-[#efc1b6]";
-  if (severity === "medium") return "bg-[#fff4df] text-[#8c6526] border-[#ead3a1]";
-  return "bg-[#e1f4ef] text-[#1d655f] border-[#b2ddd4]";
+  if (severity === "high") return "bg-[#fbe1d6] text-[#a63a1e] border-[#efc1b0]";
+  if (severity === "medium") return "bg-[#f9ebc6] text-[#8a5a0b] border-[#ecd9a6]";
+  return "bg-[#d9eddc] text-[#23604a] border-[#b9dcc1]";
 }
 
 function buildDocumentAnnotations(data: PtResult): DocumentAnnotation[] {
@@ -453,13 +453,13 @@ function renderTrackedChanges(text: string, diffs: TrackedDiff[], keyPrefix: str
     fragments.push(
       <span key={`${keyPrefix}-tc-diff-${idx}`} className="group relative inline">
         <span
-          className="cursor-pointer rounded-[2px] bg-[#fde8e5] px-[1px] text-[#9e3f2d]"
+          className="cursor-pointer rounded-[2px] bg-[#fde8e5] px-[1px] text-[#a63a1e]"
           style={{ textDecoration: "line-through" }}
         >
           {diff.before}
         </span>
         <span
-          className="ml-[2px] cursor-pointer rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#1d655f]"
+          className="ml-[2px] cursor-pointer rounded-[2px] bg-[#e8f5ee] px-[1px] text-[#23604a]"
           style={{ textDecoration: "underline", textDecorationColor: "rgba(29,101,95,0.5)" }}
         >
           {diff.after}
@@ -928,7 +928,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
             <p className="text-xs text-[var(--pt-muted)]">
               {documentWordCount} words · {documentContentType}
               {isRevisionProcessing ? (
-                <span className="ml-2 italic text-[#8c6526]">preparing your revised draft…</span>
+                <span className="ml-2 italic text-[#8a5a0b]">preparing your revised draft…</span>
               ) : null}
             </p>
             {effectiveDocumentRevision?.status === "ready" && effectiveDocumentRevision.summary ? (
@@ -937,7 +937,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
               </p>
             ) : null}
             {effectiveDocumentRevision?.status === "failed" ? (
-              <p className="mt-1 text-xs text-[#9e3f2d]">
+              <p className="mt-1 text-xs text-[#a63a1e]">
                 {effectiveDocumentRevision.message || "Suggested edits failed to generate."}
               </p>
             ) : null}
@@ -980,10 +980,10 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
         {/* Track changes legend */}
         {documentViewMode === "tracked" && trackedDiffs.length > 0 ? (
           <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--pt-muted)]">
-            <del className="rounded-[2px] bg-[#fde8e5] px-1.5 py-0.5 text-[#9e3f2d] line-through no-underline">
+            <del className="rounded-[2px] bg-[#fde8e5] px-1.5 py-0.5 text-[#a63a1e] line-through no-underline">
               removed
             </del>
-            <ins className="rounded-[2px] bg-[#e8f5ee] px-1.5 py-0.5 text-[#1d655f] underline no-underline">
+            <ins className="rounded-[2px] bg-[#e8f5ee] px-1.5 py-0.5 text-[#23604a] underline no-underline">
               inserted
             </ins>
             <span>{trackedDiffs.length} tracked change{trackedDiffs.length !== 1 ? "s" : ""} · hover for reason</span>
@@ -1002,7 +1002,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
             >
               {documentCopied ? (
                 <>
-                  <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5 text-[#1d655f]">
+                  <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3.5 w-3.5 text-[#23604a]">
                     <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   Copied
@@ -1019,11 +1019,11 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
           ) : null}
           {/* Indeterminate progress bar while generating */}
           {isRevisionProcessing && documentViewMode !== "original" ? (
-            <div className="h-0.5 w-full overflow-hidden bg-[#f0ede8]">
+            <div className="h-0.5 w-full overflow-hidden bg-[#efede4]">
               <div className="h-full w-2/5 animate-[pulse_1.4s_ease-in-out_infinite] bg-[#d8a84b]" />
             </div>
           ) : null}
-          <div className="max-h-[580px] overflow-auto bg-[#f0ede8] px-3 py-6 sm:px-10">
+          <div className="max-h-[580px] overflow-auto bg-[#efede4] px-3 py-6 sm:px-10">
             {isRevisionProcessing && documentViewMode !== "original" ? (
               /* Skeleton loading state */
               <div className="mx-auto max-w-[680px] rounded-sm bg-white px-8 py-10 shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)]">
@@ -1031,18 +1031,18 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                   {[92, 100, 78, 100, 88, 100, 65, 100, 82, 100, 70].map((w, i) => (
                     <div
                       key={i}
-                      className="h-[13px] animate-pulse rounded bg-[#f0ede8]"
+                      className="h-[13px] animate-pulse rounded bg-[#efede4]"
                       style={{ width: `${w}%` }}
                     />
                   ))}
                 </div>
-                <p className="mt-6 text-xs text-[#8c6526]">
+                <p className="mt-6 text-xs text-[#8a5a0b]">
                   Preparing your revised draft — this usually takes under two minutes.
                 </p>
               </div>
             ) : (
               <div
-                className="mx-auto max-w-[680px] rounded-sm bg-white px-8 py-10 text-[15px] leading-[1.85] tracking-[0.003em] text-[#252830] shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] whitespace-pre-wrap select-text"
+                className="mx-auto max-w-[680px] rounded-sm bg-white px-8 py-10 text-[15px] leading-[1.85] tracking-[0.003em] text-[#15322c] shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] whitespace-pre-wrap select-text"
                 style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 {documentViewMode === "tracked"
@@ -1077,17 +1077,17 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
             <p className="text-sm font-semibold text-[var(--pt-ink)]">Suggested Changes</p>
             <div className="flex gap-1.5 text-[11px]">
               {revisionHighCount > 0 ? (
-                <span className="rounded-full border border-[#efc1b6] bg-[#ffe8e3] px-2 py-0.5 text-[#9e3f2d]">
+                <span className="rounded-full border border-[#efc1b0] bg-[#fbe1d6] px-2 py-0.5 text-[#a63a1e]">
                   {revisionHighCount} high
                 </span>
               ) : null}
               {revisionMediumCount > 0 ? (
-                <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[#8c6526]">
+                <span className="rounded-full border border-[#ecd9a6] bg-[#f9ebc6] px-2 py-0.5 text-[#8a5a0b]">
                   {revisionMediumCount} medium
                 </span>
               ) : null}
               {revisionLowCount > 0 ? (
-                <span className="rounded-full border border-[#b2ddd4] bg-[#e1f4ef] px-2 py-0.5 text-[#1d655f]">
+                <span className="rounded-full border border-[#b9dcc1] bg-[#d9eddc] px-2 py-0.5 text-[#23604a]">
                   {revisionLowCount} low
                 </span>
               ) : null}
@@ -1115,12 +1115,12 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                     <span className="text-xs text-[var(--pt-muted)]">{change.reason}</span>
                   </div>
                   <div className="mt-2 grid gap-1.5 text-[13px] sm:grid-cols-2">
-                    <div className="rounded-md border border-[#f5c6c0] bg-[#fff0ee] px-2.5 py-2">
-                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
-                      <p className="max-h-40 overflow-y-auto text-[#7f2e1f]">{change.before}</p>
+                    <div className="rounded-md border border-[#f3c4b0] bg-[#fdf0ea] px-2.5 py-2">
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#a63a1e]">Was</p>
+                      <p className="max-h-40 overflow-y-auto text-[#8a2f17]">{change.before}</p>
                     </div>
-                    <div className="rounded-md border border-[#a8ddd0] bg-[#edf8f5] px-2.5 py-2">
-                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
+                    <div className="rounded-md border border-[#b9dcc1] bg-[#e3f1e5] px-2.5 py-2">
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#23604a]">Now</p>
                       <p className="max-h-40 overflow-y-auto text-[#165a52]">{change.after}</p>
                     </div>
                   </div>
@@ -1239,8 +1239,8 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                 onClick={() => setActiveBasicTab(tab.key)}
                 className={`w-full rounded-lg border px-3 py-2 text-left text-sm font-semibold transition-colors ${
                   activeBasicTab === tab.key
-                    ? "border-[#de8f79] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.35)]"
-                    : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#de8f79] hover:text-[var(--pt-ink)]"
+                    ? "border-[#e9a07a] bg-[#ffe5dc] text-[#5a2f25] shadow-[inset_0_0_0_1px_rgba(222,143,121,0.35)]"
+                    : "border-[var(--pt-border)] bg-[var(--pt-surface)] text-[var(--pt-muted)] hover:border-[#e9a07a] hover:text-[var(--pt-ink)]"
                 }`}
               >
                 {tab.label}
@@ -1348,12 +1348,12 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                       <p className="mt-1 text-sm text-[var(--pt-muted)]">What to fight for, what to accept if they push back, and what you can let go of.</p>
                       <div className="mt-3 space-y-2">
                         {protectExtras.priority_stack.fight_for.length > 0 && (
-                          <div className="rounded-lg border border-[#efc1b6] bg-[#fff0ee] p-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Fight for</p>
+                          <div className="rounded-lg border border-[#efc1b0] bg-[#fdf0ea] p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#a63a1e]">Fight for</p>
                             <ul className="mt-1.5 space-y-1">
                               {protectExtras.priority_stack.fight_for.map((item, idx) => (
-                                <li key={`fight-${idx}`} className="flex items-start gap-2 text-sm text-[#7f2e1f]">
-                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#e7745c]" />
+                                <li key={`fight-${idx}`} className="flex items-start gap-2 text-sm text-[#8a2f17]">
+                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#e9783a]" />
                                   {annotateLegalTerms(item, `fight-${idx}`)}
                                 </li>
                               ))}
@@ -1361,11 +1361,11 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                           </div>
                         )}
                         {protectExtras.priority_stack.accept_if_pushback.length > 0 && (
-                          <div className="rounded-lg border border-[#ead3a1] bg-[#fff9ef] p-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Accept if they push back</p>
+                          <div className="rounded-lg border border-[#ecd9a6] bg-[#fff9ef] p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8a5a0b]">Accept if they push back</p>
                             <ul className="mt-1.5 space-y-1">
                               {protectExtras.priority_stack.accept_if_pushback.map((item, idx) => (
-                                <li key={`accept-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4f1e]">
+                                <li key={`accept-${idx}`} className="flex items-start gap-2 text-sm text-[#6e4a08]">
                                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#d8a84b]" />
                                   {annotateLegalTerms(item, `accept-${idx}`)}
                                 </li>
@@ -1374,12 +1374,12 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                           </div>
                         )}
                         {protectExtras.priority_stack.can_concede.length > 0 && (
-                          <div className="rounded-lg border border-[#b2ddd4] bg-[#edf8f5] p-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Can concede</p>
+                          <div className="rounded-lg border border-[#b9dcc1] bg-[#e3f1e5] p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#23604a]">Can concede</p>
                             <ul className="mt-1.5 space-y-1">
                               {protectExtras.priority_stack.can_concede.map((item, idx) => (
-                                <li key={`concede-${idx}`} className="flex items-start gap-2 text-sm text-[#154f4a]">
-                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#2ba59f]" />
+                                <li key={`concede-${idx}`} className="flex items-start gap-2 text-sm text-[#15322c]">
+                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#4f9a62]" />
                                   {annotateLegalTerms(item, `concede-${idx}`)}
                                 </li>
                               ))}
@@ -1429,21 +1429,21 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                       A connected view of the risks, clause gaps, and questions that matter most from this analysis.
                     </p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-4">
-                      <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
-                        <p className="text-xs text-[#54629b]">Risk posture</p>
-                        <p className="text-lg font-semibold text-[#374175]">{data.report.risk.label}</p>
+                      <div className="rounded-md border border-[#d8e8f1] bg-white px-3 py-2">
+                        <p className="text-xs text-[#1f4e68]">Risk posture</p>
+                        <p className="text-lg font-semibold text-[#173a4d]">{data.report.risk.label}</p>
                       </div>
-                      <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
-                        <p className="text-xs text-[#54629b]">Clause clarity</p>
-                        <p className="text-lg font-semibold text-[#374175]">{clauseCoveragePct}%</p>
+                      <div className="rounded-md border border-[#d8e8f1] bg-white px-3 py-2">
+                        <p className="text-xs text-[#1f4e68]">Clause clarity</p>
+                        <p className="text-lg font-semibold text-[#173a4d]">{clauseCoveragePct}%</p>
                       </div>
-                      <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
-                        <p className="text-xs text-[#54629b]">Question readiness</p>
-                        <p className="text-lg font-semibold text-[#374175]">{questionsToAsk.length}</p>
+                      <div className="rounded-md border border-[#d8e8f1] bg-white px-3 py-2">
+                        <p className="text-xs text-[#1f4e68]">Question readiness</p>
+                        <p className="text-lg font-semibold text-[#173a4d]">{questionsToAsk.length}</p>
                       </div>
-                      <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
-                        <p className="text-xs text-[#54629b]">Terms to review</p>
-                        <p className="text-lg font-semibold text-[#374175]">{unclearClauseCount + missingClauseCount}</p>
+                      <div className="rounded-md border border-[#d8e8f1] bg-white px-3 py-2">
+                        <p className="text-xs text-[#1f4e68]">Terms to review</p>
+                        <p className="text-lg font-semibold text-[#173a4d]">{unclearClauseCount + missingClauseCount}</p>
                       </div>
                     </div>
                   </article>
@@ -1462,7 +1462,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         </p>
                         <div className="mt-2 h-2 rounded-full bg-[#f4d7ce]">
                           <div
-                            className="h-2 rounded-full bg-[#de8f79]"
+                            className="h-2 rounded-full bg-[#e9a07a]"
                             style={{
                               width: `${Math.max(
                                 ((highFlagCount + mediumFlagCount) / Math.max(redFlags.length, 1)) * 100,
@@ -1481,7 +1481,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         </p>
                         <div className="mt-2 h-2 rounded-full bg-[#e6ecfc]">
                           <div
-                            className="h-2 rounded-full bg-[#5d73c8]"
+                            className="h-2 rounded-full bg-[#4c93c4]"
                             style={{ width: `${Math.max(evidenceCoveragePct, clauseBreakdown.length ? 8 : 0)}%` }}
                           />
                         </div>
@@ -1561,18 +1561,18 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                 <>
                   {redFlags.length > 0 ? (
                     <>
-                      <article className="rounded-lg border border-[#efc1b6] bg-gradient-to-r from-[#fff3ef] via-[#fff8f5] to-[#fffdfc] p-3">
+                      <article className="rounded-lg border border-[#efc1b0] bg-gradient-to-r from-[#fff3ef] via-[#fff8f5] to-[#fffdfc] p-3">
                         <div className="flex items-center gap-2">
                           <Image
                             src="/graphics/icon-shield.svg"
                             alt=""
                             width={24}
                             height={24}
-                            className="h-6 w-6 rounded-md border border-[#efc1b6] bg-white p-1"
+                            className="h-6 w-6 rounded-md border border-[#efc1b0] bg-white p-1"
                           />
-                          <p className="text-sm font-semibold text-[#7f2e1f]">Red Flag Review</p>
+                          <p className="text-sm font-semibold text-[#8a2f17]">Red Flag Review</p>
                         </div>
-                        <p className="mt-1 text-sm text-[#7f2e1f]/80">
+                        <p className="mt-1 text-sm text-[#8a2f17]/80">
                           Each item below includes what was found and why it matters.
                         </p>
                       </article>
@@ -1580,23 +1580,23 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                       <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
                         <p className="text-sm font-semibold text-[var(--pt-ink)]">Flag Severity Mix</p>
                         <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                          <div className="rounded-md border border-[#efc1b6] bg-[#ffe8e3] px-3 py-2">
-                            <p className="text-xs text-[#9e3f2d]">High</p>
-                            <p className="text-lg font-semibold text-[#7f2e1f]">{highFlagCount}</p>
+                          <div className="rounded-md border border-[#efc1b0] bg-[#fbe1d6] px-3 py-2">
+                            <p className="text-xs text-[#a63a1e]">High</p>
+                            <p className="text-lg font-semibold text-[#8a2f17]">{highFlagCount}</p>
                           </div>
-                          <div className="rounded-md border border-[#ead3a1] bg-[#fff4df] px-3 py-2">
-                            <p className="text-xs text-[#8c6526]">Medium</p>
-                            <p className="text-lg font-semibold text-[#6e4f1e]">{mediumFlagCount}</p>
+                          <div className="rounded-md border border-[#ecd9a6] bg-[#f9ebc6] px-3 py-2">
+                            <p className="text-xs text-[#8a5a0b]">Medium</p>
+                            <p className="text-lg font-semibold text-[#6e4a08]">{mediumFlagCount}</p>
                           </div>
-                          <div className="rounded-md border border-[#b2ddd4] bg-[#e1f4ef] px-3 py-2">
-                            <p className="text-xs text-[#1d655f]">Low</p>
-                            <p className="text-lg font-semibold text-[#154f4a]">{lowFlagCount}</p>
+                          <div className="rounded-md border border-[#b9dcc1] bg-[#d9eddc] px-3 py-2">
+                            <p className="text-xs text-[#23604a]">Low</p>
+                            <p className="text-lg font-semibold text-[#15322c]">{lowFlagCount}</p>
                           </div>
                         </div>
                         <div className="mt-3 overflow-hidden rounded-full border border-[var(--pt-border)] bg-white">
                           <div className="flex h-2">
                             <div
-                              className="bg-[#e7745c]"
+                              className="bg-[#e9783a]"
                               style={{ width: `${(highFlagCount / Math.max(redFlags.length, 1)) * 100}%` }}
                             />
                             <div
@@ -1604,7 +1604,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                               style={{ width: `${(mediumFlagCount / Math.max(redFlags.length, 1)) * 100}%` }}
                             />
                             <div
-                              className="bg-[#2ba59f]"
+                              className="bg-[#4f9a62]"
                               style={{ width: `${(lowFlagCount / Math.max(redFlags.length, 1)) * 100}%` }}
                             />
                           </div>
@@ -1651,17 +1651,17 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                                 <p className="text-sm font-semibold text-[var(--pt-ink)]">{rw.issue}</p>
                                 {rw.alternatives ? (
                                   <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                                    <div className="rounded-md border border-[#efc1b6] bg-[#fff0ee] px-2.5 py-2">
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Push hard</p>
-                                      <p className="mt-1 text-xs leading-5 text-[#7f2e1f]">{rw.alternatives.aggressive}</p>
+                                    <div className="rounded-md border border-[#efc1b0] bg-[#fdf0ea] px-2.5 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#a63a1e]">Push hard</p>
+                                      <p className="mt-1 text-xs leading-5 text-[#8a2f17]">{rw.alternatives.aggressive}</p>
                                     </div>
-                                    <div className="rounded-md border border-[#ead3a1] bg-[#fff9ef] px-2.5 py-2">
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Middle ground</p>
-                                      <p className="mt-1 text-xs leading-5 text-[#6e4f1e]">{rw.alternatives.balanced}</p>
+                                    <div className="rounded-md border border-[#ecd9a6] bg-[#fff9ef] px-2.5 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8a5a0b]">Middle ground</p>
+                                      <p className="mt-1 text-xs leading-5 text-[#6e4a08]">{rw.alternatives.balanced}</p>
                                     </div>
-                                    <div className="rounded-md border border-[#b2ddd4] bg-[#edf8f5] px-2.5 py-2">
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Hold the line</p>
-                                      <p className="mt-1 text-xs leading-5 text-[#154f4a]">{rw.alternatives.minimum}</p>
+                                    <div className="rounded-md border border-[#b9dcc1] bg-[#e3f1e5] px-2.5 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#23604a]">Hold the line</p>
+                                      <p className="mt-1 text-xs leading-5 text-[#15322c]">{rw.alternatives.minimum}</p>
                                     </div>
                                   </div>
                                 ) : (
@@ -1739,7 +1739,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                                 {presentClauseCount > 0 && (
                                   <circle
                                     cx="18" cy="18" r="15.9" fill="transparent"
-                                    stroke="#2ba59f" strokeWidth="3.4"
+                                    stroke="#4f9a62" strokeWidth="3.4"
                                     strokeDasharray={`${(presentClauseCount / clauseBreakdown.length) * 100} ${100 - (presentClauseCount / clauseBreakdown.length) * 100}`}
                                     strokeDashoffset="0"
                                   />
@@ -1757,7 +1757,7 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                                 {missingClauseCount > 0 && (
                                   <circle
                                     cx="18" cy="18" r="15.9" fill="transparent"
-                                    stroke="#e7745c" strokeWidth="3.4"
+                                    stroke="#e9783a" strokeWidth="3.4"
                                     strokeDasharray={`${(missingClauseCount / clauseBreakdown.length) * 100} ${100 - (missingClauseCount / clauseBreakdown.length) * 100}`}
                                     strokeDashoffset={`${-((presentClauseCount + unclearClauseCount) / clauseBreakdown.length) * 100}`}
                                   />
@@ -1773,17 +1773,17 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                           </div>
                           {/* Stat cards */}
                           <div className="grid gap-2 sm:grid-cols-3">
-                            <div className="rounded-md border border-[#b2ddd4] bg-[#e1f4ef] px-3 py-2.5">
-                              <p className="text-xs text-[#1d655f]">Present</p>
-                              <p className="text-xl font-semibold leading-tight text-[#154f4a]">{presentClauseCount}</p>
+                            <div className="rounded-md border border-[#b9dcc1] bg-[#d9eddc] px-3 py-2.5">
+                              <p className="text-xs text-[#23604a]">Present</p>
+                              <p className="text-xl font-semibold leading-tight text-[#15322c]">{presentClauseCount}</p>
                             </div>
-                            <div className="rounded-md border border-[#ead3a1] bg-[#fff4df] px-3 py-2.5">
-                              <p className="text-xs text-[#8c6526]">Unclear</p>
-                              <p className="text-xl font-semibold leading-tight text-[#6e4f1e]">{unclearClauseCount}</p>
+                            <div className="rounded-md border border-[#ecd9a6] bg-[#f9ebc6] px-3 py-2.5">
+                              <p className="text-xs text-[#8a5a0b]">Unclear</p>
+                              <p className="text-xl font-semibold leading-tight text-[#6e4a08]">{unclearClauseCount}</p>
                             </div>
-                            <div className="rounded-md border border-[#efc1b6] bg-[#ffe8e3] px-3 py-2.5">
-                              <p className="text-xs text-[#9e3f2d]">Missing</p>
-                              <p className="text-xl font-semibold leading-tight text-[#7f2e1f]">{missingClauseCount}</p>
+                            <div className="rounded-md border border-[#efc1b0] bg-[#fbe1d6] px-3 py-2.5">
+                              <p className="text-xs text-[#a63a1e]">Missing</p>
+                              <p className="text-xl font-semibold leading-tight text-[#8a2f17]">{missingClauseCount}</p>
                             </div>
                           </div>
                         </div>
@@ -1895,15 +1895,15 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                     {/* The user's real contract, faded at the bottom */}
                     {extractedDocumentText ? (
                       <article className="relative overflow-hidden rounded-lg border border-[var(--pt-border)] shadow-sm">
-                        <div className="max-h-[340px] overflow-hidden bg-[#f0ede8] px-3 py-6 sm:px-10">
+                        <div className="max-h-[340px] overflow-hidden bg-[#efede4] px-3 py-6 sm:px-10">
                           <div
-                            className="mx-auto max-w-[680px] rounded-sm bg-white px-8 py-10 text-[15px] leading-[1.85] tracking-[0.003em] text-[#252830] shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] whitespace-pre-wrap select-text"
+                            className="mx-auto max-w-[680px] rounded-sm bg-white px-8 py-10 text-[15px] leading-[1.85] tracking-[0.003em] text-[#15322c] shadow-[0_2px_8px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.05)] whitespace-pre-wrap select-text"
                             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
                           >
                             {displayDocumentText}
                           </div>
                         </div>
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#f0ede8] to-transparent" />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#efede4] to-transparent" />
                       </article>
                     ) : null}
 
@@ -1913,16 +1913,16 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                         <p className="text-sm font-semibold text-[var(--pt-ink)]">
                           {accountMode ? "What Pro adds" : <>What Report &amp; Protect add</>}
                         </p>
-                        <span className="rounded-full border border-[#ead3a1] bg-[#fff4df] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8c6526]">Example</span>
+                        <span className="rounded-full border border-[#ecd9a6] bg-[#f9ebc6] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#8a5a0b]">Example</span>
                       </div>
                       <p className="mt-1 text-xs text-[var(--pt-muted)]">Every risky clause rewritten in plain, balanced language — shown as tracked changes and a clean revised draft you can copy and send.</p>
                       <div className="mt-3 grid gap-1.5 text-[13px] sm:grid-cols-2">
-                        <div className="rounded-md border border-[#f5c6c0] bg-[#fff0ee] px-2.5 py-2">
-                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#9e3f2d]">Was</p>
-                          <p className="text-[#7f2e1f]">Any changes requested by Owner will be billed at Contractor&apos;s discretion with no prior written approval required.</p>
+                        <div className="rounded-md border border-[#f3c4b0] bg-[#fdf0ea] px-2.5 py-2">
+                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#a63a1e]">Was</p>
+                          <p className="text-[#8a2f17]">Any changes requested by Owner will be billed at Contractor&apos;s discretion with no prior written approval required.</p>
                         </div>
-                        <div className="rounded-md border border-[#a8ddd0] bg-[#edf8f5] px-2.5 py-2">
-                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#1d655f]">Now</p>
+                        <div className="rounded-md border border-[#b9dcc1] bg-[#e3f1e5] px-2.5 py-2">
+                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-[#23604a]">Now</p>
                           <p className="text-[#165a52]">No change order is binding unless it is in writing and signed by the Owner before the work begins, stating the added scope, price, and schedule impact.</p>
                         </div>
                       </div>
@@ -2157,21 +2157,21 @@ export default function ResultWorkspace({ data, retentionDays, accessKey, abVari
                   <article className="rounded-lg border border-[var(--pt-border)] bg-[var(--pt-surface-soft)] p-3">
                     <p className="text-sm font-semibold text-[var(--pt-ink)]">Report Composition</p>
                     <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                      <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
-                        <p className="text-xs text-[#54629b]">Clauses analyzed</p>
-                        <p className="text-lg font-semibold text-[#374175]">{clauseBreakdown.length}</p>
+                      <div className="rounded-md border border-[#d8e8f1] bg-white px-3 py-2">
+                        <p className="text-xs text-[#1f4e68]">Clauses analyzed</p>
+                        <p className="text-lg font-semibold text-[#173a4d]">{clauseBreakdown.length}</p>
                       </div>
-                      <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
-                        <p className="text-xs text-[#54629b]">With evidence</p>
-                        <p className="text-lg font-semibold text-[#374175]">{evidenceClauseCount}</p>
+                      <div className="rounded-md border border-[#d8e8f1] bg-white px-3 py-2">
+                        <p className="text-xs text-[#1f4e68]">With evidence</p>
+                        <p className="text-lg font-semibold text-[#173a4d]">{evidenceClauseCount}</p>
                       </div>
-                      <div className="rounded-md border border-[#d8dff5] bg-white px-3 py-2">
-                        <p className="text-xs text-[#54629b]">Supporting notes</p>
-                        <p className="text-lg font-semibold text-[#374175]">{reportSupportingSections.length}</p>
+                      <div className="rounded-md border border-[#d8e8f1] bg-white px-3 py-2">
+                        <p className="text-xs text-[#1f4e68]">Supporting notes</p>
+                        <p className="text-lg font-semibold text-[#173a4d]">{reportSupportingSections.length}</p>
                       </div>
                     </div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full border border-[#d8dff5] bg-white">
-                      <div className="h-2 bg-[#5d73c8]" style={{ width: `${Math.max(evidenceCoveragePct, 4)}%` }} />
+                    <div className="mt-2 h-2 overflow-hidden rounded-full border border-[#d8e8f1] bg-white">
+                      <div className="h-2 bg-[#4c93c4]" style={{ width: `${Math.max(evidenceCoveragePct, 4)}%` }} />
                     </div>
                   </article>
 

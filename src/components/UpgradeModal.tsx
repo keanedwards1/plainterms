@@ -100,7 +100,7 @@ export default function UpgradeModal({
         onClick={() => {
           if (!isProcessing) onClose();
         }}
-        className="fixed inset-0 bg-[#1f2b3d]/55 backdrop-blur-sm"
+        className="fixed inset-0 bg-[#15322c]/55 backdrop-blur-sm"
       />
 
       <div className="pointer-events-none relative flex min-h-full items-center justify-center p-4">
@@ -108,7 +108,7 @@ export default function UpgradeModal({
           role="dialog"
           aria-modal="true"
           aria-label={featureTitle}
-          className="pointer-events-auto relative z-10 my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[860px] flex-col overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(31,43,61,0.6)]"
+          className="pointer-events-auto relative z-10 my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[860px] flex-col overflow-hidden rounded-2xl border border-[var(--pt-border)] bg-white shadow-[0_40px_90px_-30px_rgba(21,50,44,0.6)]"
         >
         {/* Header band */}
         <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-[#fff8f4] via-[#fef3ec] to-[#fdeae0] px-6 py-5 sm:px-8">
@@ -240,7 +240,7 @@ export default function UpgradeModal({
               </div>
 
               {error ? (
-                <p className="mt-3 rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">
+                <p className="mt-3 rounded-md border border-[#efc1b0] bg-[#fdf0ea] px-3 py-2 text-xs text-[#a63a1e]">
                   {error}
                 </p>
               ) : null}
@@ -279,12 +279,12 @@ export default function UpgradeModal({
                       key={tier}
                       className={`relative flex flex-col rounded-xl border p-4 transition-colors ${
                         recommended
-                          ? "border-[#de8f79] bg-[#fff6f1] shadow-[0_18px_36px_-28px_rgba(222,143,121,0.9)]"
+                          ? "border-[#e9a07a] bg-[#fff6f1] shadow-[0_18px_36px_-28px_rgba(222,143,121,0.9)]"
                           : "border-[var(--pt-border)] bg-white"
                       }`}
                     >
                       {recommended ? (
-                        <span className="absolute -top-2.5 left-4 rounded-full bg-[#de8f79] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                        <span className="absolute -top-2.5 left-4 rounded-full bg-[#e9a07a] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                           Most popular
                         </span>
                       ) : null}
@@ -298,7 +298,7 @@ export default function UpgradeModal({
                       <ul className="mt-3 flex-1 space-y-1.5 text-xs text-[var(--pt-ink)]/80">
                         {TIER_FEATURES[tier].map((item) => (
                           <li key={`${tier}-${item}`} className="flex items-start gap-1.5">
-                            <svg viewBox="0 0 16 16" aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#2ba59f]">
+                            <svg viewBox="0 0 16 16" aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#4f9a62]">
                               <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                             <span>{item}</span>
@@ -320,7 +320,7 @@ export default function UpgradeModal({
               </div>
 
               {error ? (
-                <p className="mt-4 rounded-md border border-[#efc1b6] bg-[#fff0ee] px-3 py-2 text-xs text-[#9e3f2d]">
+                <p className="mt-4 rounded-md border border-[#efc1b0] bg-[#fdf0ea] px-3 py-2 text-xs text-[#a63a1e]">
                   {error}
                 </p>
               ) : null}

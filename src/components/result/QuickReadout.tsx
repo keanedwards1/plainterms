@@ -23,17 +23,17 @@ export default function QuickReadout({ riskScore, recommendationLabel, flagsFoun
         </div>
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <div className="rounded-lg border border-[#efc1b6] bg-[#ffe8e3] px-3 py-2">
-          <p className="text-xs text-[#9e3f2d]">Risk score</p>
-          <p className="text-xl font-semibold text-[#7f2e1f]">{riskScore}</p>
+        <div className="rounded-lg border border-[#efc1b0] bg-[#fbe1d6] px-3 py-2">
+          <p className="text-xs text-[#a63a1e]">Risk score</p>
+          <p className="text-xl font-semibold text-[#8a2f17]">{riskScore}</p>
         </div>
-        <div className="rounded-lg border border-[#ead3a1] bg-[#fff4df] px-3 py-2">
-          <p className="text-xs text-[#8c6526]">Recommendation</p>
-          <p className="text-sm font-semibold text-[#6e4f1e]">{recommendationLabel}</p>
+        <div className="rounded-lg border border-[#ecd9a6] bg-[#f9ebc6] px-3 py-2">
+          <p className="text-xs text-[#8a5a0b]">Recommendation</p>
+          <p className="text-sm font-semibold text-[#6e4a08]">{recommendationLabel}</p>
         </div>
-        <div className="rounded-lg border border-[#b2ddd4] bg-[#e1f4ef] px-3 py-2">
-          <p className="text-xs text-[#1d655f]">Flags found</p>
-          <p className="text-xl font-semibold text-[#154f4a]">{flagsFound}</p>
+        <div className="rounded-lg border border-[#b9dcc1] bg-[#d9eddc] px-3 py-2">
+          <p className="text-xs text-[#23604a]">Flags found</p>
+          <p className="text-xl font-semibold text-[#15322c]">{flagsFound}</p>
         </div>
       </div>
     </article>

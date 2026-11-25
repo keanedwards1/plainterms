@@ -12,7 +12,7 @@ export default function OgImage() {
         style={{
           width: 1200,
           height: 630,
-          background: "#1f2b3d",
+          background: "#15322c",
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-start",
@@ -32,7 +32,7 @@ export default function OgImage() {
             width: 420,
             height: 420,
             borderRadius: "50%",
-            background: "#f1765d",
+            background: "#e9783a",
             opacity: 0.12,
           }}
         />
@@ -56,7 +56,7 @@ export default function OgImage() {
               width: 48,
               height: 48,
               borderRadius: 12,
-              background: "#f1765d",
+              background: "#e9783a",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

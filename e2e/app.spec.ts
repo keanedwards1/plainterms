@@ -4,17 +4,16 @@ test.describe("home workspace", () => {
   test("opens straight into the upload workspace", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByText("Drop your contract here")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Analyze contract" })).toBeDisabled();
-    await expect(page.getByRole("heading", { name: "What you'll get" })).toBeVisible();
+    await expect(page.getByText("Drop a contract or lease here")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "What you get back" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Tools" }).getByRole("link", { name: "Explain a letter" })).toBeVisible();
   });
 
-  test("sample contract fills the paste box and enables Analyze", async ({ page }) => {
+  test("sample contract fills the paste box and enables Read it", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Paste text" }).click();
-    await page.getByRole("button", { name: "Use a sample contract" }).click();
-    await expect(page.getByLabel("Contract text")).toHaveValue(/HOME IMPROVEMENT AGREEMENT/);
-    await expect(page.getByRole("button", { name: "Analyze contract" })).toBeEnabled();
+    await page.getByRole("button", { name: "Try a sample contract" }).click();
+    await expect(page.getByLabel("Document text")).toHaveValue(/HOME IMPROVEMENT AGREEMENT/);
+    await expect(page.getByRole("button", { name: "Read it" })).toBeEnabled();
   });
 
   test("rejects unsupported file types before uploading", async ({ page }) => {
@@ -31,7 +30,7 @@ test.describe("home workspace", () => {
   });
 
   test("never scrolls sideways", async ({ page }) => {
-    for (const path of ["/", "/sample-report", "/how-it-works"]) {
+    for (const path of ["/", "/tools", "/templates", "/tools/write-a-letter", "/tools/explain-a-letter", "/deadlines"]) {
       await page.goto(path);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -41,15 +40,16 @@ test.describe("home workspace", () => {
   });
 });
 
-test.describe("sample report", () => {
-  test("revised draft is shown as a Pro feature", async ({ page }) => {
-    await page.goto("/sample-report");
-    await page.getByRole("button", { name: "Preview Document section" }).click();
-    await page.getByRole("button", { name: "Revised", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Revised draft is part of Pro" });
-    await expect(dialog).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(dialog).toBeHidden();
+test.describe("letter writer", () => {
+  test("the letter fills in as you type", async ({ page }) => {
+    await page.goto("/tools/write-a-letter");
+    await page.getByLabel("Who owes you").fill("Brightline Remodeling");
+    await page.getByLabel("Amount").fill("$6,200");
+    const letter = page.getByRole("article", { name: "Your letter" });
+    await expect(letter).toContainText("Brightline Remodeling");
+    await expect(letter).toContainText("$6,200");
+    await page.getByRole("button", { name: "Security deposit back" }).click();
+    await expect(letter).toContainText("Return of my security deposit");
   });
 });
 
