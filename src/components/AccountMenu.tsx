@@ -94,15 +94,6 @@ export default function AccountMenu({ name, email, pictureUrl, plan = null }: Ac
             <p className="truncate text-sm font-semibold text-[var(--pt-ink)]">{name}</p>
             {name !== email ? <p className="truncate text-xs text-[var(--pt-muted)]">{email}</p> : null}
           </div>
-          {plan ? (
-            <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                plan === "pro" ? "bg-[var(--pt-ink)] text-white" : "bg-white text-[var(--pt-ink-soft)] ring-1 ring-[var(--pt-line)]"
-              }`}
-            >
-              {plan === "pro" ? "Pro" : "Free"}
-            </span>
-          ) : null}
         </div>
         <nav aria-label="Account" className="mt-1.5 grid gap-0.5">
           {LINKS.map((link) => (
