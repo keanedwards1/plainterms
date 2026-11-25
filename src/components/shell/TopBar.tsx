@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import AccountMenu from "@/components/AccountMenu";
 import Logo from "@/components/shell/Logo";
 
@@ -13,6 +14,17 @@ export type HeaderUser = {
 
 export default function TopBar({ user }: { user: HeaderUser | null }) {
   const pathname = usePathname() || "/";
+  // Plans is only for people on the free plan. Ask once per page load; stay hidden until we know.
+  const [onFreePlan, setOnFreePlan] = useState(false);
+  useEffect(() => {
+    if (!user) return undefined;
+    const controller = new AbortController();
+    fetch("/api/me", { cache: "no-store", signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((account: { plan?: string } | null) => setOnFreePlan(account?.plan === "free"))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [user]);
   const signInHref = `/sign-in?returnTo=${encodeURIComponent(pathname)}`;
 
   return (
@@ -31,9 +43,11 @@ export default function TopBar({ user }: { user: HeaderUser | null }) {
         <span className="flex-1" />
         {user ? (
           <>
-            <Link href="/dashboard/billing" className="pt-pro-chip hidden sm:inline-flex">
-              Plans
-            </Link>
+            {onFreePlan ? (
+              <Link href="/dashboard/billing" className="pt-pro-chip hidden sm:inline-flex">
+                Plans
+              </Link>
+            ) : null}
             <AccountMenu name={user.name} email={user.email} pictureUrl={user.pictureUrl} />
           </>
         ) : (
