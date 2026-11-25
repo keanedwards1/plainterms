@@ -26,7 +26,7 @@ const COLUMNS = [
   {
     title: "Account",
     links: [
-      { href: "/dashboard", label: "Your documents" },
+      { href: "/documents", label: "Your documents" },
       { href: "/deadlines", label: "Dates" },
       { href: "/dashboard/billing", label: "Plan and billing" },
       { href: "/dashboard/settings", label: "Settings" },

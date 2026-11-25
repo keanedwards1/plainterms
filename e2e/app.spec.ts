@@ -54,9 +54,11 @@ test.describe("letter writer", () => {
 });
 
 test.describe("signed out", () => {
-  test("the dashboard is not reachable without signing in", async ({ page }) => {
-    await page.goto("/dashboard");
-    await expect(page).not.toHaveURL(/\/dashboard/);
+  test("documents and account pages need sign-in", async ({ page }) => {
+    for (const path of ["/documents", "/dashboard/settings"]) {
+      await page.goto(path);
+      await expect(page).not.toHaveURL(new RegExp(path));
+    }
   });
 
   test("analyze API requires sign-in", async ({ request }) => {

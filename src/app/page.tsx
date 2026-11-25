@@ -52,7 +52,7 @@ function RecentDocuments({ docs }: { docs: DocumentSummary[] }) {
         <h2 id="recent-heading" className="text-[1.75rem] tracking-[-0.045em]">
           Pick up where you left off
         </h2>
-        <Link href="/dashboard" className="text-sm text-(--pt-muted) hover:text-(--pt-ink)">
+        <Link href="/documents" className="text-sm text-(--pt-muted) hover:text-(--pt-ink)">
           All documents
         </Link>
       </div>

@@ -15,7 +15,7 @@ function initials(name: string) {
 }
 
 const LINKS = [
-  { href: "/dashboard", label: "Documents" },
+  { href: "/documents", label: "Documents" },
   { href: "/dashboard/billing", label: "Plan & billing" },
   { href: "/dashboard/settings", label: "Account settings" },
 ] as const;

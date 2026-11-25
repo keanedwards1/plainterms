@@ -146,7 +146,7 @@ export default async function ResultPage({ params, searchParams }: Props) {
         title="We couldn't find this document"
         action={
           session ? (
-            <Link href="/dashboard" className="pt-btn pt-btn-solid px-6 py-3">Go to your documents</Link>
+            <Link href="/documents" className="pt-btn pt-btn-solid px-6 py-3">Go to your documents</Link>
           ) : (
             <a href={`/sign-in?returnTo=${encodeURIComponent(here)}`} className="pt-btn pt-btn-solid px-6 py-3">Sign in</a>
           )
@@ -189,7 +189,7 @@ export default async function ResultPage({ params, searchParams }: Props) {
         <section className="pt-panel p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {data.owned ? (
-              <Link href="/dashboard" className="text-sm font-semibold text-(--pt-muted) hover:text-(--pt-ink)">
+              <Link href="/documents" className="text-sm font-semibold text-(--pt-muted) hover:text-(--pt-ink)">
                 ← All documents
               </Link>
             ) : (

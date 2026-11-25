@@ -16,7 +16,7 @@ const ICON = {
 
 const ITEMS = [
   { href: "/", label: "Home", match: (p: string) => p === "/", icon: <svg {...ICON}><path d="M4 11 12 4l8 7v9H4z" /><path d="M10 20v-5h4v5" /></svg> },
-  { href: "/dashboard", label: "Documents", match: (p: string) => p === "/dashboard" || p.startsWith("/result"), icon: <svg {...ICON}><path d="M5 4h9l5 5v11H5z" /><path d="M14 4v5h5" /></svg> },
+  { href: "/documents", label: "Documents", match: (p: string) => p.startsWith("/documents") || p.startsWith("/result"), icon: <svg {...ICON}><path d="M5 4h9l5 5v11H5z" /><path d="M14 4v5h5" /></svg> },
   { href: "/tools", label: "Tools", match: (p: string) => p.startsWith("/tools"), icon: <svg {...ICON}><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></svg> },
   { href: "/templates", label: "Templates", match: (p: string) => p.startsWith("/templates"), icon: <svg {...ICON}><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></svg> },
   { href: "/deadlines", label: "Dates", match: (p: string) => p.startsWith("/deadlines"), icon: <svg {...ICON}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /><circle cx="12" cy="15" r="1.6" /></svg> },
@@ -25,7 +25,7 @@ const ITEMS = [
 const SETTINGS = {
   href: "/dashboard/settings",
   label: "Settings",
-  match: (p: string) => p.startsWith("/dashboard/settings") || p.startsWith("/dashboard/billing"),
+  match: (p: string) => p.startsWith("/dashboard"),
   icon: (
     <svg {...ICON}>
       <circle cx="12" cy="12" r="3" />

@@ -5,13 +5,6 @@ import { usePathname } from "next/navigation";
 
 const ITEMS = [
   {
-    href: "/dashboard",
-    label: "Documents",
-    icon: (
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4" />
-    ),
-  },
-  {
     href: "/dashboard/billing",
     label: "Plan & billing",
     icon: <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18M7 15h3" />,

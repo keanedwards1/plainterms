@@ -20,7 +20,7 @@ export default function TopBar({ user }: { user: HeaderUser | null }) {
       <div className="pt-container-wide pt-topbar">
         <Logo className="min-[820px]:hidden" />
         {user ? (
-          <Link href="/dashboard" className="pt-search">
+          <Link href="/documents" className="pt-search">
             <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
               <circle cx="11" cy="11" r="6" />
               <path d="m20 20-4.5-4.5" />
