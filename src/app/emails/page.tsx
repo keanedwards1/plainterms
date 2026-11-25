@@ -69,11 +69,11 @@ export default function EmailsPage() {
             <h2 id={`g-${group}`} className="text-2xl tracking-[-0.04em]">
               {group}
             </h2>
-            <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+            <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
               {EMAIL_TEMPLATES.filter((t) => t.group === group).map((t) => (
                 <li key={t.slug}>
                   <Link href={`/emails/${t.slug}`} className="pt-tpl grid gap-1.5">
-                    <span className="pt-tpl-paper !aspect-[4/3.4] !gap-2" aria-hidden="true">
+                    <span className="pt-tpl-paper !gap-2" aria-hidden="true">
                       <span className="flex items-center gap-1.5 border-b border-(--pt-line) pb-2 text-[0.6875rem] text-(--pt-muted)">
                         <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="3" y="5" width="18" height="14" rx="2" />
