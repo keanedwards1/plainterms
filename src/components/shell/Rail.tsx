@@ -50,6 +50,13 @@ const ITEMS: Item[] = [
     active: <svg {...FILL}><rect x="3.3" y="2.3" width="17.4" height="19.4" rx="2.6" fill="currentColor" /><path d="M8 8h8M8 12h8M8 16h5" stroke={CUT} strokeWidth="1.7" strokeLinecap="round" /></svg>,
   },
   {
+    href: "/emails",
+    label: "Emails",
+    match: (p) => p.startsWith("/emails"),
+    icon: <svg {...ICON}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3.5 6.5 8.5 6.5 8.5-6.5" /></svg>,
+    active: <svg {...FILL}><rect x="2.4" y="4.4" width="19.2" height="15.2" rx="2.6" fill="currentColor" /><path d="m3.6 6.6 8.4 6.4 8.4-6.4" fill="none" stroke={CUT} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>,
+  },
+  {
     href: "/deadlines",
     label: "Dates",
     match: (p) => p.startsWith("/deadlines"),

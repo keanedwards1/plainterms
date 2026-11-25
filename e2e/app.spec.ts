@@ -30,7 +30,7 @@ test.describe("home workspace", () => {
   });
 
   test("never scrolls sideways", async ({ page }) => {
-    for (const path of ["/", "/tools", "/templates", "/tools/write-a-letter", "/tools/explain-a-letter", "/deadlines"]) {
+    for (const path of ["/", "/tools", "/templates", "/tools/write-a-letter", "/tools/explain-a-letter", "/deadlines", "/emails"]) {
       await page.goto(path);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -50,6 +50,18 @@ test.describe("letter writer", () => {
     await expect(letter).toContainText("$6,200");
     await page.getByRole("button", { name: "Security deposit back" }).click();
     await expect(letter).toContainText("Return of my security deposit");
+  });
+});
+
+test.describe("emails", () => {
+  test("a template fills the email and the draft stays editable", async ({ page }) => {
+    await page.goto("/emails");
+    await page.getByRole("button", { name: /Friendly payment reminder/ }).click();
+    await page.getByLabel("Invoice number").fill("1042");
+    await expect(page.getByLabel("Subject")).toHaveValue("Invoice 1042 is past due");
+    await page.getByLabel("Message").fill("Custom note");
+    await expect(page.getByRole("button", { name: "Undo my edits" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open in my email app" })).toHaveAttribute("href", /^mailto:/);
   });
 });
 

@@ -11,6 +11,7 @@ const COLUMNS = [
       { href: "/tools/compare-versions", label: "Compare versions" },
       { href: "/tools/write-a-letter", label: "Write a letter" },
       { href: "/tools/check-a-contractor", label: "Check a contractor" },
+      { href: "/emails", label: "Emails" },
     ],
   },
   {
