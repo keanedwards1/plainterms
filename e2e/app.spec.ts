@@ -30,7 +30,7 @@ test.describe("home workspace", () => {
   });
 
   test("never scrolls sideways", async ({ page }) => {
-    for (const path of ["/", "/tools", "/templates", "/tools/write-a-letter", "/tools/explain-a-letter", "/deadlines", "/emails"]) {
+    for (const path of ["/", "/tools", "/templates", "/tools/write-a-letter", "/tools/explain-a-letter", "/deadlines", "/emails", "/emails/mutual-nda"]) {
       await page.goto(path);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -56,7 +56,8 @@ test.describe("letter writer", () => {
 test.describe("emails", () => {
   test("a template fills the email and the draft stays editable", async ({ page }) => {
     await page.goto("/emails");
-    await page.getByRole("button", { name: /Friendly payment reminder/ }).click();
+    await page.getByRole("link", { name: /Friendly payment reminder/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Friendly payment reminder" })).toBeVisible();
     await page.getByLabel("Invoice number").fill("1042");
     await expect(page.getByLabel("Subject")).toHaveValue("Invoice 1042 is past due");
     await page.getByLabel("Message").fill("Custom note");

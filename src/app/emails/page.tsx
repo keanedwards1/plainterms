@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import EmailComposer from "@/components/emails/EmailComposer";
+import Link from "next/link";
 import { SoonChip } from "@/components/tools/ToolHeader";
+import { EMAIL_GROUPS, EMAIL_TEMPLATES } from "@/lib/emailTemplates";
+import "@/components/home/home.css";
 
 export const metadata: Metadata = {
   title: "Emails",
@@ -62,7 +64,41 @@ export default function EmailsPage() {
           </div>
         </section>
 
-        <EmailComposer connected={false} />
+        {EMAIL_GROUPS.map((group) => (
+          <section key={group} aria-labelledby={`g-${group}`} className="mt-10">
+            <h2 id={`g-${group}`} className="text-2xl tracking-[-0.04em]">
+              {group}
+            </h2>
+            <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+              {EMAIL_TEMPLATES.filter((t) => t.group === group).map((t) => (
+                <li key={t.slug}>
+                  <Link href={`/emails/${t.slug}`} className="pt-tpl grid gap-1.5">
+                    <span className="pt-tpl-paper !aspect-[4/3.4] !gap-2" aria-hidden="true">
+                      <span className="flex items-center gap-1.5 border-b border-(--pt-line) pb-2 text-[0.6875rem] text-(--pt-muted)">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="5" width="18" height="14" rx="2" />
+                          <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
+                        </svg>
+                        New email
+                      </span>
+                      <b className="line-clamp-2 font-heading text-[0.8125rem] font-semibold">{t.subject(Object.fromEntries(t.fields.map((f) => [f.key, f.placeholder])))}</b>
+                      <i />
+                      <i />
+                      <i />
+                      {t.attachment ? (
+                        <span className="mt-auto inline-flex w-fit items-center gap-1 rounded-[3px] border border-(--pt-line-strong) bg-(--pt-surface-soft) px-1.5 py-0.5 text-[0.625rem] text-(--pt-ink-soft)">
+                          {t.attachment}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="mt-2 font-medium">{t.name}</span>
+                    <span className="text-sm leading-snug text-(--pt-muted)">{t.line}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
       </div>
     </main>
   );
