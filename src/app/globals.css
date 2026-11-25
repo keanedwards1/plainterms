@@ -92,6 +92,12 @@ html {
 }
 
 @layer components {
+/* Drawn tool icons (src/components/home/homeArt.ts) default to 62px. */
+.illu {
+  width: 62px;
+  height: 62px;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Layout                                                                     */
 /* ------------------------------------------------------------------------- */
@@ -687,5 +693,25 @@ details[open] > :not(summary) {
   .pt-skeleton,
   .pt-spinner {
     animation-duration: 3s;
+  }
+}
+
+/* Printing a letter from the letter writer prints only the letter. */
+@media print {
+  body:has(.pt-letter) * {
+    visibility: hidden;
+  }
+
+  body:has(.pt-letter) .pt-letter,
+  body:has(.pt-letter) .pt-letter * {
+    visibility: visible;
+  }
+
+  body:has(.pt-letter) .pt-letter {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    border: 0;
+    box-shadow: none;
   }
 }
