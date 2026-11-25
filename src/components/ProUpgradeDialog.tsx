@@ -9,15 +9,19 @@ type ProUpgradeDialogProps = {
   /** What the person tried to open, e.g. "Revised draft". */
   feature: string | null;
   signedIn: boolean;
+  /** Overrides the "<feature> is part of Pro" title when that phrasing doesn't fit. */
+  title?: string;
 };
 
-const PRO_PRICE_LABEL = process.env.NEXT_PUBLIC_PRO_PRICE_LABEL ?? "$5/month";
+// An empty value in the environment should still fall back to the default.
+const PRO_PRICE_LABEL = process.env.NEXT_PUBLIC_PRO_PRICE_LABEL || "$5/month";
 
 const PRO_POINTS = [
   "Our most capable AI model on every document",
   "Track changes and a clean revised draft you can send",
   "Rewrite options and fallback positions",
   "Documents kept until you delete them",
+  "Email reminders before your dates",
 ];
 
 /** Starts Pro checkout and returns the person to the page they were on. */
@@ -35,7 +39,7 @@ export async function startProCheckout(returnPath: string): Promise<string | nul
   return json.error ?? "Checkout couldn't be started. Please try again.";
 }
 
-export default function ProUpgradeDialog({ open, onClose, feature, signedIn }: ProUpgradeDialogProps) {
+export default function ProUpgradeDialog({ open, onClose, feature, signedIn, title }: ProUpgradeDialogProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +67,7 @@ export default function ProUpgradeDialog({ open, onClose, feature, signedIn }: P
         onClose();
       }}
       dismissible={!pending}
-      title={feature ? `${feature} is part of Pro` : "Upgrade to Pro"}
+      title={title ?? (feature ? `${feature} is part of Pro` : "Upgrade to Pro")}
       description={`Pro is ${PRO_PRICE_LABEL}. Cancel anytime.`}
     >
       <ul className="space-y-2 text-[15px] text-(--pt-ink-soft)">

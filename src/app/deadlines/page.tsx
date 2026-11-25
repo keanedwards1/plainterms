@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import RemindersButton from "@/components/tools/RemindersButton";
 import ToolHeader, { ExampleLabel } from "@/components/tools/ToolHeader";
+import { getSession } from "@/lib/auth";
+import { getAccount } from "@/lib/serverApi";
 
 export const metadata: Metadata = {
   title: "Dates",
@@ -14,7 +17,10 @@ const DATES = [
   { month: "Mar", day: "30", title: "Roof warranty check", detail: "Summit Roofing · first year ends in 2027", tone: "bg-(--pt-muted)" },
 ];
 
-export default function DeadlinesPage() {
+export default async function DeadlinesPage() {
+  const session = await getSession();
+  const account = session ? await getAccount(session) : null;
+
   return (
     <main className="pt-page-pad">
       <div className="pt-container-wide">
@@ -45,10 +51,7 @@ export default function DeadlinesPage() {
           <button type="button" disabled className="pt-btn pt-btn-outline h-11 px-4 text-[0.9375rem]">
             Add to your calendar
           </button>
-          <button type="button" disabled className="pt-btn pt-btn-solid h-11 px-4 text-[0.9375rem]">
-            Send me reminders
-            <span className="rounded-[3px] bg-white/90 px-1.5 py-0.5 font-mono text-[0.6875rem] font-medium text-(--pt-ink)">Pro</span>
-          </button>
+          <RemindersButton signedIn={Boolean(session)} isPro={account?.plan === "pro"} />
         </div>
         <p className="mt-8 text-(--pt-muted)">
           Dates start showing up here when you{" "}

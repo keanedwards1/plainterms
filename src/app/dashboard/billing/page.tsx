@@ -3,7 +3,7 @@ import BillingActions from "@/components/dashboard/BillingActions";
 import { getSession } from "@/lib/auth";
 import { getAccount } from "@/lib/serverApi";
 
-const PRO_PRICE_LABEL = process.env.NEXT_PUBLIC_PRO_PRICE_LABEL ?? "$5/month";
+const PRO_PRICE_LABEL = process.env.NEXT_PUBLIC_PRO_PRICE_LABEL || "$5/month";
 
 const FREE_FEATURES = [
   "Full analysis in plain English",
