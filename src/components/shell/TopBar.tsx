@@ -15,13 +15,13 @@ export type HeaderUser = {
 export default function TopBar({ user }: { user: HeaderUser | null }) {
   const pathname = usePathname() || "/";
   // Plans is only for people on the free plan. Ask once per page load; stay hidden until we know.
-  const [onFreePlan, setOnFreePlan] = useState(false);
+  const [plan, setPlan] = useState<"free" | "pro" | null>(null);
   useEffect(() => {
     if (!user) return undefined;
     const controller = new AbortController();
     fetch("/api/me", { cache: "no-store", signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
-      .then((account: { plan?: string } | null) => setOnFreePlan(account?.plan === "free"))
+      .then((account: { plan?: string } | null) => setPlan(account?.plan === "pro" ? "pro" : account?.plan === "free" ? "free" : null))
       .catch(() => {});
     return () => controller.abort();
   }, [user]);
@@ -43,12 +43,12 @@ export default function TopBar({ user }: { user: HeaderUser | null }) {
         <span className="flex-1" />
         {user ? (
           <>
-            {onFreePlan ? (
+            {plan === "free" ? (
               <Link href="/dashboard/billing" className="pt-pro-chip hidden sm:inline-flex">
                 Plans
               </Link>
             ) : null}
-            <AccountMenu name={user.name} email={user.email} pictureUrl={user.pictureUrl} />
+            <AccountMenu name={user.name} email={user.email} pictureUrl={user.pictureUrl} plan={plan} />
           </>
         ) : (
           <div className="flex items-center gap-2">
