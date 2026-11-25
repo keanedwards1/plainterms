@@ -34,8 +34,8 @@
   --pt-radius: 10px;
   --pt-radius-control: 4px;
   --pt-radius-pop: 6px;
-  --pt-rail-active: #fbe3d2;
-  --pt-rail-hover: #efede4;
+  --pt-rail-active: #15322c;
+  --pt-rail-hover: #e4ebe6;
 
   --pt-action: #15322c;
   --pt-action-hover: #21473f;
@@ -199,6 +199,7 @@ html {
 
 .pt-rail-link[aria-current="page"] svg {
   background: var(--pt-rail-active);
+  color: var(--pt-bg);
 }
 
 .pt-rail-foot {
