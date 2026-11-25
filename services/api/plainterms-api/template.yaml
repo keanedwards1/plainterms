@@ -825,6 +825,7 @@ Resources:
     Properties:
       CodeUri: lambdas/
       Handler: getResult.handler
+      MemorySize: 1024
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
@@ -1154,7 +1155,7 @@ Resources:
       Handler: me.handler
       Timeout: 60
       # More memory also means more CPU: faster cold starts for the dashboard.
-      MemorySize: 512
+      MemorySize: 1024
       Environment:
         Variables:
           STRIPE_MODE: !Ref StripeMode
@@ -1205,7 +1206,7 @@ Resources:
     Properties:
       CodeUri: lambdas/
       Handler: documents.handler
-      MemorySize: 512
+      MemorySize: 1024
       Environment:
         Variables:
           RESULTS_TABLE: !Ref ResultsTable
