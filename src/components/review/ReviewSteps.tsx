@@ -353,26 +353,22 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
 
   const prepare = (
     <>
-      <div className="mb-4">
-        <p className="rv-label">Step 4 of {N}</p>
-        <h2 className="rv-step-title">{PREP_TITLE[choice]}</h2>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="rv-label">Step 4 of {N}</p>
+          <h2 className="rv-step-title">{PREP_TITLE[choice]}</h2>
+        </div>
+        {choice === "negotiate" ? (
+          <button type="button" role="switch" aria-checked={showFallbacks} className="rv-toggle" onClick={() => setShowFallbacks((v) => !v)}>
+            <span className="rv-toggle-track" aria-hidden="true" />
+            Show Fallback
+          </button>
+        ) : null}
       </div>
       <div className="rv-prep" data-solo={choice === "walk" || !checklist}>
         <div className="grid gap-4">
           {choice === "negotiate" ? (
             <section className="pt-panel rv-card">
-              <div className="rv-asks-bar">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={showFallbacks}
-                  className="rv-toggle"
-                  onClick={() => setShowFallbacks((v) => !v)}
-                >
-                  <span className="rv-toggle-track" aria-hidden="true" />
-                  Show what to accept if they say no
-                </button>
-              </div>
               <div className="rv-asks">
                 {issues.map((issue) => (
                   <label key={issue.id} className="rv-ask">
