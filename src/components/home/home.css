@@ -72,6 +72,11 @@
 .pt-doc-thumb i:nth-of-type(3) { width: 70%; background: #fbe6a6; }
 .pt-doc-thumb i:nth-of-type(4) { width: 80%; }
 
+/* With real text: the contract's own heading and first lines, like a tiny page. */
+.pt-doc-thumb-text { gap: 6px; }
+.pt-doc-thumb-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 700 9.5px/1.4 Georgia, "Times New Roman", serif; letter-spacing: 0.07em; text-transform: uppercase; color: var(--pt-ink); }
+.pt-doc-thumb-body { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; font: 400 10.5px/1.6 Georgia, "Times New Roman", serif; color: #3b4a46; }
+
 .pt-tpl-paper {
   display: grid;
   align-content: start;

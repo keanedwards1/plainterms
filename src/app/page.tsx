@@ -3,7 +3,7 @@ import Link from "next/link";
 import HeroClouds from "@/components/art/HeroClouds";
 import HeroWidgets from "@/components/art/HeroWidgets";
 import Stipple from "@/components/art/Stipple";
-import { formatDocumentDate, VerdictBadge } from "@/components/DocumentRow";
+import { DocThumb, formatDocumentDate, VerdictBadge } from "@/components/DocumentRow";
 import Demos from "@/components/home/Demos";
 import Showcase from "@/components/home/Showcase";
 import ToolRow from "@/components/home/ToolRow";
@@ -61,13 +61,7 @@ function RecentDocuments({ docs }: { docs: DocumentSummary[] }) {
           {docs.map((doc) => (
             <li key={doc.id}>
               <Link href={`/result/${encodeURIComponent(doc.id)}`} className="pt-doc">
-                <span className="pt-doc-thumb" aria-hidden="true">
-                  <span className="truncate font-heading text-[0.8125rem] font-semibold">{doc.fileName}</span>
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </span>
+                <DocThumb doc={doc} />
                 <span className="truncate font-medium">{doc.fileName}</span>
                 <span className="text-sm text-(--pt-muted)">{formatDocumentDate(doc.createdAt)}</span>
                 <span className="mt-2 flex items-center justify-between gap-2">

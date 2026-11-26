@@ -56,7 +56,36 @@ function documentFromItem(item) {
   };
 }
 
-/** Newest-first page of a user's documents, read from the owner GSI. */
+const PREVIEW_CHARS = 320;
+
+/** Batch-reads full result items for ids the user owns, retrying unprocessed keys. Returns a Map by id. */
+async function batchGetOwned(userId, ids, projection, names, db) {
+  const byId = new Map();
+  for (let i = 0; i < ids.length; i += 100) {
+    let keys = ids.slice(i, i + 100).map((id) => ({ result_id: { S: id } }));
+    for (let attempt = 0; keys.length && attempt < 5; attempt += 1) {
+      const res = await db.send(
+        new BatchGetItemCommand({
+          RequestItems: { [resultsTable()]: { Keys: keys, ProjectionExpression: projection, ...(names ? { ExpressionAttributeNames: names } : {}) } },
+        })
+      );
+      for (const item of res?.Responses?.[resultsTable()] ?? []) {
+        // Never return another user's document, even if an id slipped through.
+        if (item?.owner_user_id?.S === userId) byId.set(item.result_id.S, item);
+      }
+      keys = res?.UnprocessedKeys?.[resultsTable()]?.Keys ?? [];
+    }
+  }
+  return byId;
+}
+
+/** The opening of the contract, for the document card's thumbnail. */
+function previewFromItem(item) {
+  const raw = parseJson(item?.ui_result?.S)?.document?.extracted_text;
+  return typeof raw === "string" ? raw.replace(/\s+/g, " ").trim().slice(0, PREVIEW_CHARS) : "";
+}
+
+/** Newest-first page of a user's documents, read from the owner GSI, each with a short text preview. */
 export async function listOwnerDocuments(userId, { cursor, limit = 20, db = defaultDb, nowEpoch } = {}) {
   const pageSize = Math.min(Math.max(Math.floor(Number(limit) || 20), 1), MAX_PAGE_SIZE);
   const res = await db.send(
@@ -75,7 +104,17 @@ export async function listOwnerDocuments(userId, { cursor, limit = 20, db = defa
     .map(documentFromItem)
     // DynamoDB TTL deletes lazily, so hide anything already past its expiry.
     .filter((doc) => doc.expiresAt === null || doc.expiresAt > now);
-  return { documents, nextCursor: encodeCursor(res?.LastEvaluatedKey) };
+  // The GSI doesn't carry the text, so the preview comes from a batch read of the page.
+  let previews = new Map();
+  try {
+    previews = await batchGetOwned(userId, documents.map((d) => d.id), "result_id, owner_user_id, ui_result", null, db);
+  } catch {
+    // Cards fall back to plain thumbnails.
+  }
+  return {
+    documents: documents.map((doc) => ({ ...doc, preview: previews.has(doc.id) ? previewFromItem(previews.get(doc.id)) : "" })),
+    nextCursor: encodeCursor(res?.LastEvaluatedKey),
+  };
 }
 
 /** Every result key a user owns (paginates the whole GSI). */
@@ -213,26 +252,13 @@ export async function listOwnerSearchRecords(userId, { cursor, db = defaultDb, n
     .filter((doc) => doc.id && (doc.expiresAt === null || doc.expiresAt > now))
     .map((doc) => doc.id);
 
-  const byId = new Map();
-  let keys = ids.map((id) => ({ result_id: { S: id } }));
-  for (let attempt = 0; keys.length && attempt < 5; attempt += 1) {
-    const res = await db.send(
-      new BatchGetItemCommand({
-        RequestItems: {
-          [resultsTable()]: {
-            Keys: keys,
-            ProjectionExpression:
-              "result_id, owner_user_id, created_at, file_name, #s, risk_score, risk_label, recommendation_action, recommendation_label, flag_count, expires_at, ui_result",
-            ExpressionAttributeNames: { "#s": "status" },
-          },
-        },
-      })
-    );
-    for (const item of res?.Responses?.[resultsTable()] ?? []) {
-      // Never return another user's document, even if an id slipped through.
-      if (item?.owner_user_id?.S === userId) byId.set(item.result_id.S, searchRecordFromItem(item));
-    }
-    keys = res?.UnprocessedKeys?.[resultsTable()]?.Keys ?? [];
-  }
+  const items = await batchGetOwned(
+    userId,
+    ids,
+    "result_id, owner_user_id, created_at, file_name, #s, risk_score, risk_label, recommendation_action, recommendation_label, flag_count, expires_at, ui_result",
+    { "#s": "status" },
+    db
+  );
+  const byId = new Map([...items].map(([id, item]) => [id, searchRecordFromItem(item)]));
   return { documents: ids.map((id) => byId.get(id)).filter(Boolean), nextCursor: encodeCursor(page?.LastEvaluatedKey) };
 }

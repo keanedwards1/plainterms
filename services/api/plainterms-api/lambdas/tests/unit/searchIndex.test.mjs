@@ -68,3 +68,15 @@ test("lists the owner's documents newest first, skipping expired ones and other 
   assert.equal(batchCalls, 2);
   assert.equal(page.nextCursor, null);
 });
+
+test("the documents list carries a short preview of each contract", async () => {
+  const { listOwnerDocuments } = await import("../../lib/documents.mjs");
+  const db = {
+    async send(cmd) {
+      if (cmd.constructor.name === "QueryCommand") return { Items: [{ result_id: { S: "a" }, created_at: { S: "1" } }] };
+      return { Responses: { results: [item("a", "u1")] } };
+    },
+  };
+  const page = await listOwnerDocuments("u1", { db, nowEpoch: 100 });
+  assert.equal(page.documents[0].preview, "PRODUCTION SERVICES AGREEMENT between Harbor Media Inc. and Luna Park Studio. Net 60 days.");
+});

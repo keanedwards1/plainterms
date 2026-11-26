@@ -1,5 +1,30 @@
 import Link from "next/link";
 import type { DocumentSummary } from "@/lib/serverApi";
+import { contractTitle } from "@/lib/contractText";
+
+/** A small page thumbnail showing the document's own first lines (or placeholder lines without text). */
+export function DocThumb({ doc, roomForButton = false }: { doc: DocumentSummary; roomForButton?: boolean }) {
+  const text = doc.preview?.trim() ?? "";
+  if (!text) {
+    return (
+      <span className="pt-doc-thumb" aria-hidden="true">
+        <span className={`truncate font-heading text-[0.8125rem] font-semibold ${roomForButton ? "pr-10" : ""}`}>{doc.fileName}</span>
+        <i />
+        <i />
+        <i />
+        <i />
+      </span>
+    );
+  }
+  const title = contractTitle(text, doc.fileName);
+  const hasHeading = text.toLowerCase().startsWith(title.toLowerCase());
+  return (
+    <span className="pt-doc-thumb pt-doc-thumb-text" aria-hidden="true">
+      {hasHeading ? <span className={`pt-doc-thumb-title ${roomForButton ? "pr-10" : ""}`}>{title}</span> : null}
+      <span className="pt-doc-thumb-body">{hasHeading ? text.slice(title.length).trim() : text}</span>
+    </span>
+  );
+}
 
 const VERDICT_STYLES: Record<string, string> = {
   sign: "bg-(--pt-good-bg) text-(--pt-good)",

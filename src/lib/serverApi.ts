@@ -14,6 +14,8 @@ export type DocumentSummary = {
   recommendationLabel: string;
   flagCount: number;
   expiresAt: number | null;
+  /** The opening of the contract text, for card thumbnails. */
+  preview?: string;
 };
 
 export type DocumentsPage = { documents: DocumentSummary[]; nextCursor: string | null };

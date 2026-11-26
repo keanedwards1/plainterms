@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { searchDocuments } from "@/lib/documentSearch";
 import { invalidateDocumentIndex, loadDocumentIndex, peekDocumentIndex } from "@/lib/documentSearchIndex";
-import { formatDocumentDate, VerdictBadge } from "@/components/DocumentRow";
+import { DocThumb, formatDocumentDate, VerdictBadge } from "@/components/DocumentRow";
 import Dialog from "@/components/ui/Dialog";
 import type { DocumentSummary, DocumentsPage } from "@/lib/serverApi";
 
@@ -28,13 +28,7 @@ function DocumentCard({ doc, isPro, onDelete }: { doc: DocumentSummary; isPro: b
   return (
     <li className="pt-doc relative">
       <Link href={`/result/${encodeURIComponent(doc.id)}`} className="grid gap-1 after:absolute after:inset-0 after:content-['']">
-        <span className="pt-doc-thumb" aria-hidden="true">
-          <span className="truncate pr-10 font-heading text-[0.8125rem] font-semibold">{doc.fileName}</span>
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
+        <DocThumb doc={doc} roomForButton />
         <span className="truncate font-medium">{doc.fileName}</span>
         <span className="text-sm text-(--pt-muted)">
           {formatDocumentDate(doc.createdAt)}
