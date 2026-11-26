@@ -67,3 +67,13 @@ export function findLoose(text: string, snippet: string, taken: Array<{ start: n
   }
   return null;
 }
+
+/** A readable title from the contract's own heading (e.g. "Production services agreement"), else the file name. */
+export function contractTitle(text: string, fileName?: string) {
+  const first = text.split("\n")[0]?.match(/^([A-Z][A-Z &,'-]{6,60}?)(?=\s+(?:Date|This|THIS|Dated|Effective|\d)|$)/)?.[1];
+  if (first && first === first.toUpperCase()) {
+    const lower = first.trim().toLowerCase();
+    return lower[0].toUpperCase() + lower.slice(1);
+  }
+  return (fileName ?? "Your contract").replace(/\.[a-z0-9]{2,5}$/i, "");
+}

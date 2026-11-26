@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { searchDocuments } from "@/lib/documentSearch";
+import { invalidateDocumentIndex, loadDocumentIndex, peekDocumentIndex } from "@/lib/documentSearchIndex";
 import { formatDocumentDate, VerdictBadge } from "@/components/DocumentRow";
 import Dialog from "@/components/ui/Dialog";
 import type { DocumentSummary, DocumentsPage } from "@/lib/serverApi";
@@ -73,14 +75,32 @@ export default function DocumentsBoard({ initial, isPro }: { initial: DocumentsP
   const [pendingDelete, setPendingDelete] = useState<DocumentSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Typing searches every document's contents with the same engine as the top-bar search.
+  const [indexReady, setIndexReady] = useState(() => Boolean(peekDocumentIndex()));
+  const deferredQuery = useDeferredValue(query);
+  const searching = query.trim().length > 0;
+  useEffect(() => {
+    if (!searching || indexReady) return;
+    let cancelled = false;
+    loadDocumentIndex()
+      .then(() => {
+        if (!cancelled) setIndexReady(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [searching, indexReady]);
+
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return documents.filter(
-      (doc) =>
-        (!q || doc.fileName.toLowerCase().includes(q)) &&
-        (filter === "all" || (doc.status !== "refining" && doc.recommendationAction === filter)),
-    );
-  }, [documents, query, filter]);
+    const q = deferredQuery.trim();
+    const byVerdict = (doc: DocumentSummary) => filter === "all" || (doc.status !== "refining" && doc.recommendationAction === filter);
+    const cache = indexReady ? peekDocumentIndex() : null;
+    if (q && cache) return searchDocuments(cache.index, q, { limit: 200 }).hits.map((h) => h.record).filter(byVerdict);
+    // Until the index has loaded, fall back to matching file names.
+    const lower = q.toLowerCase();
+    return documents.filter((doc) => (!lower || doc.fileName.toLowerCase().includes(lower)) && byVerdict(doc));
+  }, [documents, deferredQuery, filter, indexReady]);
 
   async function loadMore() {
     if (!cursor) return;
@@ -106,6 +126,8 @@ export default function DocumentsBoard({ initial, isPro }: { initial: DocumentsP
       const res = await fetch(`/api/documents/${encodeURIComponent(pendingDelete.id)}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       setDocuments((current) => current.filter((doc) => doc.id !== pendingDelete.id));
+      invalidateDocumentIndex();
+      setIndexReady(false);
       setPendingDelete(null);
     } catch {
       setError("That document couldn't be deleted. Please try again.");
@@ -140,7 +162,7 @@ export default function DocumentsBoard({ initial, isPro }: { initial: DocumentsP
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by file name"
+            placeholder="Search your documents"
             className="h-10 w-full rounded-(--pt-radius-control) border-[1.5px] border-(--pt-ink) bg-white pl-10 pr-4 text-[0.9375rem] text-(--pt-ink) placeholder:text-(--pt-muted) focus:outline-none"
           />
         </label>

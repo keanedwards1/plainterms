@@ -1279,6 +1279,18 @@ Resources:
             RestApiId: !Ref PlainTermsApi
             Path: /documents
             Method: OPTIONS
+        DocumentsSearchIndexGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /documents/search-index
+            Method: GET
+        DocumentsSearchIndexOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PlainTermsApi
+            Path: /documents/search-index
+            Method: OPTIONS
         DocumentByIdDelete:
           Type: Api
           Properties:

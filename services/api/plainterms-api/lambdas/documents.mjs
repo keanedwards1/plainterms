@@ -1,11 +1,12 @@
 import { jsonResponse, optionsResponse } from "./lib/http.mjs";
 import { requireUser } from "./lib/auth.mjs";
-import { deleteResultAndUpload, getResultItem, listOwnerDocuments } from "./lib/documents.mjs";
+import { deleteResultAndUpload, getResultItem, listOwnerDocuments, listOwnerSearchRecords } from "./lib/documents.mjs";
 
 const METHODS = "GET,DELETE,OPTIONS";
 
 /**
  * GET /documents?cursor=&limit=  — the signed-in user's documents, newest first.
+ * GET /documents/search-index?cursor= — the same documents with their text, for search.
  * DELETE /documents/{id}         — delete one of them (and its uploaded file).
  */
 export const handler = async (event) => {
@@ -19,6 +20,11 @@ export const handler = async (event) => {
   const { userId } = auth.user;
 
   try {
+    if (event.httpMethod === "GET" && String(event.resource ?? event.path ?? "").endsWith("/search-index")) {
+      const query = event.queryStringParameters ?? {};
+      const page = await listOwnerSearchRecords(userId, { cursor: query.cursor });
+      return jsonResponse(event, 200, page, METHODS);
+    }
     if (event.httpMethod === "GET") {
       const query = event.queryStringParameters ?? {};
       const page = await listOwnerDocuments(userId, { cursor: query.cursor, limit: query.limit });

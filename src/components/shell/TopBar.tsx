@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AccountMenu from "@/components/AccountMenu";
 import Logo from "@/components/shell/Logo";
+import SearchPanel from "@/components/search/SearchPanel";
 
 export type HeaderUser = {
   name: string;
@@ -32,13 +33,7 @@ export default function TopBar({ user }: { user: HeaderUser | null }) {
       <div className="pt-container-wide pt-topbar">
         <Logo className="min-[820px]:hidden" />
         {user ? (
-          <Link href="/documents" className="pt-search">
-            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <circle cx="11" cy="11" r="6" />
-              <path d="m20 20-4.5-4.5" />
-            </svg>
-            <span className="truncate">Search your documents</span>
-          </Link>
+          <SearchPanel />
         ) : null}
         <span className="flex-1" />
         {user ? (

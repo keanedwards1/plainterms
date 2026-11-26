@@ -4,7 +4,7 @@ import "./review.css";
 import Link from "next/link";
 import { useId, useMemo, useRef, useState } from "react";
 import type { PtResult, PtReview, PtReviewIssue } from "@/lib/plainterms-schema";
-import { formatContractText } from "@/lib/contractText";
+import { contractTitle, formatContractText } from "@/lib/contractText";
 import { datesCalendar, declineEmail, downloadText, mailtoHref, negotiationEmail, type SendMode } from "@/lib/reviewSend";
 import ProUpgradeDialog from "@/components/ProUpgradeDialog";
 import HalftoneDisc from "@/components/art/HalftoneDisc";
@@ -27,16 +27,6 @@ type Props = {
   signedIn: boolean;
   classicHref: string;
 };
-
-/** A readable title from the contract's own heading, else the file name. */
-function contractTitle(text: string, fileName?: string) {
-  const first = text.split("\n")[0]?.match(/^([A-Z][A-Z &,'-]{6,60}?)(?=\s+(?:Date|This|THIS|Dated|Effective|\d)|$)/)?.[1];
-  if (first && first === first.toUpperCase()) {
-    const lower = first.trim().toLowerCase();
-    return lower[0].toUpperCase() + lower.slice(1);
-  }
-  return (fileName ?? "Your contract").replace(/\.[a-z0-9]{2,5}$/i, "");
-}
 
 /** One what-if row that opens smoothly (height and fade), with a plus that turns into a minus. */
 function WhatIf({ q, a }: { q: string; a: string }) {
