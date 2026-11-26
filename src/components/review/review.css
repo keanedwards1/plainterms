@@ -217,8 +217,14 @@
   .rv-trow b { font: 500 11.5px/1.5 var(--rv-mono); text-transform: uppercase; letter-spacing: 0.02em; color: var(--pt-muted); }
   .rv-card-foot { margin-top: auto; padding-top: 16px; }
   .rv-loose { margin-bottom: 16px; }
-  .rv-loose .rv-checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 4px 28px; }
-  .rv-loose .rv-checks label { border-top: 0; }
+  .rv-loose .rv-card-h { justify-content: flex-start; align-items: center; gap: 12px; margin-bottom: 18px !important; }
+  .rv-loose .rv-card-h .rv-label { padding: 4px 9px; border-radius: 999px; background: var(--pt-surface-soft); }
+  .rv-loose .rv-checks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .rv-loose .rv-checks label { border-top: 0; padding: 16px 18px; gap: 12px; border-radius: var(--pt-radius); background: var(--pt-surface-soft); transition: opacity 0.15s; }
+  .rv-loose .rv-checks label:has(input:checked) { opacity: 0.6; }
+  .rv-loose .rv-checks small { margin-top: 3px; line-height: 1.45; }
+  @media (max-width: 1100px) { .rv-loose .rv-checks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 700px) { .rv-loose .rv-checks { grid-template-columns: 1fr; } }
   .rv-wi-q { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border: 0; background: none; color: inherit; font: 600 16px/1.35 var(--rv-body); text-align: left; }
   .rv-wi-icon { position: relative; width: 12px; height: 12px; flex: none; color: var(--pt-muted); }
   .rv-wi-icon::before, .rv-wi-icon::after { content: ""; position: absolute; left: 0; top: 5.25px; width: 12px; height: 1.5px; border-radius: 1px; background: currentColor; transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1); }
