@@ -110,7 +110,8 @@ export default function ContractNotes({ text, issues, revision, canSeeRevision, 
       taken.push(range);
       out.push({ n: i + 1, issue, ...range });
     });
-    return out;
+    // Number and list the notes in reading order, so each sits beside its highlight.
+    return out.sort((a, b) => a.start - b.start).map((m, i) => ({ ...m, n: i + 1 }));
   }, [text, issues]);
 
   // Line each margin note up with its highlight, without overlapping.
