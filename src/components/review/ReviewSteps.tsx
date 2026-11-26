@@ -104,6 +104,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
   const [choice, setChoice] = useState<Choice>(review.verdict.action === "sign" ? "sign" : "negotiate");
   const [picked, setPicked] = useState<Set<string>>(() => new Set(issues.filter((i) => i.priority !== "nice").map((i) => i.id)));
   const [checked, setChecked] = useState<Set<number>>(() => new Set());
+  const [showFallbacks, setShowFallbacks] = useState(false);
   const [mode, setMode] = useState<SendMode>(canEditContract ? "both" : "email");
   const [emailView, setEmailView] = useState<"email" | "call">("email");
   const [editedEmail, setEditedEmail] = useState<{ key: string; body: string } | null>(null);
@@ -360,6 +361,18 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
         <div className="grid gap-4">
           {choice === "negotiate" ? (
             <section className="pt-panel rv-card">
+              <div className="rv-asks-bar">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showFallbacks}
+                  className="rv-toggle"
+                  onClick={() => setShowFallbacks((v) => !v)}
+                >
+                  <span className="rv-toggle-track" aria-hidden="true" />
+                  Show what to accept if they say no
+                </button>
+              </div>
               <div className="rv-asks">
                 {issues.map((issue) => (
                   <label key={issue.id} className="rv-ask">
@@ -379,7 +392,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
                             <G>{issue.ask_short}</G>
                           </span>
                         </div>
-                        {issue.fallback ? (
+                        {showFallbacks && issue.fallback ? (
                           <div>
                             <span className="rv-k">If they say no</span>
                             <span>
