@@ -379,14 +379,14 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
                       </span>
                       <div className="rv-lines">
                         <div>
-                          <span className="rv-k">Ask for</span>
+                          <span className="rv-k">Revision</span>
                           <span>
                             <G>{issue.ask_short}</G>
                           </span>
                         </div>
                         {showFallbacks && issue.fallback ? (
                           <div>
-                            <span className="rv-k">If they say no</span>
+                            <span className="rv-k">Fallback</span>
                             <span>
                               <G>{issue.fallback}</G>
                             </span>
