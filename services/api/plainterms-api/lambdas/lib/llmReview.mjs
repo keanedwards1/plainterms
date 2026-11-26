@@ -320,14 +320,14 @@ Return ONLY this JSON object:
       "redline": {"before": "the full contract sentence or sentences to replace, copied character for character", "after": "replacement wording in the contract's own style that fixes the issue"}
     }
   ],
-  "checklist": [{"title": "up to 7 words", "detail": "up to 16 words"}],
+  "checklist": [{"title": "up to 7 words", "detail": "up to 16 words, naming the clause or blank it comes from"}],
   "sign_as_is": [{"severity": "high|medium|low", "text": "what your client accepts by signing unchanged, up to 18 words"}],
   "dates": [{"when": "short timing label from the contract, e.g. On signing", "what": "up to 10 words"}],
   "what_ifs": [{"q": "a likely situation, up to 6 words", "a": "what the contract says happens, up to 40 words, citing the clause like (§3)"}],
   "questions": ["up to 4 questions to ask the other side before signing"]
 }
 
-The checklist is practical things to get or check before signing, separate from the asks: missing attachments, blanks to fill in, who signs and their authority, licences or insurance to verify, copies to keep. Give 3 to 6 checklist items, 3 to 6 sign_as_is lines and 3 to 6 what_ifs. Use "redline": null when an issue can't be fixed by editing existing text.
+The checklist is loose ends in THIS contract to tie up before signing, separate from the asks: blanks left unfilled, attachments it refers to that are missing, details it leaves undefined (for example where notices go). Every item must point to something specific in, or missing from, this contract. No generic admin advice (keeping records, setting up payment, reading the brief). Give 0 to 5 checklist items; an empty list is fine. Give 3 to 6 sign_as_is lines and 3 to 6 what_ifs. Use "redline": null when an issue can't be fixed by editing existing text.
 
 Contract text:
 ${extractedText}

@@ -313,11 +313,9 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
   );
 
   const checklist = review.checklist.length ? (
-    <aside className="pt-panel rv-card">
+    <section className="pt-panel rv-card rv-loose">
       <div className="rv-card-h" style={{ marginBottom: 6 }}>
-        <h3 className="rv-label" style={{ fontSize: 14 }}>
-          Before you sign
-        </h3>
+        <h3>Before you sign: loose ends to tie up</h3>
         <span className="rv-label">
           {checked.size} of {review.checklist.length}
         </span>
@@ -348,7 +346,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
           </label>
         ))}
       </div>
-    </aside>
+    </section>
   ) : null;
 
   const prepare = (
@@ -365,7 +363,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
           </button>
         ) : null}
       </div>
-      <div className="rv-prep" data-solo={choice === "walk" || !checklist}>
+      <div className="rv-prep" data-solo="true">
         <div className="grid gap-4">
           {choice === "negotiate" ? (
             <section className="pt-panel rv-card">
@@ -436,7 +434,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
             </section>
           )}
         </div>
-        {choice === "walk" ? null : checklist}
       </div>
       <div className="rv-nav">
         {back(2, "Options")}
@@ -627,6 +624,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
         <h2 className="rv-step-title">Confirmation</h2>
         <p className="rv-lead">The dates to keep, and what the contract says if something goes wrong.</p>
       </div>
+      {choice === "walk" ? null : checklist}
       <div className="rv-track">
         <section className="pt-panel rv-card">
           <div className="rv-card-h">
