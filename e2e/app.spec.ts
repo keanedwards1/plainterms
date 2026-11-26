@@ -9,11 +9,11 @@ test.describe("home workspace", () => {
     await expect(page.getByRole("navigation", { name: "Tools" }).getByRole("link", { name: "Explain a letter" })).toBeVisible();
   });
 
-  test("sample contract fills the paste box and enables Read it", async ({ page }) => {
+  test("sample contract fills the paste box and enables Submit", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Try a sample contract" }).click();
     await expect(page.getByLabel("Document text")).toHaveValue(/HOME IMPROVEMENT AGREEMENT/);
-    await expect(page.getByRole("button", { name: "Read it" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Submit" })).toBeEnabled();
   });
 
   test("rejects unsupported file types before uploading", async ({ page }) => {

@@ -45,7 +45,7 @@ async function addContractAndRead(user: ReturnType<typeof userEvent.setup>, cont
   const input = container.querySelector('input[type="file"]') as HTMLInputElement;
   await user.upload(input, new File(["This agreement is between Harbor and Luna."], "contract.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }));
   await screen.findByText("Ready to analyze");
-  await user.click(screen.getByRole("button", { name: /Read it/ }));
+  await user.click(screen.getByRole("button", { name: /Submit/ }));
 }
 
 describe("Workspace asks which party you are", () => {

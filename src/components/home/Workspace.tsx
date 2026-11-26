@@ -228,7 +228,7 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
     ? prepareState === "uploading" || prepareState === "checking"
       ? "Preparing…"
       : "Analyzing…"
-    : "Read it";
+    : "Submit";
 
   const readButton = (
     <button
@@ -314,7 +314,7 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
             Drop a contract or lease here, or <span className="font-medium text-(--pt-ink) underline underline-offset-4">choose a file</span>
           </span>
           <span className="pt-btn pt-btn-solid hidden h-11 shrink-0 px-5 text-[0.9375rem] sm:inline-flex">
-            Read it
+            Submit
             <ArrowIcon />
           </span>
           <input
