@@ -11,6 +11,7 @@ import {
 } from "./lib/precheckToken.mjs";
 import { scanBufferForMalwareSignals } from "./lib/malwareScan.mjs";
 import { jsonResponse, methodGuard, parseJsonBody } from "./lib/http.mjs";
+import { detectParties } from "./lib/detectParties.mjs";
 
 const s3 = new S3Client({});
 const METHODS = "POST,OPTIONS";
@@ -159,6 +160,9 @@ export const handler = async (event) => {
     }, METHODS);
   }
 
+  // Who the contract is between, so the user can say which side they're on before analysis.
+  const parties = await detectParties(extraction.extractedText).catch(() => []);
+
   const precheckToken = await createPrecheckToken({
     objectKey: objectKeyCheck.objectKey,
     filename: metaCheck.filename,
@@ -166,11 +170,13 @@ export const handler = async (event) => {
     size: headSize,
     scanPassed: true,
     textExtractionPrecheckPassed: true,
+    parties: parties.map((p) => p.name),
   });
 
   return jsonResponse(event, 200, {
     precheckPassed: true,
     precheckToken,
+    parties,
     expiresInSec: getPrecheckTokenTtlSec(),
     extraction: {
       detectedType: extraction.extraction.detectedType,

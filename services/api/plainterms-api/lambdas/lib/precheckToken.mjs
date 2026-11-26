@@ -49,6 +49,7 @@ export async function createPrecheckToken({
   size,
   scanPassed,
   textExtractionPrecheckPassed,
+  parties = [],
 }) {
   const nowSec = Math.floor(Date.now() / 1000);
   const ttlSec = getTokenTtlSec();
@@ -62,6 +63,8 @@ export async function createPrecheckToken({
     size: Number(size),
     scanPassed: scanPassed === true,
     textExtractionPrecheckPassed: textExtractionPrecheckPassed === true,
+    // Party names found in the contract; the user may pick one of these at analyze time.
+    parties: (Array.isArray(parties) ? parties : []).slice(0, 4).map((name) => String(name).slice(0, 120)),
   };
 
   const payloadEncoded = base64UrlEncodeJson(payload);

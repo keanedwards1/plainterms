@@ -29,8 +29,6 @@ type Props = {
   review: PtReview;
   signedIn: boolean;
   classicHref: string;
-  switching: { state: "processing" | "ready" | "failed"; party?: string; message?: string } | null;
-  onSwitchSide: (party: string) => void;
 };
 
 /** A readable title from the contract's own heading, else the file name. */
@@ -64,7 +62,7 @@ function Steps({ step, setStep, labels }: { step: number; setStep: (n: number) =
   );
 }
 
-export default function ReviewSteps({ data, review, signedIn, classicHref, switching, onSwitchSide }: Props) {
+export default function ReviewSteps({ data, review, signedIn, classicHref }: Props) {
   const issues = review.issues;
   const other = review.perspective.other_short || review.perspective.other_party;
   const text = useMemo(() => formatContractText(data.document?.extracted_text ?? ""), [data.document?.extracted_text]);
@@ -81,7 +79,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref, switc
   const [editedEmail, setEditedEmail] = useState<{ key: string; body: string } | null>(null);
   const [copied, setCopied] = useState("");
   const [proFeature, setProFeature] = useState<string | null>(null);
-  const [sidesOpen, setSidesOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
 
   const counts = { high: 0, medium: 0, low: 0 };
@@ -89,7 +86,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref, switc
   const pickedIssues = issues.filter((i) => picked.has(i.id));
   const title = contractTitle(text, data.document?.file_name);
   const fileBase = (data.document?.file_name ?? title).replace(/\.[a-z0-9]{2,5}$/i, "");
-  const otherParties = review.perspective.parties.filter((p) => p.name.toLowerCase() !== review.perspective.party.toLowerCase());
 
   function setStep(n: number) {
     setStepState(n);
@@ -143,31 +139,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref, switc
         <p className="rv-label">
           Step 1 of {N} · Reviewed for {review.perspective.party}
           {review.perspective.role ? `, the ${review.perspective.role}` : ""}
-          {otherParties.length ? (
-            <button type="button" className="rv-link rv-switch" aria-expanded={sidesOpen} onClick={() => setSidesOpen((o) => !o)}>
-              Switch side
-            </button>
-          ) : null}
         </p>
-        {sidesOpen ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-sm text-(--pt-muted)">Review it for:</span>
-            {otherParties.map((p) => (
-              <button
-                key={p.name}
-                type="button"
-                className="pt-btn pt-btn-outline h-9 px-3 text-sm"
-                onClick={() => {
-                  setSidesOpen(false);
-                  onSwitchSide(p.name);
-                }}
-              >
-                {p.name}
-                {p.role ? ` (${p.role})` : ""}
-              </button>
-            ))}
-          </div>
-        ) : null}
         <h2 className="rv-step-title mt-1">{review.verdict.headline}</h2>
         <p className="rv-lead">
           <G>{review.verdict.line}</G>
@@ -732,17 +704,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref, switc
           </Link>
         </div>
       </div>
-
-      {switching?.state === "processing" ? (
-        <p role="status" className="pt-panel mb-4 flex items-center gap-3 px-4 py-3 text-sm">
-          <span className="pt-spinner shrink-0" aria-hidden="true" />
-          Reviewing it again for {switching.party}. This takes about a minute.
-        </p>
-      ) : switching?.state === "failed" ? (
-        <p role="status" className="pt-panel mb-4 px-4 py-3 text-sm">
-          {switching.message || "We couldn't review it from that side. Try again."}
-        </p>
-      ) : null}
 
       <div ref={navRef}>
         <Steps step={step} setStep={setStep} labels={labels} />

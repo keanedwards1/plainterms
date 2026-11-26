@@ -87,10 +87,15 @@ export const handler = async (event, _context, deps = {}) => {
     }
     reserved = true;
 
+    // The side the user said they're on, if it's one of the parties found at precheck.
+    const requested = typeof parsed.payload.party === "string" ? parsed.payload.party.trim().toLowerCase() : "";
+    const reviewParty = (gate.tokenPayload.parties ?? []).find((name) => String(name).toLowerCase() === requested) ?? "";
+
     const result = await runAnalysis(gate.upload, {}, { selectedAddons: [] }, {
       plan: user.plan,
       ownerUserId: userId,
       rulesOnly: true,
+      reviewParty,
     });
 
     let status = result.status;

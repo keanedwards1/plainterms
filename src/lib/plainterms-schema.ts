@@ -274,12 +274,6 @@ export const PtReview = z.object({
 export type PtReview = z.infer<typeof PtReview>;
 export type PtReviewIssue = z.infer<typeof PtReviewIssue>;
 
-export const PtReviewStatus = z.object({
-  state: z.enum(["processing", "ready", "failed"]),
-  party: z.string().optional(),
-  message: z.string().optional(),
-});
-
 export const PtResult = z.object({
   schema_version: z.literal("pt.ui.v1"),
   result_id: z.string(),
@@ -301,8 +295,6 @@ export const PtResult = z.object({
   expires_at: z.number().nullable().optional(),
   // A malformed review never breaks the page: it drops out and the classic view shows.
   review: PtReview.optional().catch(undefined),
-  review_alt: PtReview.optional().catch(undefined),
-  review_status: PtReviewStatus.optional().catch(undefined),
 });
 
 export type PtResult = z.infer<typeof PtResult>;

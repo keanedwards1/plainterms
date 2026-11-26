@@ -21,7 +21,7 @@ import { SAMPLE_CONTRACT_NAME, SAMPLE_CONTRACT_TEXT } from "@/lib/sampleContract
 
 type Mode = "file" | "paste";
 type PrepareState = "idle" | PrepareStage | "ready" | "error";
-type DialogKind = null | "sign-in" | "limit";
+type DialogKind = null | "sign-in" | "limit" | "party";
 
 const MIN_PASTE_WORDS = 40;
 
@@ -72,6 +72,7 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [dragging, setDragging] = useState(false);
+  const [awaitingParty, setAwaitingParty] = useState<PreparedUpload | null>(null);
 
   const preparing = useRef<Promise<PreparedUpload> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,10 +115,10 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  const runAnalysis = useCallback(async (prepared: PreparedUpload) => {
+  const runAnalysis = useCallback(async (prepared: PreparedUpload, party?: string) => {
     setAnalyzing(true);
     setError(null);
-    const outcome = await startAnalysis(prepared);
+    const outcome = await startAnalysis(prepared, party);
     if (outcome.ok) {
       window.location.assign(resultPath(outcome.started.resultId));
       return;
@@ -138,6 +139,27 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
       setError(failure.message);
     }
   }, []);
+
+  // Before the analysis runs, ask which party the user is so the review is written for their side.
+  const askSideThenRun = useCallback(
+    (prepared: PreparedUpload) => {
+      if (prepared.parties.length >= 2) {
+        setAnalyzing(false);
+        setAwaitingParty(prepared);
+        setDialog("party");
+        return;
+      }
+      void runAnalysis(prepared);
+    },
+    [runAnalysis]
+  );
+
+  function chooseSide(party?: string) {
+    const prepared = awaitingParty;
+    setDialog(null);
+    setAwaitingParty(null);
+    if (prepared) void runAnalysis(prepared, party);
+  }
 
   async function onAnalyze() {
     setError(null);
@@ -171,7 +193,7 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
       setDialog("sign-in");
       return;
     }
-    await runAnalysis(prepared);
+    askSideThenRun(prepared);
   }
 
   // Coming back from sign-in: pick up the stashed upload and analyze it.
@@ -193,13 +215,13 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
       if (!resume || !signedIn) return;
       const pending = takePendingAnalysis();
       if (pending) {
-        void runAnalysis(pending);
+        askSideThenRun(pending);
       } else {
         setError("Your upload expired while you were signing in. Add the contract again.");
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [signedIn, runAnalysis]);
+  }, [signedIn, askSideThenRun]);
 
   const canAnalyze = mode === "file" ? Boolean(file) && prepareState !== "error" : pasted.trim().length > 0;
   const buttonLabel = analyzing
@@ -352,6 +374,34 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
             Create a free account
           </a>
           <p className="mt-1 text-center text-xs text-(--pt-muted)">Google, Microsoft, Apple or email.</p>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={dialog === "party"}
+        onClose={() => {
+          setDialog(null);
+          setAwaitingParty(null);
+        }}
+        title="Which one are you?"
+        description="We'll review the contract from your side."
+      >
+        <div className="flex flex-col gap-2.5">
+          {awaitingParty?.parties.map((party, i) => (
+            <button
+              key={party.name}
+              type="button"
+              onClick={() => chooseSide(party.name)}
+              className="pt-btn pt-btn-outline justify-between px-5 py-3 text-left text-base"
+              autoFocus={i === 0}
+            >
+              <span className="min-w-0 truncate">{party.name}</span>
+              {party.role ? <span className="shrink-0 text-sm font-normal text-(--pt-muted)">{party.role}</span> : null}
+            </button>
+          ))}
+          <button type="button" onClick={() => chooseSide()} className="pt-btn pt-btn-ghost px-5 py-3 text-base">
+            Someone else, or not sure
+          </button>
         </div>
       </Dialog>
 

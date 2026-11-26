@@ -808,6 +808,7 @@ async function buildAnalysisArtifacts({
         extractedText: extraction.extractedText,
         analysisMode: finalSelection.analysisMode,
         llmModel: finalSelection.llmModel,
+        party: runOptions.reviewParty || undefined,
       }).catch((err) => ({ ok: false, review: null, reason: `review_error:${err instanceof Error ? err.message : String(err)}` }))
     : Promise.resolve({ ok: false, review: null, reason: "not_attempted" });
 
@@ -990,6 +991,9 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
     if (runOptions.ownerUserId) {
       item.owner_user_id = { S: String(runOptions.ownerUserId) };
     }
+    if (runOptions.reviewParty) {
+      item.review_party = { S: String(runOptions.reviewParty).slice(0, 120) };
+    }
   }
 
   await db.send(new PutItemCommand({ TableName: process.env.RESULTS_TABLE, Item: item }));
@@ -1035,7 +1039,7 @@ export async function refineStoredAnalysis(resultId) {
       normalizedPayload,
       resultId,
       createdAt: item.created_at?.S ?? new Date().toISOString(),
-      runOptions: { plan },
+      runOptions: { plan, reviewParty: item.review_party?.S ?? "" },
     });
   } catch (err) {
     // Keep the instant result; it is still a complete, usable report.

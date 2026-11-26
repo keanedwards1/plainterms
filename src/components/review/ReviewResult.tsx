@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { PtResult as PtResultSchema, type PtResult } from "@/lib/plainterms-schema";
 import TrackResultViewed from "@/components/TrackResultViewed";
 import ClassicResult from "@/components/result/ClassicResult";
@@ -17,18 +17,15 @@ type Props = {
 const POLL_MS = 3500;
 const GIVE_UP_MS = 6 * 60 * 1000;
 
-/** Keeps the step-by-step page current while the review, a side switch or the revised draft is being written. */
+/** Keeps the step-by-step page current while the review or the revised draft is being written. */
 export default function ReviewResult({ initial, retentionDays, accessKey, abVariant, signedIn }: Props) {
   const [data, setData] = useState(initial);
-  const [pollKey, setPollKey] = useState(0);
-  const [switchError, setSwitchError] = useState<string | null>(null);
   const query = accessKey ? `?k=${encodeURIComponent(accessKey)}` : "";
   const id = initial.result_id;
 
   const canSeeRevision = data.entitlements ? data.entitlements.revised_document : true;
   const waiting =
     data.analysis_stage === "refining" ||
-    data.review_status?.state === "processing" ||
     (canSeeRevision && data.document?.revision?.status === "processing");
 
   useEffect(() => {
@@ -53,32 +50,7 @@ export default function ReviewResult({ initial, retentionDays, accessKey, abVari
       stopped = true;
       window.clearInterval(timer);
     };
-  }, [waiting, id, query, pollKey]);
-
-  const switchSide = useCallback(
-    async (party: string) => {
-      setSwitchError(null);
-      try {
-        const res = await fetch(`/api/result/${encodeURIComponent(id)}/side${query}`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ party }),
-        });
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        if (!res.ok && res.status !== 202) {
-          setSwitchError(body.error ?? "We couldn't review it from that side. Try again.");
-          return;
-        }
-        const fresh = await fetch(`/api/result/${encodeURIComponent(id)}${query}`, { cache: "no-store" });
-        const parsed = PtResultSchema.safeParse(await fresh.json());
-        if (parsed.success) setData(parsed.data);
-        setPollKey((k) => k + 1);
-      } catch {
-        setSwitchError("We couldn't review it from that side. Try again.");
-      }
-    },
-    [id, query]
-  );
+  }, [waiting, id, query]);
 
   const classicHref = `/result/${encodeURIComponent(id)}/classic${query}`;
   const review = data.review;
@@ -92,7 +64,7 @@ export default function ReviewResult({ initial, retentionDays, accessKey, abVari
             <div role="status" aria-live="polite" className="pt-panel flex items-center gap-3 px-5 py-4">
               <span className="pt-spinner shrink-0" aria-hidden="true" />
               <p>
-                <span className="font-semibold">Reviewing your contract.</span> This takes about a minute, and the page updates by itself.
+                <span className="font-semibold">Reviewing your contract.</span> This usually takes about a minute.
               </p>
             </div>
             <div className="mt-5 grid gap-4" aria-hidden="true">
@@ -106,8 +78,6 @@ export default function ReviewResult({ initial, retentionDays, accessKey, abVari
     return <ClassicResult data={data} retentionDays={retentionDays} accessKey={accessKey} abVariant={abVariant} signedIn={signedIn} />;
   }
 
-  const switching = switchError ? { state: "failed" as const, message: switchError } : data.review_status ?? null;
-
   return (
     <main className="pt-page-pad py-5">
       <TrackResultViewed resultId={id} />
@@ -118,8 +88,6 @@ export default function ReviewResult({ initial, retentionDays, accessKey, abVari
           review={review}
           signedIn={signedIn}
           classicHref={classicHref}
-          switching={switching}
-          onSwitchSide={switchSide}
         />
       </div>
     </main>

@@ -8,6 +8,8 @@ const AnalyzeRequest = z.object({
   contentType: z.string().min(1),
   size: z.number().int().positive(),
   precheckToken: z.string().min(1),
+  // The side the user said they're on; must be one of the parties found at precheck.
+  party: z.string().max(160).optional(),
 });
 
 const AnalyzeResponse = z.object({

@@ -11,6 +11,7 @@ const PrecheckRequest = z.object({
 const PrecheckResponse = z.object({
   precheckPassed: z.boolean(),
   precheckToken: z.string().min(1),
+  parties: z.array(z.object({ name: z.string(), role: z.string() })).max(4).optional(),
   expiresInSec: z.number().int().positive().optional(),
   checks: z
     .object({

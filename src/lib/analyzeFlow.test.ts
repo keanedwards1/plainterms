@@ -17,6 +17,7 @@ function prepared(overrides: Partial<PreparedUpload> = {}): PreparedUpload {
     size: 1234,
     precheckToken: "token",
     preparedAt: Date.now(),
+    parties: [],
     ...overrides,
   };
 }
@@ -70,5 +71,19 @@ describe("helpers", () => {
     expect(prettyFileSize(512)).toBe("512 B");
     expect(prettyFileSize(2048)).toBe("2 KB");
     expect(prettyFileSize(3.5 * 1024 * 1024)).toBe("3.5 MB");
+  });
+});
+
+describe("stashed uploads keep their parties", () => {
+  it("restores the parties found at precheck after sign-in", () => {
+    stashPendingAnalysis(prepared({ parties: [{ name: "Luna Park Studio", role: "vendor" }, { name: "Harbor Media Inc.", role: "client" }] }));
+    expect(takePendingAnalysis()?.parties.map((p) => p.name)).toEqual(["Luna Park Studio", "Harbor Media Inc."]);
+  });
+
+  it("treats older stashed uploads as having no parties", () => {
+    const { parties: _parties, ...old } = prepared();
+    void _parties;
+    window.sessionStorage.setItem("pt.pendingAnalysis", JSON.stringify(old));
+    expect(takePendingAnalysis()?.parties).toEqual([]);
   });
 });

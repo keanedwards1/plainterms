@@ -603,6 +603,9 @@ Resources:
           PRECHECK_MIN_WORDS: "5"
           PRECHECK_TOKEN_TTL_SEC: "900"
           PRECHECK_TOKEN_SECRET_PARAM: !Ref PrecheckTokenSecretParamName
+          # A small model call names the parties when the rules can't.
+          LLM_BASE_URL: "https://api.openai.com/v1"
+          LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref UploadBucket
@@ -612,6 +615,7 @@ Resources:
               - ssm:GetParameter
             Resource:
               - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${PrecheckTokenSecretParamName}
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
       Events:
         PrecheckPost:
           Type: Api
@@ -980,74 +984,6 @@ Resources:
               - lambda:InvokeFunction
             Resource:
               - !GetAtt GenerateRevisionFunction.Arn
-
-  # Writes the contract review for the other side when the user switches sides.
-  GenerateReviewFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: lambdas/
-      Handler: generateReview.handler
-      Timeout: 300
-      MemorySize: 512
-      EventInvokeConfig:
-        MaximumRetryAttempts: 0
-      Environment:
-        Variables:
-          RESULTS_TABLE: !Ref ResultsTable
-          LLM_BASE_URL: "https://api.openai.com/v1"
-          LLM_MODEL: !Ref LlmModel
-          LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
-          FREE_LLM_MODEL: !Ref FreeLlmModel
-          PRO_LLM_MODEL: !Ref ProLlmModel
-          DOCUMENT_REVISION_FUNCTION_NAME: !Ref GenerateRevisionFunction
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ResultsTable
-        - Statement:
-            Effect: Allow
-            Action:
-              - ssm:GetParameter
-            Resource:
-              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
-        - Statement:
-            Effect: Allow
-            Action:
-              - lambda:InvokeFunction
-            Resource:
-              - !GetAtt GenerateRevisionFunction.Arn
-
-  SwitchSideFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: lambdas/
-      Handler: switchSide.handler
-      MemorySize: 512
-      Environment:
-        Variables:
-          RESULTS_TABLE: !Ref ResultsTable
-          REVIEW_FUNCTION_NAME: !Ref GenerateReviewFunction
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ResultsTable
-        - Statement:
-            Effect: Allow
-            Action:
-              - lambda:InvokeFunction
-            Resource:
-              - !GetAtt GenerateReviewFunction.Arn
-      Events:
-        SwitchSidePost:
-          Type: Api
-          Properties:
-            RestApiId: !Ref PlainTermsApi
-            Path: /result/{id}/side
-            Method: POST
-        SwitchSideOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref PlainTermsApi
-            Path: /result/{id}/side
-            Method: OPTIONS
 
   BillingCheckoutFunction:
     Type: AWS::Serverless::Function

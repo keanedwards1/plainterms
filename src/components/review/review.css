@@ -52,7 +52,6 @@
   /* step 1 */
   .rv-stage { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
   .rv-focus { padding: 32px 34px; }
-  .rv-switch { margin-left: 8px; color: var(--pt-ink); text-decoration: underline; text-underline-offset: 3px; text-transform: none; letter-spacing: 0; font-family: var(--rv-body); font-size: 13px; }
   .rv-risk { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 22px; align-items: center; margin-top: 22px; padding: 16px 20px; border-radius: var(--pt-radius-pop); background: var(--pt-surface-soft); }
   .rv-risk-num { font: 700 46px/1 var(--rv-display); letter-spacing: -0.04em; }
   .rv-risk-num small { font: 500 15px/1 var(--rv-body); color: var(--pt-muted); letter-spacing: 0; margin-left: 2px; }

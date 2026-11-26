@@ -8,6 +8,9 @@ import { getOrCreateFunnelId, trackFunnelMetric } from "@/lib/funnelMetrics";
 //   2. startAnalysis: POST /api/analyze (needs sign-in). If the user is signed
 //      out, the prepared upload is stashed and resumed after sign-in.
 
+/** A party named in the contract, e.g. { name: "Luna Park Studio", role: "vendor" }. */
+export type ContractParty = { name: string; role: string };
+
 export type PreparedUpload = {
   objectKey: string;
   filename: string;
@@ -15,7 +18,18 @@ export type PreparedUpload = {
   size: number;
   precheckToken: string;
   preparedAt: number;
+  /** Parties found in the contract, so the user can say which side they're on. */
+  parties: ContractParty[];
 };
+
+function cleanParties(value: unknown): ContractParty[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((p): p is { name: string; role?: unknown } => Boolean(p) && typeof (p as { name?: unknown }).name === "string")
+    .map((p) => ({ name: p.name.trim().slice(0, 120), role: typeof p.role === "string" ? p.role.trim().slice(0, 40) : "" }))
+    .filter((p) => p.name)
+    .slice(0, 4);
+}
 
 export type AnalysisStarted = {
   resultId: string;
@@ -114,7 +128,7 @@ export async function prepareUpload(
       (await readError(precheckRes, "We couldn't read this file. Try a different copy of the contract.")).message
     );
   }
-  const precheck = (await precheckRes.json()) as { precheckPassed?: boolean; precheckToken?: string };
+  const precheck = (await precheckRes.json()) as { precheckPassed?: boolean; precheckToken?: string; parties?: unknown };
   if (!precheck.precheckPassed || !precheck.precheckToken) {
     throw new UploadError("We couldn't read this file. Try a different copy of the contract.");
   }
@@ -126,18 +140,22 @@ export async function prepareUpload(
     size: file.size,
     precheckToken: precheck.precheckToken,
     preparedAt: Date.now(),
+    parties: cleanParties(precheck.parties),
   };
 }
 
+/** Starts the analysis. `party` is the side the user said they're on, if they picked one. */
 export async function startAnalysis(
-  prepared: PreparedUpload
+  prepared: PreparedUpload,
+  party?: string
 ): Promise<{ ok: true; started: AnalysisStarted } | { ok: false; failure: AnalyzeFailure }> {
-  const { preparedAt: _preparedAt, ...body } = prepared;
+  const { preparedAt: _preparedAt, parties: _parties, ...body } = prepared;
   void _preparedAt;
+  void _parties;
   const res = await fetch("/api/analyze", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(party ? { ...body, party } : body),
   });
 
   if (res.ok) {
@@ -172,7 +190,7 @@ export function takePendingAnalysis(): PreparedUpload | null {
     const parsed = JSON.parse(raw) as PreparedUpload;
     if (!parsed?.objectKey || !parsed.precheckToken) return null;
     if (Date.now() - Number(parsed.preparedAt ?? 0) > PENDING_MAX_AGE_MS) return null;
-    return parsed;
+    return { ...parsed, parties: cleanParties(parsed.parties) };
   } catch {
     return null;
   }
