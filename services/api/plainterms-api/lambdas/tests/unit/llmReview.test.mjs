@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { findVerbatim, normalizeReview, buildReviewPrompt } from "../../lib/llmReview.mjs";
+import { findVerbatim, normalizeReview, buildReviewPrompt, buildExtrasPrompt, mergeExtras } from "../../lib/llmReview.mjs";
 import { reviewRiskScore, reviewRiskLabel } from "../../lib/reviewScore.mjs";
 
 const CONTRACT = readFileSync(new URL("../fixtures/harbor-contract.txt", import.meta.url), "utf8");
@@ -168,4 +168,50 @@ test("reviewRiskScore bands and floors", () => {
 test("the prompt pins the side when a party is given", () => {
   assert.match(buildReviewPrompt({ extractedText: "x", party: "Harbor Media Inc." }), /You act for: Harbor Media Inc\./);
   assert.match(buildReviewPrompt({ extractedText: "x" }), /most likely to have been sent this contract/);
+});
+
+test("a core review waits for its extras, which merge in by issue id", () => {
+  const raw = rawReview();
+  const coreRaw = { ...raw, issues: raw.issues.map(({ ask_short, ask_email_line, fallback, walk_away_if, they_say, you_say, redline, ...core }) => core) };
+  delete coreRaw.checklist;
+  delete coreRaw.sign_as_is;
+  delete coreRaw.dates;
+  delete coreRaw.what_ifs;
+  delete coreRaw.questions;
+  const core = normalizeReview(coreRaw, CONTRACT, { extrasStatus: "processing" });
+  assert.equal(core.extras_status, "processing");
+  assert.equal(core.issues[0].ask_short, "");
+  assert.equal(core.issues[0].redline, null);
+  assert.deepEqual(core.checklist, []);
+
+  // The extras prompt names each issue by id so the answers can be matched.
+  assert.match(buildExtrasPrompt({ extractedText: CONTRACT, review: core }), /id i1 \[high\] §1 You'd owe work nobody has written down/);
+
+  const merged = mergeExtras(
+    core,
+    {
+      issues: [
+        {
+          id: "i1",
+          ask_short: "Attach Exhibit A and Appendix 1.",
+          they_say: "We'll send the SOW after you sign.",
+          redline: { before: "If any exhibit is unavailable at signing, Vendor will still perform services requested by Client.", after: "No work without a signed SOW." },
+        },
+        { id: "i2", ask_short: "Net 30.", redline: { before: "not in the contract", after: "x" } },
+        { id: "i9", ask_short: "Ignored, no such issue." },
+      ],
+      checklist: [{ title: "Read Exhibit A", detail: "It defines the job." }],
+    },
+    CONTRACT
+  );
+  assert.equal(merged.extras_status, "ready");
+  assert.equal(merged.issues[0].ask_short, "Attach Exhibit A and Appendix 1.");
+  assert.ok(merged.issues[0].redline);
+  assert.equal(merged.issues[1].ask_short, "Net 30.");
+  assert.equal(merged.issues[1].redline, null);
+  assert.equal(merged.issues[2].ask_short, "");
+  assert.equal(merged.checklist.length, 1);
+  // Core facts are untouched.
+  assert.deepEqual(merged.risk, core.risk);
+  assert.equal(merged.issues[0].quote, core.issues[0].quote);
 });
