@@ -240,20 +240,23 @@
   @media (max-width: 1100px) { .rv-track { grid-template-columns: 1fr; } }
 
   /* waiting: progress ticks and the clause catcher game */
-  .rv-wait { display: grid; gap: 18px; max-width: 640px; margin: 8px auto 0; }
-  .rv-ticks { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14.5px; color: var(--pt-muted); }
-  .rv-ticks li { display: inline-flex; align-items: center; gap: 8px; }
-  .rv-ticks li[data-state="done"] { color: var(--pt-ink); }
-  .rv-ticks li[data-state="now"] { color: var(--pt-ink); font-weight: 600; }
-  .rv-tickdot { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--rv-line2); flex: none; }
-  .rv-ticks li[data-state="done"] .rv-tickdot { border-color: var(--pt-good); background: var(--pt-good); color: #fff; }
-  .rv-game { display: grid; gap: 8px; }
-  .rv-game-bar { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-  .rv-game-stats { font: 500 12.5px/1 var(--rv-mono); color: var(--pt-muted); }
-  .rv-game-field { position: relative; overflow: hidden; border: 1.5px solid var(--pt-ink); border-radius: var(--pt-radius-pop); background: var(--pt-paper); touch-action: none; outline: none; }
-  .rv-game-field:focus-visible { box-shadow: 0 0 0 3px color-mix(in oklab, var(--pt-ink) 25%, transparent); }
-  .rv-game-overlay { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 16px; text-align: center; background: rgb(255 253 248 / 0.82); }
-  .rv-ready { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; }
+  .rv-wait { display: grid; justify-items: center; gap: 16px; max-width: 640px; margin: 24px auto 0; text-align: center; }
+  .rv-prog { width: min(100%, 520px); display: grid; gap: 10px; text-align: left; }
+  .rv-prog-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 15.5px; color: var(--pt-ink); }
+  .rv-prog-now { font: 500 12px/1.3 var(--rv-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--pt-muted); }
+  .rv-prog-bar { display: grid; grid-template-columns: 1fr 2fr 3fr; gap: 4px; }
+  .rv-prog-seg { height: 6px; border-radius: 999px; background: var(--rv-line2, #e3e0d4); overflow: hidden; }
+  .rv-prog-seg > span { display: block; height: 100%; border-radius: inherit; background: var(--pt-accent); transition: width 500ms linear; }
+  .rv-prog-steps { display: grid; grid-template-columns: 1fr 2fr 3fr; gap: 4px; margin: 0; padding: 0; list-style: none; font: 500 11px/1.3 var(--rv-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--pt-muted); }
+  .rv-prog-steps li { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+  .rv-prog-steps li[data-state="done"] { color: var(--pt-good); }
+  .rv-prog-steps li[data-state="now"] { color: var(--pt-ink); }
+  .rv-prog-note { font-size: 13.5px; color: var(--pt-muted); }
+  @media (prefers-reduced-motion: reduce) { .rv-prog-seg > span { transition: none; } }
+  /* The network loader (PlexusLoader.tsx). */
+  .rv-plexus { position: relative; width: min(100%, 620px); aspect-ratio: 4 / 3; }
+  .rv-plexus canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
 
   /* steps waiting on the background extras */
   .rv-pending { display: grid; gap: 14px; padding: 28px; }

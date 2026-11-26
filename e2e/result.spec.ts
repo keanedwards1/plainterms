@@ -118,15 +118,11 @@ test.describe("results that are still arriving", () => {
     }
   });
 
-  test("the wait shows progress and a game", async ({ page }) => {
+  test("the wait shows progress and the loader", async ({ page }) => {
     await page.goto("/result/fixture-harbor-refining");
     await expect(page.getByText("This usually takes about a minute.")).toBeVisible();
     await expect(page.getByRole("list", { name: "Progress" })).toContainText("Finding what matters");
-    await page.getByRole("button", { name: "Play while you wait" }).click();
-    await expect(page.getByRole("button", { name: "Play while you wait" })).toHaveCount(0);
-    await page.keyboard.down("ArrowLeft");
-    await page.keyboard.up("ArrowLeft");
-    await expect(page.getByText(/Score \d+/)).toBeVisible();
+    await expect(page.locator(".rv-plexus")).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   });

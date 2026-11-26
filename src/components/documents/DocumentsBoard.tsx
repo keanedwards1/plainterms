@@ -67,7 +67,6 @@ export default function DocumentsBoard({ initial, isPro }: { initial: DocumentsP
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(initial ? null : "Your documents couldn't be loaded. Refresh to try again.");
   const [pendingDelete, setPendingDelete] = useState<DocumentSummary | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   // Typing searches every document's contents with the same engine as the top-bar search.
   const [indexReady, setIndexReady] = useState(() => Boolean(peekDocumentIndex()));
@@ -113,21 +112,27 @@ export default function DocumentsBoard({ initial, isPro }: { initial: DocumentsP
     }
   }
 
+  // Optimistic: the card goes at once and comes back if the server says no.
   async function confirmDelete() {
-    if (!pendingDelete) return;
-    setDeleting(true);
+    const doc = pendingDelete;
+    if (!doc) return;
+    const at = documents.findIndex((d) => d.id === doc.id);
+    setPendingDelete(null);
+    setError(null);
+    setDocuments((current) => current.filter((d) => d.id !== doc.id));
     try {
-      const res = await fetch(`/api/documents/${encodeURIComponent(pendingDelete.id)}`, { method: "DELETE" });
+      const res = await fetch(`/api/documents/${encodeURIComponent(doc.id)}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      setDocuments((current) => current.filter((doc) => doc.id !== pendingDelete.id));
       invalidateDocumentIndex();
       setIndexReady(false);
-      setPendingDelete(null);
     } catch {
+      setDocuments((current) => {
+        if (current.some((d) => d.id === doc.id)) return current;
+        const next = [...current];
+        next.splice(Math.max(0, Math.min(at, next.length)), 0, doc);
+        return next;
+      });
       setError("That document couldn't be deleted. Please try again.");
-      setPendingDelete(null);
-    } finally {
-      setDeleting(false);
     }
   }
 
@@ -199,7 +204,6 @@ export default function DocumentsBoard({ initial, isPro }: { initial: DocumentsP
       <Dialog
         open={pendingDelete !== null}
         onClose={() => setPendingDelete(null)}
-        dismissible={!deleting}
         title="Delete this document?"
         description={
           pendingDelete ? (
@@ -211,11 +215,10 @@ export default function DocumentsBoard({ initial, isPro }: { initial: DocumentsP
         }
       >
         <div className="flex flex-col gap-2.5 sm:flex-row-reverse">
-          <button type="button" onClick={confirmDelete} disabled={deleting} className="pt-btn pt-btn-danger px-5 py-2.5">
-            {deleting ? <span className="pt-spinner" aria-hidden="true" /> : null}
+          <button type="button" onClick={confirmDelete} className="pt-btn pt-btn-danger px-5 py-2.5">
             Delete
           </button>
-          <button type="button" onClick={() => setPendingDelete(null)} disabled={deleting} className="pt-btn pt-btn-outline px-5 py-2.5" autoFocus>
+          <button type="button" onClick={() => setPendingDelete(null)} className="pt-btn pt-btn-outline px-5 py-2.5" autoFocus>
             Keep it
           </button>
         </div>
