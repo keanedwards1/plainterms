@@ -4,10 +4,10 @@
 // document, so it must render its own <html>/<body> and can't depend on the
 // app's global styles — keep it minimal and self-contained.
 export default function GlobalError({
-  reset,
+  retry,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
+  error: unknown;
+  retry: () => void;
 }) {
   return (
     <html lang="en">
@@ -37,7 +37,7 @@ export default function GlobalError({
           </p>
           <button
             type="button"
-            onClick={reset}
+            onClick={() => retry()}
             style={{
               cursor: "pointer",
               border: "1px solid #d9654f",

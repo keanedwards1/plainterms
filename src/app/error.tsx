@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 
 export default function Error({
   error,
-  reset,
+  retry,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
+  error: unknown;
+  retry: () => void;
 }) {
   useEffect(() => {
     // Surface to the browser console; server-side logging happens upstream.
@@ -33,17 +32,19 @@ export default function Error({
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={reset}
+            onClick={() => retry()}
             className="pt-btn-primary inline-flex w-full items-center justify-center px-5 py-3 text-sm font-semibold sm:w-auto"
           >
             Try again
           </button>
-          <Link
+          {/* A full page load, so it also recovers when the error happened on the home page itself. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a
             href="/"
             className="pt-btn-secondary inline-flex w-full items-center justify-center px-5 py-3 text-sm font-semibold sm:w-auto"
           >
             Back to home
-          </Link>
+          </a>
         </div>
       </section>
     </main>
