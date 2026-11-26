@@ -17,7 +17,7 @@ import { ICONS, Icon, RiskMeter, SevChip } from "@/components/review/parts";
 type Choice = "negotiate" | "sign" | "walk";
 
 const PRIORITY: Record<PtReviewIssue["priority"], string> = { must: "Must have", worth: "Worth asking", nice: "Nice to have" };
-const PREP_TITLE: Record<Choice, string> = { negotiate: "Prepare to negotiate", sign: "Signing as-is", walk: "Walk away" };
+const PREP_TITLE: Record<Choice, string> = { negotiate: "What would you like to revise?", sign: "Signing as-is", walk: "Walk away" };
 const SEND_TITLE: Record<Choice, string> = { negotiate: "Send your changes", sign: "Sign it", walk: "Let them know" };
 const N = 6;
 
