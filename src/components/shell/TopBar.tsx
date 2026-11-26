@@ -19,12 +19,18 @@ export default function TopBar({ user }: { user: HeaderUser | null }) {
   const [plan, setPlan] = useState<"free" | "pro" | null>(null);
   useEffect(() => {
     if (!user) return undefined;
-    const controller = new AbortController();
-    fetch("/api/me", { cache: "no-store", signal: controller.signal })
+    // A small request: let it finish and ignore the answer if the bar has gone (e.g. on the full-screen /new page).
+    // Aborting it instead surfaces as a runtime error in development.
+    let gone = false;
+    fetch("/api/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((account: { plan?: string } | null) => setPlan(account?.plan === "pro" ? "pro" : account?.plan === "free" ? "free" : null))
+      .then((account: { plan?: string } | null) => {
+        if (!gone) setPlan(account?.plan === "pro" ? "pro" : account?.plan === "free" ? "free" : null);
+      })
       .catch(() => {});
-    return () => controller.abort();
+    return () => {
+      gone = true;
+    };
   }, [user]);
   const signInHref = `/sign-in?returnTo=${encodeURIComponent(pathname)}`;
 
