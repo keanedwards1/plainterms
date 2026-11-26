@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import LogoLoader from "@/components/LogoLoader";
+import HomeSplash from "@/components/home/HomeSplash";
+import { RecentDocumentsSkeleton } from "@/components/Skeletons";
 import HeroClouds from "@/components/art/HeroClouds";
 import HeroWidgets from "@/components/art/HeroWidgets";
 import Stipple from "@/components/art/Stipple";
@@ -96,9 +97,7 @@ function RecentDocumentsLoading() {
   return (
     <section aria-label="Loading your recent documents" className="pt-legal-pad mt-16">
       <h2 className="text-[1.75rem] tracking-[-0.045em]">Pick up where you left off</h2>
-      <div className="pt-section-loading">
-        <LogoLoader label="Loading your recent documents" />
-      </div>
+      <RecentDocumentsSkeleton />
     </section>
   );
 }
@@ -108,6 +107,7 @@ export default async function HomePage() {
 
   return (
     <main className="pt-page-pad">
+      <HomeSplash />
       <div className="pt-container-wide">
         <section aria-labelledby="hero-heading" className="relative isolate pb-14 pt-12 text-center sm:pt-20">
           <div className="absolute inset-x-[-2.5rem] -top-24 -z-10">

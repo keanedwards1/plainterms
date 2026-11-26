@@ -563,15 +563,27 @@ html {
   0%, 12%, 100% { transform: translate(0, 0); }
   50%, 62% { transform: translate(-38px, -38px); }
 }
-/* A centred block that holds the loader while a section's data arrives. */
-.pt-section-loading {
+/* First-visit splash on the home page (HomeSplash.tsx). Fades on its own after 4s if scripts are slow. */
+.pt-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   display: grid;
   place-items: center;
-  min-height: 12rem;
-  padding: 2rem 0;
+  background: var(--pt-paper);
+  transition: opacity 450ms ease;
+  animation: pt-splash-out 450ms ease 4s forwards;
+}
+.pt-splash[data-state="out"] {
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes pt-splash-out {
+  to { opacity: 0; visibility: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
   .pt-ll-a, .pt-ll-b { animation: none; }
+  .pt-splash { transition: none; }
 }
 
 .pt-tab-loader {

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cache, Suspense } from "react";
 import { redirect } from "next/navigation";
 import DocumentsBoard from "@/components/documents/DocumentsBoard";
-import LogoLoader from "@/components/LogoLoader";
+import { DocumentCardsSkeleton } from "@/components/Skeletons";
 import { getSession, type Session } from "@/lib/auth";
 import { getAccount, getDocuments } from "@/lib/serverApi";
 import "@/components/home/home.css";
@@ -67,11 +67,7 @@ export default async function DocumentsPage() {
         </header>
 
         <Suspense
-          fallback={
-            <div className="pt-section-loading min-h-[20rem]">
-              <LogoLoader label="Loading your documents" />
-            </div>
-          }
+          fallback={<DocumentCardsSkeleton />}
         >
           <DocumentsContent session={session} />
         </Suspense>

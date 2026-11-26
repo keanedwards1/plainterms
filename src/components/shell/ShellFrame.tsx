@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import LogoLoader from "@/components/LogoLoader";
+import { SkeletonFor } from "@/components/Skeletons";
 import Rail from "@/components/shell/Rail";
 import TopBar, { type HeaderUser } from "@/components/shell/TopBar";
 
@@ -17,8 +17,8 @@ export default function ShellFrame({
   children: React.ReactNode;
 }) {
   const pathname = usePathname() || "/";
-  // The tab just tapped. Until its page arrives, the rail shows it as current and the page area shows the
-  // loader, so a tap always answers at once, even on a slow connection.
+  // The tab just tapped. Until its page arrives, the rail shows it as current and the page area shows that
+  // page's skeleton, so a tap always answers at once, even on a slow connection.
   const [pending, setPending] = useState<string | null>(null);
   const [lastPath, setLastPath] = useState(pathname);
   if (pathname !== lastPath) {
@@ -26,7 +26,7 @@ export default function ShellFrame({
     setPending(null);
   }
 
-  // If a navigation never lands (an error, a cancelled tap), don't leave the loader up.
+  // If a navigation never lands (an error, a cancelled tap), don't leave the skeleton up.
   useEffect(() => {
     if (!pending) return undefined;
     const t = window.setTimeout(() => setPending(null), 12000);
@@ -46,11 +46,7 @@ export default function ShellFrame({
       <div className="pt-main min-w-0">
         <TopBar user={user} />
         {pending ? (
-          <main className="pt-page-pad">
-            <div className="pt-section-loading min-h-[60vh]">
-              <LogoLoader size={52} />
-            </div>
-          </main>
+          <SkeletonFor path={pending} />
         ) : (
           children
         )}

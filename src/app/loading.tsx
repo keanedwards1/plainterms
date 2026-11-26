@@ -1,12 +1,9 @@
-import LogoLoader from "@/components/LogoLoader";
+"use client";
 
-// Shown the moment a tab is tapped, until that page's first content arrives.
+import { usePathname } from "next/navigation";
+import { SkeletonFor } from "@/components/Skeletons";
+
+// Shown the moment a page is opened: the shape of that page, filled in as it arrives.
 export default function Loading() {
-  return (
-    <main className="pt-page-pad">
-      <div className="pt-section-loading min-h-[60vh]">
-        <LogoLoader size={52} />
-      </div>
-    </main>
-  );
+  return <SkeletonFor path={usePathname() || "/"} />;
 }

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import DeleteAccount from "@/components/dashboard/DeleteAccount";
 import { Suspense } from "react";
-import LogoLoader from "@/components/LogoLoader";
+import { AccountPanelsSkeleton } from "@/components/Skeletons";
 import { displayName, getSession, type Session } from "@/lib/auth";
 import { getAccount } from "@/lib/serverApi";
 
@@ -82,11 +82,7 @@ export default async function SettingsPage() {
       <h1 className="text-3xl text-(--pt-ink)">Account settings</h1>
       <p className="mt-1 text-(--pt-muted)">Your profile and account controls.</p>
       <Suspense
-        fallback={
-          <div className="pt-section-loading">
-            <LogoLoader label="Loading your account" />
-          </div>
-        }
+        fallback={<AccountPanelsSkeleton rows={4} />}
       >
         <SettingsBody session={session} />
       </Suspense>

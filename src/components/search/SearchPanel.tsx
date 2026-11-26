@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { highlight, searchDocuments, type SearchHit, type Segment } from "@/lib/documentSearch";
 import { loadDocumentIndex, peekDocumentIndex } from "@/lib/documentSearchIndex";
-import LogoLoader from "@/components/LogoLoader";
 
 const RECENT_KEY = "pt.recentSearches";
 const WHERE: Record<SearchHit["where"], string> = {
@@ -243,9 +242,14 @@ export default function SearchPanel() {
             {failed ? (
               <p className="pt-sr-empty">Your documents couldn&apos;t be searched right now. Try again in a moment.</p>
             ) : !cache ? (
-              <div className="pt-sr-loading">
-                <LogoLoader size={36} label="Getting your documents ready" />
-                <p>Getting your documents ready…</p>
+              <div className="pt-sr-loading" role="status" aria-label="Getting your documents ready">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="pt-sr-skel">
+                    <div className="pt-skeleton h-4 w-2/5" />
+                    <div className="pt-skeleton h-3 w-1/4" />
+                    <div className="pt-skeleton h-3.5 w-11/12" />
+                  </div>
+                ))}
               </div>
             ) : outcome ? (
               <>

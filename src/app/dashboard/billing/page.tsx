@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import BillingActions from "@/components/dashboard/BillingActions";
 import { Suspense } from "react";
-import LogoLoader from "@/components/LogoLoader";
+import { AccountPanelsSkeleton } from "@/components/Skeletons";
 import { getSession, type Session } from "@/lib/auth";
 import { getAccount } from "@/lib/serverApi";
 
@@ -144,11 +144,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       <h1 className="text-3xl text-(--pt-ink)">Plan &amp; billing</h1>
       <p className="mt-1 text-(--pt-muted)">Manage your plan, payment method and invoices.</p>
       <Suspense
-        fallback={
-          <div className="pt-section-loading">
-            <LogoLoader label="Loading your account" />
-          </div>
-        }
+        fallback={<AccountPanelsSkeleton rows={3} />}
       >
         <BillingBody session={session} upgraded={upgraded} />
       </Suspense>
