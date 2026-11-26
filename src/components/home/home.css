@@ -123,3 +123,24 @@
     transition: none;
   }
 }
+
+/* Submit progress: the checks a document goes through, under the upload field. */
+.pt-submit { margin: 14px auto 0; max-width: 34rem; padding: 18px 20px; border: 1px solid var(--pt-line); border-radius: var(--pt-radius-pop, 12px); background: #fff; text-align: left; animation: pt-submit-in 160ms ease-out; }
+@keyframes pt-submit-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.pt-submit-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1rem; color: var(--pt-ink); }
+.pt-submit-detail { margin-top: 4px; padding-left: 20px; font-size: 0.875rem; line-height: 1.45; color: var(--pt-muted); }
+.pt-submit-pulse { position: relative; width: 10px; height: 10px; flex: none; border-radius: 999px; background: var(--pt-accent); }
+.pt-submit-pulse::after { content: ""; position: absolute; inset: -4px; border-radius: inherit; background: var(--pt-accent); opacity: 0.25; animation: pt-submit-ping 1.4s ease-out infinite; }
+@keyframes pt-submit-ping { from { transform: scale(0.6); opacity: 0.35; } to { transform: scale(1.5); opacity: 0; } }
+.pt-submit-bar { margin: 14px 0 12px; height: 6px; border-radius: 999px; background: var(--pt-surface-soft); overflow: hidden; }
+.pt-submit-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--pt-accent); transition: width 500ms ease; }
+.pt-submit-steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 0.9375rem; }
+.pt-submit-steps li { display: flex; align-items: center; gap: 10px; color: var(--pt-ink); }
+.pt-submit-steps li[data-state="todo"] { color: var(--pt-muted); }
+.pt-submit-dot { display: grid; place-items: center; width: 16px; height: 16px; flex: none; border-radius: 999px; border: 1.5px solid var(--pt-line); color: #fff; }
+.pt-submit-steps li[data-state="done"] .pt-submit-dot { border-color: var(--pt-good); background: var(--pt-good); }
+.pt-submit-steps li[data-state="active"] .pt-submit-dot { border-color: var(--pt-accent); background: color-mix(in srgb, var(--pt-accent) 22%, #fff); }
+@media (prefers-reduced-motion: reduce) {
+  .pt-submit, .pt-submit-pulse::after { animation: none; }
+  .pt-submit-bar > span { transition: none; }
+}

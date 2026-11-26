@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Dialog from "@/components/ui/Dialog";
+import SubmitProgress, { type SubmitStep } from "@/components/home/SubmitProgress";
 import {
   ACCEPTED_FILE_TYPES,
   fileFromPastedText,
@@ -73,6 +74,7 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [dragging, setDragging] = useState(false);
   const [awaitingParty, setAwaitingParty] = useState<PreparedUpload | null>(null);
+  const [runPhase, setRunPhase] = useState<"starting" | "opening" | null>(null);
 
   const preparing = useRef<Promise<PreparedUpload> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -117,13 +119,16 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
 
   const runAnalysis = useCallback(async (prepared: PreparedUpload, party?: string) => {
     setAnalyzing(true);
+    setRunPhase("starting");
     setError(null);
     const outcome = await startAnalysis(prepared, party);
     if (outcome.ok) {
+      setRunPhase("opening");
       window.location.assign(resultPath(outcome.started.resultId));
       return;
     }
     setAnalyzing(false);
+    setRunPhase(null);
     const { failure } = outcome;
     if (failure.kind === "sign_in_required") {
       stashPendingAnalysis(prepared);
@@ -229,6 +234,8 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
       ? "Preparing…"
       : "Analyzing…"
     : "Submit";
+  const submitStep: SubmitStep =
+    runPhase ?? (prepareState === "uploading" ? "uploading" : prepareState === "checking" ? "checking" : "starting");
 
   const readButton = (
     <button
@@ -327,7 +334,9 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
         </label>
       )}
 
-      <div className="mt-3.5 flex flex-wrap justify-center gap-2">
+      {analyzing ? <SubmitProgress step={submitStep} /> : null}
+
+      <div className="mt-3.5 flex flex-wrap justify-center gap-2" hidden={analyzing}>
         <button
           type="button"
           className="pt-btn-tag"
