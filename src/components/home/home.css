@@ -124,23 +124,17 @@
   }
 }
 
-/* Submit progress: the checks a document goes through, under the upload field. */
-.pt-submit { margin: 14px auto 0; max-width: 34rem; padding: 18px 20px; border: 1px solid var(--pt-line); border-radius: var(--pt-radius-pop, 12px); background: #fff; text-align: left; animation: pt-submit-in 160ms ease-out; }
-@keyframes pt-submit-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-.pt-submit-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1rem; color: var(--pt-ink); }
-.pt-submit-detail { margin-top: 4px; padding-left: 20px; font-size: 0.875rem; line-height: 1.45; color: var(--pt-muted); }
-.pt-submit-pulse { position: relative; width: 10px; height: 10px; flex: none; border-radius: 999px; background: var(--pt-accent); }
-.pt-submit-pulse::after { content: ""; position: absolute; inset: -4px; border-radius: inherit; background: var(--pt-accent); opacity: 0.25; animation: pt-submit-ping 1.4s ease-out infinite; }
-@keyframes pt-submit-ping { from { transform: scale(0.6); opacity: 0.35; } to { transform: scale(1.5); opacity: 0; } }
-.pt-submit-bar { margin: 14px 0 12px; height: 6px; border-radius: 999px; background: var(--pt-surface-soft); overflow: hidden; }
-.pt-submit-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--pt-accent); transition: width 500ms ease; }
-.pt-submit-steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 0.9375rem; }
-.pt-submit-steps li { display: flex; align-items: center; gap: 10px; color: var(--pt-ink); }
-.pt-submit-steps li[data-state="todo"] { color: var(--pt-muted); }
-.pt-submit-dot { display: grid; place-items: center; width: 16px; height: 16px; flex: none; border-radius: 999px; border: 1.5px solid var(--pt-line); color: #fff; }
-.pt-submit-steps li[data-state="done"] .pt-submit-dot { border-color: var(--pt-good); background: var(--pt-good); }
-.pt-submit-steps li[data-state="active"] .pt-submit-dot { border-color: var(--pt-accent); background: color-mix(in srgb, var(--pt-accent) 22%, #fff); }
+/* Submit progress: a strip along the bottom of the upload field, one label per check. */
+.pt-submit { position: relative; display: flex; align-items: center; min-height: 40px; padding: 8px 16px; border-top: 1px solid var(--pt-line); background: var(--pt-surface-soft); text-align: left; }
+.pt-submit-bar { position: absolute; top: -1px; left: 0; height: 2px; background: var(--pt-accent); transition: width 500ms ease; }
+.pt-submit-steps { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 0; padding: 0; list-style: none; font: 500 11px/1.3 var(--font-label), ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.04em; color: var(--pt-muted); }
+.pt-submit-steps li { display: inline-flex; align-items: center; gap: 6px; }
+.pt-submit-steps li[data-state="done"] { color: var(--pt-good); }
+.pt-submit-steps li[data-state="active"] { color: var(--pt-ink); }
+.pt-submit-steps .pt-spinner { width: 11px; height: 11px; }
+.pt-submit-dot { width: 7px; height: 7px; margin: 0 2px; border-radius: 999px; border: 1.5px solid currentColor; opacity: 0.6; }
+/* In the single-row file field, the strip spans the full width below the row. */
+.pt-submit-row { flex-basis: 100%; margin: 4px -8px -8px -16px; }
 @media (prefers-reduced-motion: reduce) {
-  .pt-submit, .pt-submit-pulse::after { animation: none; }
-  .pt-submit-bar > span { transition: none; }
+  .pt-submit-bar { transition: none; }
 }

@@ -269,9 +269,10 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
             <span className="text-sm text-(--pt-muted)">{pasted.trim() ? `${wordCount(pasted)} words` : "Copy it from an email, a PDF or a portal."}</span>
             {readButton}
           </div>
+          {analyzing ? <SubmitProgress step={submitStep} /> : null}
         </div>
       ) : file ? (
-        <div className="pt-framed flex flex-wrap items-center gap-3 bg-white py-2 pl-4 pr-2 text-left">
+        <div className="pt-framed flex flex-wrap items-center gap-3 overflow-hidden bg-white py-2 pl-4 pr-2 text-left">
           <span className="text-(--pt-accent)">
             <FileIcon />
           </span>
@@ -298,6 +299,7 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
             Change
           </button>
           {readButton}
+          {analyzing ? <SubmitProgress step={submitStep} className="pt-submit-row" /> : null}
         </div>
       ) : (
         <label
@@ -333,8 +335,6 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
           />
         </label>
       )}
-
-      {analyzing ? <SubmitProgress step={submitStep} /> : null}
 
       <div className="mt-3.5 flex flex-wrap justify-center gap-2" hidden={analyzing}>
         <button
