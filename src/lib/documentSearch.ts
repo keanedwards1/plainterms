@@ -95,6 +95,16 @@ export function parseQuery(query: string): { words: string; phrases: string[] } 
   return { words: words.trim(), phrases };
 }
 
+// Words too common to narrow anything, ignored unless they're all you typed.
+const STOP_WORDS = new Set(["a", "an", "the", "of", "and", "or", "to", "in", "for", "on", "with", "by", "is", "are", "be", "at", "as", "it"]);
+
+/** The words worth searching for: single letters and filler words drop out. */
+export function meaningfulWords(words: string): string[] {
+  const all = words.split(/\s+/).filter((w) => (processTerm(w) ?? "").length >= 2);
+  const kept = all.filter((w) => !STOP_WORDS.has(normalize(w)));
+  return kept.length ? kept : all;
+}
+
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -103,7 +113,7 @@ function escapeRegex(value: string) {
 function hitRegex(terms: string[]): RegExp | null {
   const forms = new Set<string>();
   for (const term of terms) {
-    if (!term) continue;
+    if (!term || term.length < 2) continue;
     forms.add(escapeRegex(term));
     if (term.endsWith("y")) forms.add(`${escapeRegex(term.slice(0, -1))}ies`);
   }
@@ -178,8 +188,11 @@ function whereMatched(result: SearchResult): SearchHit["where"] {
 }
 
 export function searchDocuments(index: DocumentIndex, query: string, { limit = 30, now = Date.now() } = {}): SearchOutcome {
-  const { words, phrases } = parseQuery(query);
-  if (!words) return { hits: [], partial: false, suggestion: null };
+  const parsed = parseQuery(query);
+  const { phrases } = parsed;
+  const terms = meaningfulWords(parsed.words);
+  if (!terms.length) return { hits: [], partial: false, suggestion: null };
+  const words = terms.join(" ");
 
   let partial = false;
   let results = index.mini.search(words, options("AND", now, index.records));
@@ -191,16 +204,21 @@ export function searchDocuments(index: DocumentIndex, query: string, { limit = 3
       return wanted.every((p) => hay.includes(p));
     });
   }
-  if (!results.length && !phrases.length && words.includes(" ")) {
+  // Only fall back to "some of your words" when those words are real words, not fragments.
+  if (!results.length && !phrases.length && terms.length > 1 && terms.every((t) => t.length >= 3)) {
     results = index.mini.search(words, options("OR", now, index.records));
     partial = results.length > 0;
   }
 
+  // "Did you mean": one corrected word per typed word, for real words only.
   let suggestion: string | null = null;
-  if (!results.length || partial) {
-    const typed = normalize(words).trim();
-    const guess = index.mini.autoSuggest(words, { fuzzy: 0.3, prefix: true, combineWith: "AND", processTerm })[0]?.suggestion;
-    if (guess && guess !== typed) suggestion = guess;
+  if ((!results.length || partial) && terms.length <= 4 && terms.every((t) => t.length >= 4)) {
+    const corrected = terms.map((t) => {
+      const best = index.mini.autoSuggest(t, { fuzzy: 0.34, prefix: false, processTerm })[0]?.terms?.[0];
+      return best ?? normalize(t);
+    });
+    const guess = corrected.join(" ");
+    if (guess !== terms.map((t) => normalize(t)).join(" ")) suggestion = guess;
   }
 
   const hits = results.slice(0, limit).flatMap((r): SearchHit[] => {

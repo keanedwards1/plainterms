@@ -35,3 +35,10 @@
     .pt-search-wrap { display: none; }
   }
 }
+
+/* Outside the layer so it beats the site-wide focus ring: the field's own border shows focus. */
+.pt-search input:focus,
+.pt-search input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}

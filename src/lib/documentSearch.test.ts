@@ -88,6 +88,14 @@ describe("document search", () => {
     ]);
   });
 
+  it("ignores single letters and filler words, and never builds a junk suggestion", () => {
+    const outcome = searchDocuments(index, "a s e");
+    expect(outcome.hits).toEqual([]);
+    expect(outcome.suggestion).toBeNull();
+    expect(ids("the arbitration")).toEqual(["harbor"]);
+    expect(searchDocuments(index, "arbitrashun").suggestion).toBe("arbitration");
+  });
+
   it("normalizes words and queries", () => {
     expect(processTerm("Harbor's")).toBe("harbor");
     expect(processTerm("Parties,")).toBe("party");
