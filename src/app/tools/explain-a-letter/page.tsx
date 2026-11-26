@@ -25,7 +25,7 @@ export default function ExplainLetterPage() {
         <ExampleLetter />
         <p className="mt-8 text-(--pt-muted)">
           Have a contract instead?{" "}
-          <Link href="/#start" className="font-medium text-(--pt-ink) underline underline-offset-4">
+          <Link href="/new" className="font-medium text-(--pt-ink) underline underline-offset-4">
             Review it now
           </Link>
           .

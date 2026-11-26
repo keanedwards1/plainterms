@@ -60,7 +60,7 @@ export default function Showcase() {
                 <svg {...ICON}><path d="M4 5h16v11H9l-5 4z" /><path d="M10 9.5a2 2 0 1 1 2.8 1.8c-.6.3-.8.7-.8 1.2M12 14.5h.01" /></svg>
                 Ask about it
               </Link>
-              <Link href="/#start" className="pt-btn pt-btn-solid h-11 px-4 text-[0.9375rem]">
+              <Link href="/new" className="pt-btn pt-btn-solid h-11 px-4 text-[0.9375rem]">
                 <svg {...ICON}><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg>
                 Review yours
               </Link>

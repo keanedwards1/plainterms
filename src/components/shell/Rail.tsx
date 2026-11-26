@@ -101,7 +101,7 @@ export default function Rail({ pendingPath, onGo }: { pendingPath?: string | nul
         ))}
       </nav>
       <div className="pt-rail-foot">
-        <Link href="/#start" className="pt-rail-new" aria-label="Start a new document" onNavigate={() => onGo?.("/")}>
+        <Link href="/new" className="pt-rail-new" aria-label="Start a new document">
           <svg {...ICON} className="h-5 w-5"><path d="M12 5v14M5 12h14" /></svg>
         </Link>
         <RailLink item={SETTINGS} pathname={pathname} onGo={onGo} />

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Dialog from "@/components/ui/Dialog";
 import SubmitProgress, { type SubmitStep } from "@/components/home/SubmitProgress";
 import {
@@ -65,6 +66,8 @@ const STAGE_LABEL: Record<PrepareState, string> = {
 };
 
 export default function Workspace({ signedIn }: { signedIn: boolean }) {
+  // Sign-in comes back to this page (home or the full-screen /new) and picks the upload up again.
+  const resumeTo = `${usePathname() || "/"}?resume=1`;
   const [mode, setMode] = useState<Mode>("file");
   const [file, setFile] = useState<File | null>(null);
   const [pasted, setPasted] = useState("");
@@ -376,10 +379,10 @@ export default function Workspace({ signedIn }: { signedIn: boolean }) {
         description="It's free, with no card needed. Your contract is ready and will be analyzed as soon as you're in."
       >
         <div className="flex flex-col gap-2.5">
-          <a href={signInPath("/?resume=1")} className="pt-btn pt-btn-solid px-5 py-3 text-base" autoFocus>
+          <a href={signInPath(resumeTo)} className="pt-btn pt-btn-solid px-5 py-3 text-base" autoFocus>
             Continue
           </a>
-          <a href={signInPath("/?resume=1", "sign-up")} className="pt-btn pt-btn-outline px-5 py-3 text-base">
+          <a href={signInPath(resumeTo, "sign-up")} className="pt-btn pt-btn-outline px-5 py-3 text-base">
             Create a free account
           </a>
           <p className="mt-1 text-center text-xs text-(--pt-muted)">Google, Microsoft, Apple or email.</p>

@@ -38,7 +38,8 @@ export default function ShellFrame({
     setPending(path === pathname ? null : path);
   };
 
-  if (pathname === "/construction") return <>{children}</>;
+  // These render bare: the construction gate, and the full-screen "review a document" page.
+  if (pathname === "/construction" || pathname === "/new") return <>{children}</>;
 
   return (
     <div className="pt-shell">

@@ -142,7 +142,7 @@ export default function DocumentsBoard({ initial, isPro }: { initial: DocumentsP
       <div className="pt-legal-pad flex flex-col items-start py-12">
         <h2 className="text-[1.75rem] tracking-[-0.045em]">Nothing here yet</h2>
         <p className="mt-2 max-w-md text-(--pt-muted)">Read a contract, lease or bid and it&apos;s saved here, so you can come back to it any time.</p>
-        <Link href="/#start" className="pt-btn pt-btn-solid mt-6 h-11 px-5">
+        <Link href="/new" className="pt-btn pt-btn-solid mt-6 h-11 px-5">
           Review a document
         </Link>
       </div>

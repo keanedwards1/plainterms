@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TOOL_ICONS } from "@/components/home/homeArt";
 
 export const TOOLS = [
-  { key: "review", name: "Review a contract", href: "/#start" },
+  { key: "review", name: "Review a contract", href: "/new" },
   { key: "letter", name: "Explain a letter", href: "/tools/explain-a-letter" },
   { key: "compare", name: "Compare versions", href: "/tools/compare-versions" },
   { key: "ask", name: "Ask a question", href: "/tools/ask" },

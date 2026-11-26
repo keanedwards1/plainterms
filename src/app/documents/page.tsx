@@ -61,7 +61,7 @@ export default async function DocumentsPage() {
               <Subline session={session} />
             </Suspense>
           </div>
-          <Link href="/#start" className="pt-btn pt-btn-solid h-11 px-5">
+          <Link href="/new" className="pt-btn pt-btn-solid h-11 px-5">
             Review a document
           </Link>
         </header>

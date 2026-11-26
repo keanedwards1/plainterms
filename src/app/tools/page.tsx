@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const TOOLS = [
-  { icon: "review", name: "Review a contract", line: "A verdict, the risky clauses and the three changes to ask for.", href: "/#start", ready: true },
+  { icon: "review", name: "Review a contract", line: "A verdict, the risky clauses and the three changes to ask for.", href: "/new", ready: true },
   { icon: "write", name: "Write a letter", line: "Demand letters, deposit requests and complaints that write themselves.", href: "/tools/write-a-letter", ready: true },
   { icon: "letter", name: "Explain a letter", line: "What a notice wants from you, the reply date and your options.", href: "/tools/explain-a-letter", ready: false },
   { icon: "compare", name: "Compare versions", line: "Every change between two drafts, marked better or worse for you.", href: "/tools/compare-versions", ready: false },
