@@ -14,6 +14,12 @@ const ACTIONS = new Set(["sign", "negotiate", "do_not_sign_yet"]);
 const CONFIDENCE = new Set(["high", "medium", "low"]);
 const DEAL_LABELS = ["Between", "The work", "Fee", "Payment", "Timing", "Ending it", "Ownership", "Disputes"];
 const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 };
+// The headline always matches the action, so the verdict never reads differently from the decision.
+const HEADLINES = { sign: "Looks fair to sign", negotiate: "Negotiate before you sign", do_not_sign_yet: "Don't sign this yet" };
+
+function capFirst(value) {
+  return value ? value[0].toUpperCase() + value.slice(1) : value;
+}
 
 function text(value, max = 400) {
   if (typeof value !== "string") return "";
@@ -89,7 +95,7 @@ function normalizeIssue(raw, index, source) {
     quote,
     why: text(raw.why, 320),
     why_short: text(raw.why_short || raw.why, 140),
-    usual: text(raw.usual, 60),
+    usual: capFirst(text(raw.usual, 60)),
     ask_short: text(raw.ask_short, 140),
     ask_email_line: text(raw.ask_email_line || raw.ask_short, 300),
     fallback: text(raw.fallback, 160),
@@ -126,12 +132,9 @@ export function normalizeReview(raw, sourceText, meta = {}) {
   }
 
   const v = raw.verdict && typeof raw.verdict === "object" ? raw.verdict : {};
-  const verdict = {
-    action: ACTIONS.has(v.action) ? v.action : "negotiate",
-    headline: text(v.headline, 60),
-    line: text(v.line, 220),
-  };
-  if (!verdict.headline) return null;
+  const action = ACTIONS.has(v.action) ? v.action : "negotiate";
+  const verdict = { action, headline: HEADLINES[action], line: text(v.line, 220) };
+  if (!verdict.line) return null;
 
   const seen = new Set();
   const issues = list(raw.issues, 10)
@@ -203,6 +206,7 @@ How to judge
 - Keep only issues worth raising. Usually 3 to 7. Never pad the list.
 - Never invent facts. Quote the contract exactly. Numbers and dates you propose may appear only in ask, fallback, you_say and redline.after.
 - "usual" is what a fair, common version of the term looks like, in 3 to 7 words.
+- When the contract is silent on something, say it is silent. Never claim it "says" something it doesn't.
 
 How to write (every text field)
 - Plain English for someone who is not a lawyer. Short sentences. Call your client "you". Call the other side by a short name (other_short).
@@ -222,11 +226,10 @@ Return ONLY this JSON object:
   },
   "verdict": {
     "action": "sign|negotiate|do_not_sign_yet",
-    "headline": "3 to 6 words, e.g. Negotiate before you sign",
-    "line": "1 or 2 short sentences giving the main reason"
+    "line": "1 or 2 short sentences giving the main reason, from your client's side"
   },
   "deal": [
-    {"label": "Between|The work|Fee|Payment|Timing|Ending it|Ownership|Disputes", "value": "up to 20 words of plain fact from the contract (say so if it is silent)", "flag": "a short red-flag phrase only when something critical is wrong, else empty"}
+    {"label": "Between|The work|Fee|Payment|Timing|Ending it|Ownership|Disputes", "value": "up to 22 words explaining the term in plain English from your client's side (don't copy the contract's wording; say so if it is silent; for Ending it, cover both sides)", "flag": "a short red-flag phrase only when something critical is wrong, else empty"}
   ],
   "gaps": ["up to 6 things the contract needs but leaves out, each up to 12 words"],
   "issues": [
@@ -256,7 +259,7 @@ Return ONLY this JSON object:
   "questions": ["up to 4 questions to ask the other side before signing"]
 }
 
-Order issues most serious first. Give 3 to 6 checklist items specific to this contract, 3 to 6 sign_as_is lines and 3 to 6 what_ifs. Use "redline": null when an issue can't be fixed by editing existing text.
+Order issues most serious first. The checklist is practical things to get or check before signing, separate from the negotiation asks: missing attachments, blanks to fill in, who signs and their authority, licences or insurance to verify, copies to keep. Give 3 to 6 checklist items specific to this contract, 3 to 6 sign_as_is lines and 3 to 6 what_ifs. Use "redline": null when an issue can't be fixed by editing existing text.
 
 Contract text:
 ${extractedText}

@@ -139,6 +139,8 @@ test("normalizeReview cleans text: no dashes, no wrapping quotes, known deal lab
 test("normalizeReview rejects output without both parties or a verdict", () => {
   assert.equal(normalizeReview(rawReview({ perspective: { party: "Luna Park Studio" } }), CONTRACT), null);
   assert.equal(normalizeReview(rawReview({ verdict: {} }), CONTRACT), null);
+  // The headline is set from the action, whatever the model wrote.
+  assert.equal(normalizeReview(rawReview({ verdict: { action: "do_not_sign_yet", headline: "Fix scope", line: "x" } }), CONTRACT).verdict.headline, "Don't sign this yet");
   assert.equal(normalizeReview(null, CONTRACT), null);
 });
 
