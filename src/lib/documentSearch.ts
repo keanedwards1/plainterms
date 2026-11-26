@@ -98,11 +98,17 @@ export function parseQuery(query: string): { words: string; phrases: string[] } 
 // Words too common to narrow anything, ignored unless they're all you typed.
 const STOP_WORDS = new Set(["a", "an", "the", "of", "and", "or", "to", "in", "for", "on", "with", "by", "is", "are", "be", "at", "as", "it"]);
 
-/** The words worth searching for: single letters and filler words drop out. */
-export function meaningfulWords(words: string): string[] {
-  const all = words.split(/\s+/).filter((w) => (processTerm(w) ?? "").length >= 2);
-  const kept = all.filter((w) => !STOP_WORDS.has(normalize(w)));
-  return kept.length ? kept : all;
+/**
+ * Splits typed words into whole words (searched normally) and single letters or
+ * digits (which just have to appear somewhere in the document). Filler words
+ * drop out when there's something more specific to search for.
+ */
+export function splitWords(words: string): { words: string[]; letters: string[] } {
+  const tokens = words.split(/\s+/).filter((w) => processTerm(w));
+  const letters = tokens.filter((w) => (processTerm(w) ?? "").length === 1).map((w) => normalize(w).replace(/[^a-z0-9$%]/g, "")).filter(Boolean);
+  const whole = tokens.filter((w) => (processTerm(w) ?? "").length >= 2);
+  const specific = whole.filter((w) => !STOP_WORDS.has(normalize(w)));
+  return { words: specific.length ? specific : whole, letters };
 }
 
 function escapeRegex(value: string) {
@@ -187,32 +193,54 @@ function whereMatched(result: SearchResult): SearchHit["where"] {
   return "contract";
 }
 
+function haystack(index: DocumentIndex, id: string) {
+  const rec = index.records.get(id);
+  return normalize(
+    [index.titles.get(id), rec?.fileName, rec?.parties.join(" "), rec?.text, rec?.verdict, rec?.issues.map((i) => `${i.title} ${i.why}`).join(" ")].join(" ")
+  ).replace(/\s+/g, " ");
+}
+
+/** The opening of the contract, for results matched by letters alone. */
+function leadSnippet(text: string, width = 170): Segment[] {
+  if (!text) return [];
+  if (text.length <= width) return [{ text, hit: false }];
+  const cut = text.lastIndexOf(" ", width);
+  return [{ text: `${text.slice(0, cut > 40 ? cut : width)}…`, hit: false }];
+}
+
+type Ranked = { id: string; result: SearchResult | null };
+
 export function searchDocuments(index: DocumentIndex, query: string, { limit = 30, now = Date.now() } = {}): SearchOutcome {
   const parsed = parseQuery(query);
   const { phrases } = parsed;
-  const terms = meaningfulWords(parsed.words);
-  if (!terms.length) return { hits: [], partial: false, suggestion: null };
+  const { words: terms, letters } = splitWords(parsed.words);
+  if (!terms.length && !letters.length) return { hits: [], partial: false, suggestion: null };
   const words = terms.join(" ");
 
   let partial = false;
-  let results = index.mini.search(words, options("AND", now, index.records));
-  if (phrases.length) {
-    const wanted = phrases.map((p) => normalize(p).replace(/\s+/g, " "));
-    results = results.filter((r) => {
-      const rec = index.records.get(String(r.id));
-      const hay = normalize([index.titles.get(String(r.id)), rec?.fileName, rec?.parties.join(" "), rec?.text, rec?.issues.map((i) => `${i.title} ${i.why}`).join(" ")].join(" ")).replace(/\s+/g, " ");
-      return wanted.every((p) => hay.includes(p));
-    });
-  }
+  let ranked: Ranked[] = terms.length
+    ? index.mini.search(words, options("AND", now, index.records)).map((r) => ({ id: String(r.id), result: r }))
+    : // Only letters typed: every document, newest first, filtered below.
+      [...index.records.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((r) => ({ id: r.id, result: null }));
+
   // Only fall back to "some of your words" when those words are real words, not fragments.
-  if (!results.length && !phrases.length && terms.length > 1 && terms.every((t) => t.length >= 3)) {
-    results = index.mini.search(words, options("OR", now, index.records));
-    partial = results.length > 0;
+  if (!ranked.length && !phrases.length && terms.length > 1 && terms.every((t) => t.length >= 3)) {
+    ranked = index.mini.search(words, options("OR", now, index.records)).map((r) => ({ id: String(r.id), result: r }));
+    partial = ranked.length > 0;
+  }
+
+  // Single letters and "quoted phrases" must appear somewhere in the document.
+  if (letters.length || phrases.length) {
+    const wanted = phrases.map((p) => normalize(p).replace(/\s+/g, " "));
+    ranked = ranked.filter(({ id }) => {
+      const hay = haystack(index, id);
+      return letters.every((l) => hay.includes(l)) && wanted.every((p) => hay.includes(p));
+    });
   }
 
   // "Did you mean": one corrected word per typed word, for real words only.
   let suggestion: string | null = null;
-  if ((!results.length || partial) && terms.length <= 4 && terms.every((t) => t.length >= 4)) {
+  if ((!ranked.length || partial) && terms.length && terms.length <= 4 && terms.every((t) => t.length >= 4)) {
     const corrected = terms.map((t) => {
       const best = index.mini.autoSuggest(t, { fuzzy: 0.34, prefix: false, processTerm })[0]?.terms?.[0];
       return best ?? normalize(t);
@@ -221,22 +249,21 @@ export function searchDocuments(index: DocumentIndex, query: string, { limit = 3
     if (guess !== terms.map((t) => normalize(t)).join(" ")) suggestion = guess;
   }
 
-  const hits = results.slice(0, limit).flatMap((r): SearchHit[] => {
-    const record = index.records.get(String(r.id));
+  const hits = ranked.slice(0, limit).flatMap(({ id, result }): SearchHit[] => {
+    const record = index.records.get(id);
     if (!record) return [];
     const title = index.titles.get(record.id) ?? record.fileName;
-    const terms = r.terms;
-    const where = whereMatched(r);
+    if (!result) return [{ record, title, titleParts: [{ text: title, hit: false }], snippet: leadSnippet(record.text), where: "title" }];
+    const matched = result.terms;
+    const where = whereMatched(result);
     const issueText = record.issues.map((i) => `${i.title}. ${i.why}`).join(" ");
     const snippet =
       where === "review"
-        ? bestSnippet(issueText || [record.verdict, ...record.deal].join(" "), terms)
-        : where === "contract"
-          ? bestSnippet(record.text, terms)
-          : where === "parties"
-            ? highlight(record.parties.join(" and "), terms)
-            : bestSnippet(record.text, terms);
-    return [{ record, title, titleParts: highlight(title, terms), snippet, where }];
+        ? bestSnippet(issueText || [record.verdict, ...record.deal].join(" "), matched)
+        : where === "parties"
+          ? highlight(record.parties.join(" and "), matched)
+          : bestSnippet(record.text, matched);
+    return [{ record, title, titleParts: highlight(title, matched), snippet: snippet.length ? snippet : leadSnippet(record.text), where }];
   });
 
   return { hits, partial, suggestion };

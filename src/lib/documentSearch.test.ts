@@ -88,10 +88,15 @@ describe("document search", () => {
     ]);
   });
 
-  it("ignores single letters and filler words, and never builds a junk suggestion", () => {
+  it("treats single letters as 'contains', ignores filler words, and never builds a junk suggestion", () => {
+    // Single letters match documents that contain them, without highlighting or junk suggestions.
     const outcome = searchDocuments(index, "a s e");
-    expect(outcome.hits).toEqual([]);
+    expect(outcome.hits.map((h) => h.record.id)).toEqual(["harbor", "nda", "lease"]);
     expect(outcome.suggestion).toBeNull();
+    expect(outcome.hits.every((h) => h.snippet.every((p) => !p.hit))).toBe(true);
+    expect(ids("q")).toEqual([]);
+    expect(ids("arbitration z")).toEqual([]);
+    expect(ids("arbitration y")).toEqual(["harbor"]);
     expect(ids("the arbitration")).toEqual(["harbor"]);
     expect(searchDocuments(index, "arbitrashun").suggestion).toBe("arbitration");
   });
