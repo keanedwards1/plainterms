@@ -286,7 +286,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
     ["walk", "Walk away", `Pass on this contract. Worth weighing if ${other} won't move on the must-haves.`, "Start over"],
   ];
   const decide = (
-    <section className="pt-framed rv-focus">
+    <section className="pt-framed rv-focus rv-options">
             <h2 className="rv-step-title">What do you want to do?</h2>
       <p className="rv-lead">Your call. Here&apos;s what each choice means for you.</p>
       <div className="rv-choices mt-6" role="radiogroup" aria-label="What you want to do">
@@ -350,7 +350,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
 
   const prepare = (
     <>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="rv-step-title">{PREP_TITLE[choice]}</h2>
         </div>
@@ -361,7 +361,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
           </button>
         ) : null}
       </div>
-      <div className="rv-prep" data-solo="true">
+      <div className="rv-prep rv-plan" data-solo="true">
         <div className="grid gap-4">
           {choice === "negotiate" ? (
             <section className="pt-panel rv-card">
