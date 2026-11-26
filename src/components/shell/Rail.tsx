@@ -76,18 +76,20 @@ const SETTINGS: Item = {
   active: <svg {...FILL}><path d={GEAR} fill="currentColor" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" /><circle cx="12" cy="12" r="3" fill={CUT} /></svg>,
 };
 
-function RailLink({ item, pathname }: { item: Item; pathname: string }) {
+function RailLink({ item, pathname, onGo }: { item: Item; pathname: string; onGo?: (href: string) => void }) {
   const on = item.match(pathname);
   return (
-    <Link href={item.href} className="pt-rail-link" aria-current={on ? "page" : undefined}>
+    <Link href={item.href} className="pt-rail-link" aria-current={on ? "page" : undefined} onNavigate={() => onGo?.(item.href)}>
       {on ? item.active : item.icon}
       {item.label}
     </Link>
   );
 }
 
-export default function Rail() {
-  const pathname = usePathname() || "/";
+/** `pendingPath` is the tab just tapped, shown as current before its page arrives. */
+export default function Rail({ pendingPath, onGo }: { pendingPath?: string | null; onGo?: (href: string) => void }) {
+  const current = usePathname() || "/";
+  const pathname = pendingPath ?? current;
   return (
     <aside className="pt-rail" aria-label="Main">
       <Link href="/" aria-label="PlainTerms home" className="pt-rail-logo text-(--pt-accent)">
@@ -95,14 +97,14 @@ export default function Rail() {
       </Link>
       <nav className="pt-rail-nav" aria-label="Main">
         {ITEMS.map((item) => (
-          <RailLink key={item.href} item={item} pathname={pathname} />
+          <RailLink key={item.href} item={item} pathname={pathname} onGo={onGo} />
         ))}
       </nav>
       <div className="pt-rail-foot">
-        <Link href="/#start" className="pt-rail-new" aria-label="Start a new document">
+        <Link href="/#start" className="pt-rail-new" aria-label="Start a new document" onNavigate={() => onGo?.("/")}>
           <svg {...ICON} className="h-5 w-5"><path d="M12 5v14M5 12h14" /></svg>
         </Link>
-        <RailLink item={SETTINGS} pathname={pathname} />
+        <RailLink item={SETTINGS} pathname={pathname} onGo={onGo} />
       </div>
     </aside>
   );
