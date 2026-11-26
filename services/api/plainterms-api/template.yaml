@@ -967,6 +967,49 @@ Resources:
           FREE_LLM_MODEL: !Ref FreeLlmModel
           PRO_LLM_MODEL: !Ref ProLlmModel
           DOCUMENT_REVISION_FUNCTION_NAME: !Ref GenerateRevisionFunction
+          ENRICH_REVIEW_FUNCTION_NAME: !Ref EnrichReviewFunction
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ResultsTable
+        - S3ReadPolicy:
+            BucketName: !Ref UploadBucket
+        - Statement:
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${LlmApiKeyParamName}
+        - Statement:
+            Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt GenerateRevisionFunction.Arn
+              - !GetAtt EnrichReviewFunction.Arn
+
+  # Runs after the first results are on screen: the review's negotiation
+  # extras, the classic page's AI text, then (Pro) the revised draft.
+  EnrichReviewFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/
+      Handler: enrichReview.handler
+      Timeout: 300
+      MemorySize: 1024
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+      Environment:
+        Variables:
+          RESULTS_TABLE: !Ref ResultsTable
+          RESULT_TTL_DAYS: "30"
+          UPLOAD_BUCKET: !Ref UploadBucket
+          ANALYSIS_MODE: llm
+          LLM_BASE_URL: "https://api.openai.com/v1"
+          LLM_MODEL: !Ref LlmModel
+          LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
+          FREE_LLM_MODEL: !Ref FreeLlmModel
+          PRO_LLM_MODEL: !Ref ProLlmModel
+          DOCUMENT_REVISION_FUNCTION_NAME: !Ref GenerateRevisionFunction
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ResultsTable

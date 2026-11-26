@@ -1,5 +1,6 @@
-import { DynamoDBClient, GetItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { generateRevisedDocumentWithLlm } from "./lib/generateRevisedDocument.mjs";
+import { updateUiResult } from "./lib/updateUiResult.mjs";
 
 const db = new DynamoDBClient({});
 
@@ -35,19 +36,10 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+/** Writes only the revision onto the latest stored result, so other workers' changes are kept. */
 async function saveUiResult(resultId, uiResult) {
-  await db.send(
-    new UpdateItemCommand({
-      TableName: process.env.RESULTS_TABLE,
-      Key: {
-        result_id: { S: resultId },
-      },
-      UpdateExpression: "SET ui_result = :ui",
-      ExpressionAttributeValues: {
-        ":ui": { S: JSON.stringify(uiResult) },
-      },
-    })
-  );
+  const revision = uiResult?.document?.revision;
+  await updateUiResult(resultId, (current) => withRevision(current, revision));
 }
 
 export const handler = async (event) => {

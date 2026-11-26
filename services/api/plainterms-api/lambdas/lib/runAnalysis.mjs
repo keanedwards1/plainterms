@@ -7,8 +7,9 @@ import {
 } from "./ptTransform.mjs";
 import { extractDocumentTextFromUpload } from "./extractDocumentText.mjs";
 import { analyzeExtractedTextWithLlm } from "./llmAnalyze.mjs";
-import { generateContractReview } from "./llmReview.mjs";
+import { generateCoreReview } from "./llmReview.mjs";
 import { generateNegotiationEmailDraftWithLlm } from "./llmNegotiationEmail.mjs";
+import { updateUiResult } from "./updateUiResult.mjs";
 import { validateObjectKey, validateUploadMeta } from "./uploadPolicy.mjs";
 import { buildReportInsights } from "./reportEngine.mjs";
 import { createResultAccessKey, hashResultAccessKey } from "./resultAccessKey.mjs";
@@ -769,7 +770,7 @@ export function documentSummaryAttributes(uiResult) {
  * Extracts, analyzes and shapes one document. Pure apart from the LLM calls
  * and the S3 read; persistence is the caller's job.
  */
-async function buildAnalysisArtifacts({
+export async function buildAnalysisArtifacts({
   normalizedPayload,
   resultId,
   createdAt,
@@ -800,18 +801,6 @@ async function buildAnalysisArtifacts({
     contentType: normalizedPayload.contentType,
   });
 
-  // The lawyer-style review powers the step-by-step result page. It runs only
-  // in the plan's AI pass, alongside the field analysis.
-  const wantsReview = Boolean(plan) && !rulesOnly && finalSelection.analysisMode === "llm";
-  const reviewPromise = wantsReview
-    ? generateContractReview({
-        extractedText: extraction.extractedText,
-        analysisMode: finalSelection.analysisMode,
-        llmModel: finalSelection.llmModel,
-        party: runOptions.reviewParty || undefined,
-      }).catch((err) => ({ ok: false, review: null, reason: `review_error:${err instanceof Error ? err.message : String(err)}` }))
-    : Promise.resolve({ ok: false, review: null, reason: "not_attempted" });
-
   let llmAnalysis = { usedLlm: false, reason: "not_attempted", fields: null };
   try {
     llmAnalysis = await analyzeExtractedTextWithLlm({
@@ -827,10 +816,6 @@ async function buildAnalysisArtifacts({
       reason: `llm_error:${err instanceof Error ? err.message : String(err)}`,
       fields: null,
     };
-  }
-  const reviewOutcome = await reviewPromise;
-  if (!reviewOutcome.ok && wantsReview) {
-    console.warn("contract review unavailable", { resultId, reason: String(reviewOutcome.reason).slice(0, 300) });
   }
 
   const reportInsights = buildReportInsights({
@@ -881,9 +866,6 @@ async function buildAnalysisArtifacts({
   }
   if (initialRevision) {
     uiResult = withDocumentRevision(uiResult, initialRevision);
-  }
-  if (reviewOutcome.ok && reviewOutcome.review) {
-    uiResult = { ...uiResult, review: reviewOutcome.review };
   }
   assertPtUiV1Contract(uiResult);
 
@@ -1013,7 +995,7 @@ export async function runAnalysis(payload, analysisSelection = {}, addonSelectio
  * model and replaces the instant rules result. Only acts while the stored
  * status is "refining", so retried or duplicate invocations are no-ops.
  */
-export async function refineStoredAnalysis(resultId) {
+export async function refineStoredAnalysis(resultId, deps = {}) {
   const record = await db.send(
     new GetItemCommand({
       TableName: process.env.RESULTS_TABLE,
@@ -1025,6 +1007,108 @@ export async function refineStoredAnalysis(resultId) {
   if (!item) return { ok: false, reason: "not_found" };
   if (item.status?.S !== "refining") return { ok: true, reason: "not_refining" };
 
+  const fast = await refineWithCoreReview(resultId, item, deps).catch((err) => {
+    console.warn(JSON.stringify({ event: "refine.core_failed", resultId, message: String(err?.message ?? err).slice(0, 300) }));
+    return null;
+  });
+  if (fast) return fast;
+  return refineWithFullAnalysis(resultId, item);
+}
+
+function timing(event, resultId, fields) {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), event, resultId, ...fields }));
+}
+
+async function queueEnrichJob(resultId, extractedText) {
+  const name = String(process.env.ENRICH_REVIEW_FUNCTION_NAME ?? "").trim();
+  if (!name) return false;
+  const { LambdaClient, InvokeCommand } = await import("@aws-sdk/client-lambda");
+  // Hand over the extracted text so the worker skips the S3 read (async payloads max out at 256 KB).
+  const payload = { resultId, ...(extractedText && extractedText.length < 100000 ? { extractedText } : {}) };
+  await new LambdaClient({}).send(
+    new InvokeCommand({ FunctionName: name, InvocationType: "Event", Payload: Buffer.from(JSON.stringify(payload)) })
+  );
+  return true;
+}
+
+/**
+ * Fast path for plan results: the core review only (verdict, deal, issues),
+ * shown on top of the instant rules result. Everything else (the review's
+ * negotiation extras, the classic AI text and the revised draft) is handed to
+ * the enrich worker. Returns null when the core review isn't available, so the
+ * caller falls back to the full pass.
+ */
+async function refineWithCoreReview(resultId, item, deps = {}) {
+  const plan = normalizePlan(item.plan?.S);
+  const selection = resolvePlanAnalysisSelection(plan, { rulesOnly: false });
+  if (selection.analysisMode !== "llm") return null;
+
+  const started = Date.now();
+  const extraction = await extractDocumentTextFromUpload({
+    bucket: process.env.UPLOAD_BUCKET,
+    objectKey: item.object_key?.S ?? "",
+    filename: item.upload_filename?.S ?? "",
+    contentType: item.upload_content_type?.S ?? "",
+  });
+  const extracted = Date.now();
+  const core = await (deps.generateCoreReview ?? generateCoreReview)({
+    extractedText: extraction.extractedText,
+    analysisMode: selection.analysisMode,
+    llmModel: selection.llmModel,
+    party: item.review_party?.S || undefined,
+  });
+  timing("refine.timing", resultId, { extract_ms: extracted - started, core_ms: Date.now() - extracted, core: core.reason });
+  if (!core.ok || !core.review) return null;
+
+  let uiResult = JSON.parse(item.ui_result?.S ?? "{}");
+  uiResult = { ...uiResult, review: core.review };
+  if (plan === "pro") {
+    uiResult = withDocumentRevision(uiResult, core.review.issues.length ? { status: "processing" } : { status: "not_needed" });
+  }
+  const summary = documentSummaryAttributes(uiResult);
+  try {
+    await db.send(
+      new UpdateItemCommand({
+        TableName: process.env.RESULTS_TABLE,
+        Key: { result_id: { S: resultId } },
+        UpdateExpression:
+          "SET #status = :complete, ui_result = :ui, ui_version = if_not_exists(ui_version, :zero) + :one, " +
+          "risk_score = :score, risk_label = :label, recommendation_action = :action, recommendation_label = :reclabel, flag_count = :flags",
+        ConditionExpression: "#status = :refining",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":complete": { S: "complete" },
+          ":refining": { S: "refining" },
+          ":ui": { S: JSON.stringify(uiResult) },
+          ":zero": { N: "0" },
+          ":one": { N: "1" },
+          ":score": summary.risk_score,
+          ":label": summary.risk_label,
+          ":action": summary.recommendation_action,
+          ":reclabel": summary.recommendation_label,
+          ":flags": summary.flag_count,
+        },
+      })
+    );
+  } catch (err) {
+    if (err?.name === "ConditionalCheckFailedException") return { ok: true, reason: "already_refined" };
+    throw err;
+  }
+
+  try {
+    const queued = await (deps.queueEnrichJob ?? queueEnrichJob)(resultId, extraction.extractedText);
+    if (!queued) throw new Error("Enrich worker is not configured.");
+  } catch (err) {
+    console.error(JSON.stringify({ event: "refine.enrich_queue_failed", resultId, message: String(err?.message ?? err).slice(0, 300) }));
+    await updateUiResult(resultId, (cur) =>
+      cur.review ? { ...cur, review: { ...cur.review, extras_status: "failed" } } : null
+    ).catch(() => {});
+  }
+  return { ok: true, reason: "core_ready" };
+}
+
+/** The previous single pass: AI summary fields, report and email for the classic page. */
+async function refineWithFullAnalysis(resultId, item) {
   const plan = normalizePlan(item.plan?.S);
   const normalizedPayload = {
     objectKey: item.object_key?.S ?? "",
@@ -1039,7 +1123,7 @@ export async function refineStoredAnalysis(resultId) {
       normalizedPayload,
       resultId,
       createdAt: item.created_at?.S ?? new Date().toISOString(),
-      runOptions: { plan, reviewParty: item.review_party?.S ?? "" },
+      runOptions: { plan },
     });
   } catch (err) {
     // Keep the instant result; it is still a complete, usable report.
