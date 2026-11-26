@@ -1,4 +1,6 @@
 /* Step-by-step result page (design 06). Classes are prefixed rv-. */
+/* Same layer order as Tailwind, so this file can't reorder the cascade when it's bundled before globals.css. */
+@layer properties, theme, base, components, utilities;
 @layer components {
   .rv { --rv-line2: var(--pt-line-strong); --rv-mono: var(--font-label), ui-monospace, monospace; --rv-display: var(--font-display), system-ui, sans-serif; --rv-body: var(--font-body), system-ui, sans-serif; color: var(--pt-ink); }
   .rv-strong { font-family: var(--rv-display); letter-spacing: -0.02em; }

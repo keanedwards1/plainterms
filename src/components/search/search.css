@@ -1,4 +1,6 @@
 /* Document search: the top-bar trigger and the instant results panel. */
+/* Same layer order as Tailwind, so this file can't reorder the cascade when it's bundled before globals.css. */
+@layer properties, theme, base, components, utilities;
 @layer components {
   .pt-search-wrap { position: relative; flex: 1; max-width: 32rem; min-width: 0; }
   .pt-search { max-width: none; cursor: text; transition: border-color 0.15s; }
