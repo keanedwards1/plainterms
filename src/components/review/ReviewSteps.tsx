@@ -623,7 +623,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
             <p className="rv-quiet">The contract doesn&apos;t set any dates.</p>
           )}
           {review.dates.length ? (
-            <div className="mt-3">
+            <div className="rv-card-foot">
               <button
                 type="button"
                 className="pt-btn pt-btn-outline h-10 px-4 text-sm"
