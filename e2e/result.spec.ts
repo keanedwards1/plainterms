@@ -55,14 +55,14 @@ test.describe("step-by-step result", () => {
   test("ticking a change in the contract updates the asks, and the contract zooms", async ({ page }) => {
     await page.goto("/result/fixture-harbor");
     await goToStep(page, "Plan");
-    const picked = page.getByText(/\d of 6 picked/);
-    const before = await picked.innerText();
+    const ticked = page.locator(".rv-ask input:checked");
+    const before = await ticked.count();
     await goToStep(page, "Send");
 
     const firstBox = page.locator(".rv-rl-keep input").first();
     await firstBox.uncheck();
     await goToStep(page, "Plan");
-    await expect(picked).not.toHaveText(before);
+    await expect(ticked).toHaveCount(before - 1);
 
     await goToStep(page, "Send");
     await page.getByRole("button", { name: "Zoom in" }).click();

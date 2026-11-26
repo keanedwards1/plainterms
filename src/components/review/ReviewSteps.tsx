@@ -360,12 +360,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
         <div className="grid gap-4">
           {choice === "negotiate" ? (
             <section className="pt-panel rv-card">
-              <div className="rv-card-h">
-                <h3>Your asks</h3>
-                <span className="rv-label">
-                  {picked.size} of {issues.length} picked
-                </span>
-              </div>
               <div className="rv-asks">
                 {issues.map((issue) => (
                   <label key={issue.id} className="rv-ask">
