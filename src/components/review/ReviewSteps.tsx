@@ -482,7 +482,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
               Open in email
             </a>
           </div>
-          {mode === "both" ? <p className="rv-quiet mt-2.5">Download the Word file from the contract above and attach it.</p> : null}
+          {mode === "both" ? <p className="rv-quiet mt-2.5">Download the Word file from the contract below and attach it.</p> : null}
         </>
       ) : (
         <div className="rv-script">
@@ -549,6 +549,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
             })}
           </div>
           <div className="grid gap-4">
+            {mode !== "contract" ? emailPanel : null}
             {mode !== "email" ? (
               <section className="pt-panel rv-card">
                 <div className="rv-card-h">
@@ -557,7 +558,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
                 <RedlineEditor text={text} issues={issues} picked={picked} onToggle={toggle} fileBase={fileBase} />
               </section>
             ) : null}
-            {mode !== "contract" ? emailPanel : null}
           </div>
         </>
       ) : choice === "sign" ? (
