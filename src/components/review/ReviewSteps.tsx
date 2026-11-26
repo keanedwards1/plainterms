@@ -615,7 +615,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
     <>
       <div className="mb-4">
                 <h2 className="rv-step-title">Confirmation</h2>
-        <p className="rv-lead">The dates to keep, and what the contract says if something goes wrong.</p>
       </div>
       {choice === "walk" ? null : checklist}
       <div className="rv-track">
