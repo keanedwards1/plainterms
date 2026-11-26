@@ -135,7 +135,7 @@
 
   /* step 4 */
   .rv-prep { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: start; }
-  .rv-prep[data-solo="true"] { grid-template-columns: minmax(0, 760px); }
+  .rv-prep[data-solo="true"] { grid-template-columns: minmax(0, 1fr); }
   .rv-asks { display: grid; gap: 10px; }
   .rv-toggle { display: inline-flex; align-items: center; gap: 10px; padding: 4px 0; border: 0; background: none; color: var(--pt-ink); font: 500 14px/1.2 var(--rv-body); }
   .rv-toggle-track { position: relative; width: 34px; height: 20px; flex: none; border-radius: 999px; background: var(--rv-line2); transition: background-color 200ms ease; }
