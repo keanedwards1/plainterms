@@ -1,15 +1,18 @@
 /* Document search: the top-bar trigger and the instant results panel. */
 @layer components {
-  .pt-search { cursor: text; text-align: left; }
-  .pt-search .truncate { flex: 1; }
+  .pt-search-wrap { position: relative; flex: 1; max-width: 32rem; min-width: 0; }
+  .pt-search { max-width: none; cursor: text; transition: border-color 0.15s; }
+  .pt-search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; font-size: 0.9375rem; color: var(--pt-ink); }
+  .pt-search input::placeholder { color: var(--pt-muted); }
+  .pt-search input::-webkit-search-cancel-button { display: none; }
+  .pt-search:focus-within { border-color: var(--pt-ink); }
+  /* Open: the field and its dropdown read as one piece. */
+  .pt-search-wrap[data-open="true"] .pt-search { border-color: var(--pt-ink); border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-color: var(--pt-line); background: #fff; }
   .pt-search-kbd { flex: none; padding: 2px 6px; border: 1px solid var(--pt-line); border-radius: 4px; font: 500 11px/1.3 var(--font-label), ui-monospace, monospace; color: var(--pt-muted); background: var(--pt-surface-soft); }
 
-  .pt-sr { width: min(680px, calc(100vw - 32px)); max-width: none; max-height: none; margin: 72px auto 0; padding: 0; border: 0; background: transparent; overflow: visible; }
-  .pt-sr::backdrop { background: rgb(21 50 44 / 0.18); }
-  .pt-sr-box { display: flex; flex-direction: column; max-height: min(72vh, 640px); border: 1.5px solid var(--pt-ink); border-radius: var(--pt-radius-pop); background: #fff; box-shadow: 6px 6px 0 var(--pt-ink); overflow: hidden; }
-  .pt-sr-field { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--pt-line); }
-  .pt-sr-field input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 17px; color: var(--pt-ink); }
-  .pt-sr-field input::-webkit-search-cancel-button { display: none; }
+  .pt-sr-drop { position: absolute; top: 100%; left: 0; right: 0; z-index: 60; display: flex; flex-direction: column; max-height: min(70vh, 620px); border: 1px solid var(--pt-ink); border-top: 0; border-radius: 0 0 var(--pt-radius-pop) var(--pt-radius-pop); background: #fff; box-shadow: 0 18px 40px -18px rgb(21 50 44 / 0.35); overflow: hidden; animation: pt-sr-in 140ms ease-out; }
+  @keyframes pt-sr-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .pt-sr-drop { animation: none; } }
   .pt-sr-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 6px; }
   .pt-sr-list { margin: 0; padding: 0; list-style: none; }
   .pt-sr-group { padding: 10px 10px 4px; font: 500 11px/1.3 var(--font-label), ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.03em; color: var(--pt-muted); }
@@ -20,15 +23,15 @@
   .pt-sr-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13px; color: var(--pt-muted); }
   .pt-sr-where { padding: 1px 6px; border-radius: 3px; background: var(--pt-surface-soft); font: 500 10.5px/1.5 var(--font-label), ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.02em; }
   .pt-sr-snippet { font-size: 14px; line-height: 1.5; color: #3b4a46; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .pt-sr mark { padding: 0 1px; border-radius: 2px; background: #f8ebb8; color: inherit; font-weight: 600; }
+  .pt-sr-drop mark { padding: 0 1px; border-radius: 2px; background: #f8ebb8; color: inherit; font-weight: 600; }
   .pt-sr-empty, .pt-sr-note { padding: 14px 12px; font-size: 14.5px; color: var(--pt-muted); }
   .pt-sr-note { padding-bottom: 2px; }
   .pt-sr-suggest { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--pt-ink); text-decoration: underline; text-underline-offset: 3px; }
   .pt-sr-foot { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 8px 14px; border-top: 1px solid var(--pt-line); background: var(--pt-surface-soft); font-size: 12px; color: var(--pt-muted); }
-  @media (max-width: 700px) {
-    .pt-sr { margin-top: 12px; }
-    .pt-sr-box { max-height: calc(100dvh - 24px); }
+  @media (max-width: 1000px) {
     .pt-sr-foot { display: none; }
-    .pt-search-kbd { display: none; }
+  }
+  @media (max-width: 819px) {
+    .pt-search-wrap { display: none; }
   }
 }

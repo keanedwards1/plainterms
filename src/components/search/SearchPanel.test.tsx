@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -7,15 +7,6 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
 import SearchPanel from "@/components/search/SearchPanel";
 import { invalidateDocumentIndex } from "@/lib/documentSearchIndex";
-
-beforeAll(() => {
-  HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) {
-    this.open = true;
-  };
-  HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) {
-    this.open = false;
-  };
-});
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -57,7 +48,7 @@ describe("SearchPanel", () => {
     mockIndex();
     render(<SearchPanel />);
 
-    await user.click(screen.getByRole("button", { name: /Search your documents/ }));
+    await user.click(screen.getByRole("combobox"));
     await screen.findByText("Recent documents");
     await user.type(screen.getByRole("combobox"), "arbitr seat");
 
@@ -79,5 +70,26 @@ describe("SearchPanel", () => {
     await screen.findByText("Recent documents");
     await user.type(screen.getByRole("combobox"), "zebra");
     expect(await screen.findByText(/No documents match/)).toBeTruthy();
+  });
+});
+
+describe("SearchPanel closing", () => {
+  it("closes on Escape and on a click outside", async () => {
+    const user = userEvent.setup();
+    mockIndex();
+    render(
+      <div>
+        <SearchPanel />
+        <p>Outside</p>
+      </div>
+    );
+    await user.click(screen.getByRole("combobox"));
+    await screen.findByText("Recent documents");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByText("Recent documents")).toBeNull();
+    await user.click(screen.getByRole("combobox"));
+    await screen.findByText("Recent documents");
+    await user.click(screen.getByText("Outside"));
+    expect(screen.queryByText("Recent documents")).toBeNull();
   });
 });

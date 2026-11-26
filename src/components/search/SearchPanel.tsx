@@ -63,7 +63,7 @@ function SearchIcon({ className = "h-4.5 w-4.5" }: { className?: string }) {
  */
 export default function SearchPanel() {
   const router = useRouter();
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -83,13 +83,19 @@ export default function SearchPanel() {
       .catch(() => setFailed(true));
   }, []);
 
+  const close = useCallback(() => {
+    setOpen(false);
+    inputRef.current?.blur();
+  }, []);
+
+  // A click anywhere outside the field and its dropdown closes it.
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-      inputRef.current?.select();
-    } else if (!open && dialog.open) dialog.close();
+    if (!open) return undefined;
+    const onDown = (e: PointerEvent) => {
+      if (wrapRef.current && e.target instanceof Node && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
   }, [open]);
 
   // ⌘K / Ctrl+K anywhere, or "/" when not typing somewhere else.
@@ -98,6 +104,8 @@ export default function SearchPanel() {
       const typing = e.target instanceof HTMLElement && (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName));
       if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey)) {
         e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
         show();
       }
     };
@@ -129,7 +137,7 @@ export default function SearchPanel() {
       return;
     }
     saveRecent(query);
-    setOpen(false);
+    close();
     router.push(option.href);
   }
 
@@ -143,6 +151,9 @@ export default function SearchPanel() {
     } else if (e.key === "Enter") {
       e.preventDefault();
       go(options[activeIndex]);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      close();
     }
   }
 
@@ -176,50 +187,40 @@ export default function SearchPanel() {
   );
 
   return (
-    <>
-      <button type="button" className="pt-search" onClick={show} aria-haspopup="dialog" aria-keyshortcuts="Meta+K Control+K /">
+    <div ref={wrapRef} className="pt-search-wrap" data-open={open}>
+      <label className="pt-search">
+        <span className="sr-only">Search your documents</span>
         <SearchIcon />
-        <span className="truncate">Search your documents</span>
+        <input
+          ref={inputRef}
+          type="search"
+          role="combobox"
+          aria-expanded={open}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={open && options.length ? optionId(activeIndex) : undefined}
+          aria-keyshortcuts="Meta+K Control+K /"
+          value={query}
+          onFocus={() => {
+            if (!open) show();
+          }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setActive(0);
+            if (!open) show();
+          }}
+          onKeyDown={onKeyDown}
+          placeholder="Search your documents"
+          autoComplete="off"
+          spellCheck={false}
+        />
         <kbd className="pt-search-kbd" aria-hidden="true">
-          ⌘K
+          {open ? "esc" : "⌘K"}
         </kbd>
-      </button>
+      </label>
 
-      <dialog
-        ref={dialogRef}
-        className="pt-sr"
-        aria-label="Search your documents"
-        onClose={() => setOpen(false)}
-        onClick={(e) => {
-          if (e.target === dialogRef.current) setOpen(false);
-        }}
-      >
-        <div className="pt-sr-box">
-          <div className="pt-sr-field">
-            <SearchIcon className="h-5 w-5 shrink-0 text-(--pt-muted)" />
-            <input
-              ref={inputRef}
-              type="search"
-              role="combobox"
-              aria-expanded="true"
-              aria-controls={listId}
-              aria-autocomplete="list"
-              aria-activedescendant={options.length ? optionId(activeIndex) : undefined}
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setActive(0);
-              }}
-              onKeyDown={onKeyDown}
-              placeholder="Search contracts, parties, clauses…"
-              autoComplete="off"
-              spellCheck={false}
-            />
-            <kbd className="pt-search-kbd" aria-hidden="true">
-              esc
-            </kbd>
-          </div>
-
+      {open ? (
+        <div className="pt-sr-drop">
           <div className="pt-sr-body">
             {failed ? (
               <p className="pt-sr-empty">Your documents couldn&apos;t be searched right now. Try again in a moment.</p>
@@ -310,7 +311,8 @@ export default function SearchPanel() {
             <span>&quot;quotes&quot; for an exact phrase</span>
           </p>
         </div>
-      </dialog>
-    </>
+      ) : null}
+    </div>
+
   );
 }
