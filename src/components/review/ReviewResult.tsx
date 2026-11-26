@@ -65,7 +65,11 @@ function Waiting({ ready, onPlay, onSee }: { ready: boolean; onPlay: () => void;
           return (
             <li key={label} data-state={state}>
               <span className="rv-tickdot" aria-hidden="true">
-                {state === "done" ? "✓" : ""}
+                {state === "done" ? (
+                  <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                  </svg>
+                ) : null}
               </span>
               {label}
             </li>
