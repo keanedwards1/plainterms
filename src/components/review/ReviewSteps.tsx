@@ -98,7 +98,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
   const other = review.perspective.other_short || review.perspective.other_party;
   const text = useMemo(() => formatContractText(data.document?.extracted_text ?? ""), [data.document?.extracted_text]);
   const entitlements = data.entitlements;
-  const canSeeRevision = entitlements ? entitlements.revised_document : true;
   const canEditContract = entitlements ? entitlements.rewrites : true;
 
   const [step, setStepState] = useState(0);
@@ -233,9 +232,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
       <ContractNotes
         text={text}
         issues={issues}
-        revision={data.document?.revision}
-        canSeeRevision={canSeeRevision}
-        onPro={setProFeature}
         fileLabel={`${data.document?.file_name ?? "Contract"}${data.document?.word_count ? ` · ${data.document.word_count} words` : ""}`}
       />
       <div className="rv-below">

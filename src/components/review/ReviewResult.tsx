@@ -90,12 +90,10 @@ export default function ReviewResult({ initial, retentionDays, accessKey, abVari
   const query = accessKey ? `?k=${encodeURIComponent(accessKey)}` : "";
   const id = initial.result_id;
 
-  const canSeeRevision = data.entitlements ? data.entitlements.revised_document : true;
   const refining = data.analysis_stage === "refining";
   const waiting =
     refining ||
-    data.review?.extras_status === "processing" ||
-    (canSeeRevision && data.document?.revision?.status === "processing");
+    data.review?.extras_status === "processing";
 
   useEffect(() => {
     if (!waiting) return undefined;

@@ -25,15 +25,12 @@ test.describe("step-by-step result", () => {
     await expect(page.getByText("Not legal advice.")).toBeVisible();
   });
 
-  test("the contract step marks issues and switches views", async ({ page }) => {
+  test("the review step marks each issue in the contract", async ({ page }) => {
     await page.goto("/result/fixture-harbor");
     await goToStep(page, "Review");
     const contract = page.getByRole("article", { name: "Contract" });
     await expect(contract.locator(".rv-mk")).toHaveCount(6);
-    await page.getByRole("button", { name: "Track changes" }).click();
-    await expect(contract.locator("ins").first()).toBeVisible();
-    await page.getByRole("button", { name: "Revised", exact: true }).click();
-    await expect(contract).toContainText("Date/Effective Date: March 4, 2026");
+    await expect(page.getByRole("button", { name: "Track changes" })).toHaveCount(0);
     await expect(page.getByText("Checked and fine")).toBeVisible();
   });
 

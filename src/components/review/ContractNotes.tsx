@@ -1,21 +1,15 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { PtResult, PtReviewIssue } from "@/lib/plainterms-schema";
+import type { PtReviewIssue } from "@/lib/plainterms-schema";
 import { findLoose } from "@/lib/contractText";
-import { diffWords } from "@/lib/wordDiff";
 import { G } from "@/components/review/Glossed";
 import { SevChip } from "@/components/review/parts";
 
-type Revision = NonNullable<NonNullable<PtResult["document"]>["revision"]>;
-type View = "original" | "tracked" | "revised";
 
 type Props = {
   text: string;
   issues: PtReviewIssue[];
-  revision?: Revision;
-  canSeeRevision: boolean;
-  onPro: (feature: string) => void;
   fileLabel: string;
 };
 
@@ -54,47 +48,7 @@ function renderMarked(text: string, marks: Mark[], active: number, onPick: (n: n
   return out;
 }
 
-/** Original text with the revised draft's changes shown as tracked edits. */
-function renderTracked(text: string, revision: Revision): ReactNode[] {
-  const taken: Array<{ start: number; end: number }> = [];
-  const located = (revision.changes ?? [])
-    .map((change) => {
-      const range = findLoose(text, change.before, taken);
-      if (!range) return null;
-      taken.push(range);
-      return { ...range, change };
-    })
-    .filter((x): x is NonNullable<typeof x> => Boolean(x))
-    .sort((a, b) => a.start - b.start);
-
-  const out: ReactNode[] = [];
-  let cursor = 0;
-  located.forEach((loc, i) => {
-    if (loc.start > cursor) out.push(<G key={`t${i}`}>{text.slice(cursor, loc.start)}</G>);
-    const after = loc.change.after.replace(/\s*\n\s*/g, " ").trim();
-    diffWords(text.slice(loc.start, loc.end), after).forEach((part, j) => {
-      if (part.type === "eq") out.push(<G key={`c${i}-${j}`}>{part.text}</G>);
-      else if (part.type === "del")
-        out.push(
-          <del key={`c${i}-${j}`} data-tip={loc.change.reason}>
-            {part.text}
-          </del>
-        );
-      else
-        out.push(
-          <ins key={`c${i}-${j}`} data-tip={loc.change.reason}>
-            <G>{part.text}</G>
-          </ins>
-        );
-    });
-    cursor = loc.end;
-  });
-  if (cursor < text.length) out.push(<G key="tail">{text.slice(cursor)}</G>);
-  return out;
-}
-
-export default function ContractNotes({ text, issues, revision, canSeeRevision, onPro, fileLabel }: Props) {
-  const [view, setView] = useState<View>("original");
+export default function ContractNotes({ text, issues, fileLabel }: Props) {
   const [active, setActive] = useState(1);
   const splitRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLElement>(null);
@@ -121,7 +75,7 @@ export default function ContractNotes({ text, issues, revision, canSeeRevision, 
     const margin = marginRef.current;
     if (!split || !page || !margin) return;
     // Phones stack the notes under the contract; only wide screens line them up.
-    if (view !== "original" || window.matchMedia("(max-width: 1100px)").matches) {
+    if (window.matchMedia("(max-width: 1100px)").matches) {
       noteRefs.current.forEach((note) => note?.style.removeProperty("top"));
       margin.style.removeProperty("min-height");
       return;
@@ -136,7 +90,7 @@ export default function ContractNotes({ text, issues, revision, canSeeRevision, 
       last = y + (note?.offsetHeight ?? 140) + 12;
     });
     margin.style.minHeight = `${last}px`;
-  }, [marks, view]);
+  }, [marks]);
 
   useLayoutEffect(() => {
     place();
@@ -159,51 +113,17 @@ export default function ContractNotes({ text, issues, revision, canSeeRevision, 
     }
   }
 
-  const revisionBody = (() => {
-    if (view === "original") return renderMarked(text, marks, active, setActive);
-    const feature = view === "tracked" ? "Track changes" : "Revised draft";
-    if (!canSeeRevision || !revision || revision.status === "not_available" || revision.locked) {
-      return (
-        <p className="rv-pro-note">
-          Pro writes every fix into the contract{view === "tracked" ? ", shown as tracked changes" : " as a clean draft you can sign"}.
-          <button type="button" className="rv-link font-semibold text-(--pt-ink) underline underline-offset-3" onClick={() => onPro(feature)}>
-            See Pro
-          </button>
-        </p>
-      );
-    }
-    if (revision.status === "processing") return <p className="rv-pro-note">Writing the revised draft. This usually takes a minute or two.</p>;
-    if (revision.status !== "ready" || !revision.revised_text) {
-      return <p className="rv-pro-note">{revision.message || "The revised draft isn't available for this document."}</p>;
-    }
-    if (view === "tracked") return renderTracked(text, revision);
-    return <G>{revision.revised_text}</G>;
-  })();
-
   return (
     <div>
       <div className="rv-dvbar">
-        <div className="rv-seg" role="group" aria-label="Document view">
-          {(
-            [
-              ["original", "Original"],
-              ["tracked", "Track changes"],
-              ["revised", "Revised"],
-            ] as const
-          ).map(([key, label]) => (
-            <button key={key} type="button" aria-pressed={view === key} onClick={() => setView(key)}>
-              {label}
-            </button>
-          ))}
-        </div>
         <span className="rv-sp" />
         <span className="rv-label">{fileLabel}</span>
       </div>
       <div className="rv-split" ref={splitRef}>
         <article ref={pageRef} className="pt-framed rv-page" aria-label="Contract">
-          {revisionBody}
+          {renderMarked(text, marks, active, setActive)}
         </article>
-        <aside ref={marginRef} className="rv-margin" aria-label="Notes" style={{ visibility: view === "original" ? "visible" : "hidden" }}>
+        <aside ref={marginRef} className="rv-margin" aria-label="Notes">
           {marks.map((m, i) => (
             <div
               key={m.n}
