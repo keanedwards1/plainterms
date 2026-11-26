@@ -216,6 +216,70 @@ export const PtEntitlements = z.object({
 
 export type PtEntitlements = z.infer<typeof PtEntitlements>;
 
+/**
+ * review.v1: a lawyer-style review written for one side of the contract.
+ * Powers the step-by-step result page. Results without it open in the classic view.
+ */
+const PtReviewSeverity = z.enum(["high", "medium", "low"]);
+
+export const PtReviewIssue = z.object({
+  id: z.string(),
+  severity: PtReviewSeverity,
+  priority: z.enum(["must", "worth", "nice"]),
+  section_ref: z.string().default(""),
+  title: z.string(),
+  quote: z.string(),
+  why: z.string(),
+  why_short: z.string(),
+  usual: z.string(),
+  ask_short: z.string(),
+  ask_email_line: z.string(),
+  fallback: z.string(),
+  walk_away_if: z.string().default(""),
+  they_say: z.string().default(""),
+  you_say: z.string().default(""),
+  redline: z.object({ before: z.string(), after: z.string() }).nullable().optional(),
+});
+
+export const PtReview = z.object({
+  version: z.literal("review.v1"),
+  perspective: z.object({
+    party: z.string(),
+    role: z.string(),
+    other_party: z.string(),
+    other_role: z.string(),
+    other_short: z.string(),
+    parties: z.array(z.object({ name: z.string(), role: z.string() })).default([]),
+    confidence: z.enum(["high", "medium", "low"]).default("medium"),
+  }),
+  verdict: z.object({
+    action: z.enum(["sign", "negotiate", "do_not_sign_yet"]),
+    headline: z.string(),
+    line: z.string(),
+  }),
+  risk: z.object({ score: z.number().min(0).max(100), label: PtReviewSeverity }),
+  deal: z.array(z.object({ label: z.string(), value: z.string(), flag: z.string().default("") })).default([]),
+  gaps: z.array(z.string()).default([]),
+  issues: z.array(PtReviewIssue).default([]),
+  good: z.array(z.object({ section_ref: z.string().default(""), text: z.string() })).default([]),
+  checklist: z.array(z.object({ title: z.string(), detail: z.string() })).default([]),
+  sign_as_is: z.array(z.object({ severity: PtReviewSeverity, text: z.string() })).default([]),
+  dates: z.array(z.object({ when: z.string(), what: z.string() })).default([]),
+  what_ifs: z.array(z.object({ q: z.string(), a: z.string() })).default([]),
+  questions: z.array(z.string()).default([]),
+  generated_at: z.string().optional(),
+  model: z.string().optional(),
+});
+
+export type PtReview = z.infer<typeof PtReview>;
+export type PtReviewIssue = z.infer<typeof PtReviewIssue>;
+
+export const PtReviewStatus = z.object({
+  state: z.enum(["processing", "ready", "failed"]),
+  party: z.string().optional(),
+  message: z.string().optional(),
+});
+
 export const PtResult = z.object({
   schema_version: z.literal("pt.ui.v1"),
   result_id: z.string(),
@@ -235,6 +299,10 @@ export const PtResult = z.object({
   analysis_stage: z.enum(["refining", "complete"]).optional(),
   owned: z.boolean().optional(),
   expires_at: z.number().nullable().optional(),
+  // A malformed review never breaks the page: it drops out and the classic view shows.
+  review: PtReview.optional().catch(undefined),
+  review_alt: PtReview.optional().catch(undefined),
+  review_status: PtReviewStatus.optional().catch(undefined),
 });
 
 export type PtResult = z.infer<typeof PtResult>;
