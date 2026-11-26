@@ -13,6 +13,7 @@ import ContractNotes from "@/components/review/ContractNotes";
 import RedlineEditor from "@/components/review/RedlineEditor";
 import { G, GlossTooltip } from "@/components/review/Glossed";
 import { ICONS, Icon, RiskMeter, SevChip } from "@/components/review/parts";
+import LocalDate from "@/components/LocalDate";
 
 type Choice = "negotiate" | "sign" | "walk";
 
@@ -713,10 +714,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
     ["check", "Confirmation"],
   ];
 
-  const reviewDate = new Date(data.created_at);
-  const dateLabel = Number.isNaN(reviewDate.getTime())
-    ? ""
-    : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(reviewDate);
+  const dateLabel = <LocalDate iso={data.created_at} options={{ month: "short", day: "numeric", year: "numeric" }} />;
 
   return (
     <div className="rv">
@@ -734,7 +732,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
             <h1>{title}</h1>
             <p className="rv-meta">
               {review.perspective.party} and {review.perspective.other_party}
-              {dateLabel ? ` · Reviewed ${dateLabel}` : ""}
+              {data.created_at ? <> · Reviewed {dateLabel}</> : null}
             </p>
           </div>
           <Link href={classicHref} className="pt-btn pt-btn-ghost h-10 px-4 text-sm">

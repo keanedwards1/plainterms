@@ -3,7 +3,8 @@ import Link from "next/link";
 import HeroClouds from "@/components/art/HeroClouds";
 import HeroWidgets from "@/components/art/HeroWidgets";
 import Stipple from "@/components/art/Stipple";
-import { DocThumb, formatDocumentDate, VerdictBadge } from "@/components/DocumentRow";
+import { DATE_SHORT, DocThumb, VerdictBadge } from "@/components/DocumentRow";
+import LocalDate from "@/components/LocalDate";
 import Demos from "@/components/home/Demos";
 import Showcase from "@/components/home/Showcase";
 import ToolRow from "@/components/home/ToolRow";
@@ -63,7 +64,7 @@ function RecentDocuments({ docs }: { docs: DocumentSummary[] }) {
               <Link href={`/result/${encodeURIComponent(doc.id)}`} className="pt-doc">
                 <DocThumb doc={doc} />
                 <span className="truncate font-medium">{doc.fileName}</span>
-                <span className="text-sm text-(--pt-muted)">{formatDocumentDate(doc.createdAt)}</span>
+                <span className="text-sm text-(--pt-muted)"><LocalDate iso={doc.createdAt} options={DATE_SHORT} /></span>
                 <span className="mt-2 flex items-center justify-between gap-2">
                   <VerdictBadge action={doc.recommendationAction} refining={doc.status === "refining"} />
                   {doc.status === "refining" ? null : (

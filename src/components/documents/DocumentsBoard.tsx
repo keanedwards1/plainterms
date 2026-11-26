@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { searchDocuments } from "@/lib/documentSearch";
 import { invalidateDocumentIndex, loadDocumentIndex, peekDocumentIndex } from "@/lib/documentSearchIndex";
-import { DocThumb, formatDocumentDate, VerdictBadge } from "@/components/DocumentRow";
+import { DATE_SHORT, DocThumb, VerdictBadge } from "@/components/DocumentRow";
+import LocalDate from "@/components/LocalDate";
 import Dialog from "@/components/ui/Dialog";
 import type { DocumentSummary, DocumentsPage } from "@/lib/serverApi";
 
@@ -31,7 +32,7 @@ function DocumentCard({ doc, isPro, onDelete }: { doc: DocumentSummary; isPro: b
         <DocThumb doc={doc} roomForButton />
         <span className="truncate font-medium">{doc.fileName}</span>
         <span className="text-sm text-(--pt-muted)">
-          {formatDocumentDate(doc.createdAt)}
+          <LocalDate iso={doc.createdAt} options={DATE_SHORT} />
           {left !== null && left <= 7 ? (
             <span className="text-(--pt-warn)"> · {left === 0 ? "Expires today" : `${left} day${left === 1 ? "" : "s"} left`}</span>
           ) : null}

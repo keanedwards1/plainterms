@@ -1,19 +1,8 @@
 import Link from "next/link";
 import TrackResultViewed from "@/components/TrackResultViewed";
 import LiveResult from "@/components/result/LiveResult";
+import LocalDate from "@/components/LocalDate";
 import type { PtResult } from "@/lib/plainterms-schema";
-
-function formatResultDate(raw: string) {
-  const asDate = new Date(raw);
-  if (Number.isNaN(asDate.getTime())) return raw;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(asDate);
-}
 
 type Props = {
   data: PtResult;
@@ -45,7 +34,7 @@ export default function ClassicResult({ data, retentionDays, accessKey, abVarian
             )}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold uppercase tracking-[0.14em] text-(--pt-muted)">
               <span className="max-w-[60vw] truncate">File: {data.document?.file_name ?? "Contract document"}</span>
-              <span>Reviewed {formatResultDate(data.created_at)}</span>
+              <span>Reviewed <LocalDate iso={data.created_at} fallback={data.created_at} options={{ month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }} /></span>
               {newViewHref ? (
                 <Link href={newViewHref} className="normal-case tracking-normal text-(--pt-ink) underline underline-offset-4">
                   Step-by-step view

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { DocumentSummary } from "@/lib/serverApi";
 import { contractTitle } from "@/lib/contractText";
+import LocalDate from "@/components/LocalDate";
 
 /** A small page thumbnail showing the document's own first lines (or placeholder lines without text). */
 export function DocThumb({ doc, roomForButton = false }: { doc: DocumentSummary; roomForButton?: boolean }) {
@@ -37,6 +38,8 @@ const VERDICT_LABELS: Record<string, string> = {
   negotiate: "Negotiate",
   do_not_sign_yet: "Don't sign yet",
 };
+
+export const DATE_SHORT: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
 
 export function formatDocumentDate(iso: string) {
   const date = new Date(iso);
@@ -79,7 +82,7 @@ export default function DocumentRow({ doc, compact = false }: { doc: DocumentSum
           {doc.fileName}
         </span>
         <span className="block text-sm text-(--pt-muted)">
-          {formatDocumentDate(doc.createdAt)}
+          <LocalDate iso={doc.createdAt} options={DATE_SHORT} />
           {!compact && !refining ? ` · ${doc.flagCount} red flag${doc.flagCount === 1 ? "" : "s"}` : ""}
         </span>
       </span>
