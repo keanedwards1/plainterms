@@ -5,7 +5,7 @@ export type Sev = "high" | "medium" | "low";
 export const SEV_LABEL: Record<Sev, string> = { high: "High", medium: "Medium", low: "Low" };
 
 export function SevChip({ sev, prefix = "" }: { sev: Sev; prefix?: string }) {
-  return <span className={`rv-chip rv-${sev}`}>{`${prefix}${SEV_LABEL[sev]}`}</span>;
+  return <span className={`rv-chip rv-${sev}`}>{`${prefix}${SEV_LABEL[sev]} risk`}</span>;
 }
 
 /** The risk score on a labelled Low / Medium / High scale, so it's clear which end is bad. */

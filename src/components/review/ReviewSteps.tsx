@@ -223,9 +223,9 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
           <b>{review.risk.score}</b>
           <span>/100 · {review.risk.label[0].toUpperCase() + review.risk.label.slice(1)} risk</span>
         </span>
-        {counts.high ? <span className="rv-chip rv-high">{counts.high} high</span> : null}
-        {counts.medium ? <span className="rv-chip rv-medium">{counts.medium} medium</span> : null}
-        {counts.low ? <span className="rv-chip rv-low">{counts.low} low</span> : null}
+        {counts.high ? <span className="rv-chip rv-high">{counts.high} high risk</span> : null}
+        {counts.medium ? <span className="rv-chip rv-medium">{counts.medium} medium risk</span> : null}
+        {counts.low ? <span className="rv-chip rv-low">{counts.low} low risk</span> : null}
         <span className="rv-sp" />
         <span className="rv-label hidden sm:inline">Reviewed for {review.perspective.party}</span>
       </div>
