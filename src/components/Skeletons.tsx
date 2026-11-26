@@ -127,6 +127,27 @@ export function HomeSkeleton() {
   );
 }
 
+/** The full-screen /new page: close button, two-line headline, subtitle, upload field, two small buttons. */
+export function NewDocumentSkeleton() {
+  return (
+    <main className="pt-new" aria-busy="true" aria-label="Loading">
+      <span className="pt-skeleton fixed right-4 top-4 h-11 w-11 rounded-full" />
+      <div className="flex w-full flex-col items-center px-4 pb-12 pt-[4.5rem]">
+        <Bar className="h-14 w-[min(34rem,88%)] sm:h-24" />
+        <Bar className="mt-3 h-14 w-[min(38rem,94%)] sm:h-24" />
+        <Bar className="mt-8 h-4 w-[min(32rem,86%)]" />
+        <Bar className="mt-2.5 h-4 w-[min(24rem,70%)]" />
+        <Bar className="mt-9 h-16 w-[min(47.5rem,100%)] rounded-(--pt-radius-pop)" />
+        <div className="mt-3.5 flex gap-2">
+          <Bar className="h-9 w-40" />
+          <Bar className="h-9 w-24" />
+        </div>
+        <Bar className="mt-4 h-3 w-[min(26rem,80%)]" />
+      </div>
+    </main>
+  );
+}
+
 /** A document's result page. */
 export function ResultSkeleton() {
   return (
@@ -163,6 +184,7 @@ export function ResultSkeleton() {
 /** The skeleton for whichever page a tab leads to. */
 export function SkeletonFor({ path }: { path: string }) {
   if (path === "/") return <HomeSkeleton />;
+  if (path === "/new") return <NewDocumentSkeleton />;
   if (path.startsWith("/documents")) return <DocumentsSkeleton />;
   if (path.startsWith("/result")) return <ResultSkeleton />;
   if (path.startsWith("/dashboard")) {
