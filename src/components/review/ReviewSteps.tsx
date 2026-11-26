@@ -17,11 +17,8 @@ import { ICONS, Icon, RiskMeter, SevChip } from "@/components/review/parts";
 type Choice = "negotiate" | "sign" | "walk";
 
 const PRIORITY: Record<PtReviewIssue["priority"], string> = { must: "Must have", worth: "Worth asking", nice: "Nice to have" };
-const CHOICE_LABEL: Record<Choice, string> = { negotiate: "Negotiate", sign: "Sign as-is", walk: "Walk away" };
 const PREP_TITLE: Record<Choice, string> = { negotiate: "Prepare to negotiate", sign: "Signing as-is", walk: "Walk away" };
-const PREP_SUB: Record<Choice, string> = { negotiate: "Your asks", sign: "Checklist", walk: "Nothing to undo" };
 const SEND_TITLE: Record<Choice, string> = { negotiate: "Send your changes", sign: "Sign it", walk: "Let them know" };
-const SEND_SUB: Record<Choice, string> = { negotiate: "Email or contract", sign: "Download to sign", walk: "Decline note" };
 const N = 6;
 
 type Props = {
@@ -49,17 +46,16 @@ function Steps({
 }: {
   step: number;
   setStep: (n: number) => void;
-  labels: Array<[string, string, string]>;
+  labels: Array<[string, string]>;
   busy: boolean[];
 }) {
   return (
     <nav className="rv-steps" aria-label="Steps">
-      {labels.map(([icon, title, sub], i) => (
+      {labels.map(([icon, title], i) => (
         <button key={title} type="button" className="rv-step" aria-current={i === step ? "step" : undefined} onClick={() => setStep(i)}>
           <ToolIcon name={icon} />
           <span className="min-w-0">
             {title}
-            <small>{sub}</small>
           </span>
           {busy[i] ? (
             <span className="pt-spinner" aria-label="Still being written" />
@@ -177,7 +173,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
         </dl>
         <div className="rv-nav">
           <span />
-          {next(1, "Next: the contract")}
+          {next(1, "Next: review")}
         </div>
       </section>
       {review.gaps.length ? (
@@ -253,13 +249,13 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
         ) : null}
       </div>
       <div className="pt-framed rv-bottombar">
-        {back(0, "The deal")}
+        {back(0, "Overview")}
         <b className="rv-strong">
           {issues.length} issue{issues.length === 1 ? "" : "s"}
           {counts.high ? `, ${counts.high} high` : ""}
         </b>
         <span className="rv-sp" />
-        {next(2, "Next: decide")}
+        {next(2, "Next: options")}
       </div>
     </>
   );
@@ -290,8 +286,8 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
       </div>
       <p className="rv-signpost">If a lot is riding on this contract, a lawyer can read the full document, including anything attached, before you sign.</p>
       <div className="rv-nav">
-        {back(1, "The contract")}
-        {next(3, "Next: prepare")}
+        {back(1, "Review")}
+        {next(3, "Next: plan")}
       </div>
     </section>
   );
@@ -421,7 +417,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
         {choice === "walk" ? null : checklist}
       </div>
       <div className="rv-nav">
-        {back(2, "Decide")}
+        {back(2, "Options")}
         {next(4, "Next: send")}
       </div>
     </>
@@ -596,7 +592,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
         </section>
       )}
       <div className="rv-nav">
-        {back(3, "Prepare")}
+        {back(3, "Plan")}
         {next(5, "Next: confirmation")}
       </div>
     </>
@@ -703,7 +699,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
         )}
       </section>
       <div className="rv-nav">
-        {back(n - 1, n === 3 ? "Decide" : n === 4 ? "Prepare" : "Send")}
+        {back(n - 1, n === 3 ? "Options" : n === 4 ? "Plan" : "Send")}
         {n < N - 1 ? next(n + 1, n === 3 ? "Next: send" : "Next: confirmation") : <span />}
       </div>
     </>
@@ -718,13 +714,13 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
     needsExtras ? waitingPanel(5, "Confirmation") : confirmation,
   ];
   const busy = [false, false, false, extrasPending, extrasPending, extrasPending];
-  const labels: Array<[string, string, string]> = [
-    ["template", "The deal", other],
-    ["review", "The contract", `${issues.length} issue${issues.length === 1 ? "" : "s"}`],
-    ["compare", "Decide", CHOICE_LABEL[choice]],
-    ["write", "Prepare", PREP_SUB[choice]],
-    ["letter", "Send", SEND_SUB[choice]],
-    ["check", "Confirmation", "What happens next"],
+  const labels: Array<[string, string]> = [
+    ["template", "Overview"],
+    ["review", "Review"],
+    ["compare", "Options"],
+    ["write", "Plan"],
+    ["letter", "Send"],
+    ["check", "Confirmation"],
   ];
 
   const reviewDate = new Date(data.created_at);

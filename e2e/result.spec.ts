@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 
 // These run against /result/fixture-*, which the server serves from
 // e2e/fixtures only when E2E_FIXTURES=1 (set in playwright.config.ts).
-const STEPS = ["The deal", "The contract", "Decide", "Prepare", "Send", "Confirmation"];
+const STEPS = ["Overview", "Review", "Options", "Plan", "Send", "Confirmation"];
 
 async function goToStep(page: import("@playwright/test").Page, name: string) {
   await page.getByRole("navigation", { name: "Steps" }).getByRole("button", { name: new RegExp(`^${name}`) }).click();
@@ -27,7 +27,7 @@ test.describe("step-by-step result", () => {
 
   test("the contract step marks issues and switches views", async ({ page }) => {
     await page.goto("/result/fixture-harbor");
-    await goToStep(page, "The contract");
+    await goToStep(page, "Review");
     const contract = page.getByRole("article", { name: "Contract" });
     await expect(contract.locator(".rv-mk")).toHaveCount(6);
     await page.getByRole("button", { name: "Track changes" }).click();
@@ -57,14 +57,14 @@ test.describe("step-by-step result", () => {
 
   test("ticking a change in the contract updates the asks, and the contract zooms", async ({ page }) => {
     await page.goto("/result/fixture-harbor");
-    await goToStep(page, "Prepare");
+    await goToStep(page, "Plan");
     const picked = page.getByText(/\d of 6 picked/);
     const before = await picked.innerText();
     await goToStep(page, "Send");
 
     const firstBox = page.locator(".rv-rl-keep input").first();
     await firstBox.uncheck();
-    await goToStep(page, "Prepare");
+    await goToStep(page, "Plan");
     await expect(picked).not.toHaveText(before);
 
     await goToStep(page, "Send");
@@ -113,9 +113,9 @@ test.describe("results that are still arriving", () => {
   test("steps 1 to 3 work while the asks and edits are still being written", async ({ page }) => {
     await page.goto("/result/fixture-harbor-pending");
     await expect(page.getByRole("heading", { level: 1, name: "Production services agreement" })).toBeVisible();
-    await goToStep(page, "Decide");
+    await goToStep(page, "Options");
     await expect(page.getByRole("heading", { name: "What do you want to do?" })).toBeVisible();
-    for (const name of ["Prepare", "Send", "Confirmation"]) {
+    for (const name of ["Plan", "Send", "Confirmation"]) {
       await goToStep(page, name);
       await expect(page.getByText("Writing your asks and edits.")).toBeVisible();
     }
