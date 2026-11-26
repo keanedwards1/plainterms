@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { highlight, searchDocuments, type SearchHit, type Segment } from "@/lib/documentSearch";
 import { loadDocumentIndex, peekDocumentIndex } from "@/lib/documentSearchIndex";
+import LogoLoader from "@/components/LogoLoader";
 
 const RECENT_KEY = "pt.recentSearches";
 const WHERE: Record<SearchHit["where"], string> = {
@@ -81,6 +82,23 @@ export default function SearchPanel() {
     loadDocumentIndex()
       .then(() => setReady(true))
       .catch(() => setFailed(true));
+  }, []);
+
+  // Warm the index once the page is idle, so the first search usually opens with results ready.
+  useEffect(() => {
+    if (peekDocumentIndex()) return undefined;
+    const warm = () => {
+      loadDocumentIndex()
+        .then(() => setReady(true))
+        .catch(() => {});
+    };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(warm, { timeout: 3000 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(warm, 1500);
+    return () => window.clearTimeout(id);
   }, []);
 
   const close = useCallback(() => {
@@ -225,10 +243,10 @@ export default function SearchPanel() {
             {failed ? (
               <p className="pt-sr-empty">Your documents couldn&apos;t be searched right now. Try again in a moment.</p>
             ) : !cache ? (
-              <p className="pt-sr-empty" role="status">
-                <span className="pt-spinner mr-2 align-[-2px]" aria-hidden="true" />
-                Getting your documents ready…
-              </p>
+              <div className="pt-sr-loading">
+                <LogoLoader size={36} label="Getting your documents ready" />
+                <p>Getting your documents ready…</p>
+              </div>
             ) : outcome ? (
               <>
                 {outcome.suggestion ? (

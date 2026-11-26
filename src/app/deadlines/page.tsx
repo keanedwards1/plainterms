@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import RemindersButton from "@/components/tools/RemindersButton";
 import ToolHeader, { ExampleLabel } from "@/components/tools/ToolHeader";
-import { getSession } from "@/lib/auth";
+import { getSession, type Session } from "@/lib/auth";
 import { getAccount } from "@/lib/serverApi";
 
 export const metadata: Metadata = {
@@ -17,9 +18,14 @@ const DATES = [
   { month: "Mar", day: "30", title: "Roof warranty check", detail: "Summit Roofing · first year ends in 2027", tone: "bg-(--pt-muted)" },
 ];
 
+/** The reminders button needs the plan; it loads on its own so the page doesn't wait. */
+async function Reminders({ session }: { session: Session | null }) {
+  const account = session ? await getAccount(session) : null;
+  return <RemindersButton signedIn={Boolean(session)} isPro={account?.plan === "pro"} />;
+}
+
 export default async function DeadlinesPage() {
   const session = await getSession();
-  const account = session ? await getAccount(session) : null;
 
   return (
     <main className="pt-page-pad">
@@ -51,7 +57,15 @@ export default async function DeadlinesPage() {
           <button type="button" disabled className="pt-btn pt-btn-outline h-11 px-4 text-[0.9375rem]">
             Add to your calendar
           </button>
-          <RemindersButton signedIn={Boolean(session)} isPro={account?.plan === "pro"} />
+          <Suspense
+            fallback={
+              <button type="button" disabled className="pt-btn pt-btn-solid h-11 px-4 text-[0.9375rem]">
+                Send me reminders
+              </button>
+            }
+          >
+            <Reminders session={session} />
+          </Suspense>
         </div>
         <p className="mt-8 text-(--pt-muted)">
           Dates start showing up here when you{" "}

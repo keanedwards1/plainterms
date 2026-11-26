@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import LogoLoader from "@/components/LogoLoader";
 import HeroClouds from "@/components/art/HeroClouds";
 import HeroWidgets from "@/components/art/HeroWidgets";
 import Stipple from "@/components/art/Stipple";
@@ -9,7 +11,7 @@ import Demos from "@/components/home/Demos";
 import Showcase from "@/components/home/Showcase";
 import ToolRow from "@/components/home/ToolRow";
 import Workspace from "@/components/home/Workspace";
-import { getSession } from "@/lib/auth";
+import { getSession, type Session } from "@/lib/auth";
 import { getDocuments, type DocumentSummary } from "@/lib/serverApi";
 import { HOME_TEMPLATES } from "@/lib/templates";
 import "@/components/home/home.css";
@@ -84,9 +86,25 @@ function RecentDocuments({ docs }: { docs: DocumentSummary[] }) {
   );
 }
 
+/** Fetches the recent documents on its own, so the rest of the page doesn't wait for it. */
+async function RecentDocumentsSection({ session }: { session: Session }) {
+  const recent = await getDocuments(session, { limit: 4 });
+  return <RecentDocuments docs={recent?.documents ?? []} />;
+}
+
+function RecentDocumentsLoading() {
+  return (
+    <section aria-label="Loading your recent documents" className="pt-legal-pad mt-16">
+      <h2 className="text-[1.75rem] tracking-[-0.045em]">Pick up where you left off</h2>
+      <div className="pt-section-loading">
+        <LogoLoader label="Loading your recent documents" />
+      </div>
+    </section>
+  );
+}
+
 export default async function HomePage() {
   const session = await getSession();
-  const recent = session ? await getDocuments(session, { limit: 4 }) : null;
 
   return (
     <main className="pt-page-pad">
@@ -112,7 +130,11 @@ export default async function HomePage() {
 
         <ToolRow />
 
-        {session ? <RecentDocuments docs={recent?.documents ?? []} /> : null}
+        {session ? (
+          <Suspense fallback={<RecentDocumentsLoading />}>
+            <RecentDocumentsSection session={session} />
+          </Suspense>
+        ) : null}
 
         <section aria-labelledby="get-heading" className="relative isolate mt-10 pb-16">
           <div

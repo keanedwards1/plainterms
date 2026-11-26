@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import BillingActions from "@/components/dashboard/BillingActions";
-import { getSession } from "@/lib/auth";
+import { Suspense } from "react";
+import LogoLoader from "@/components/LogoLoader";
+import { getSession, type Session } from "@/lib/auth";
 import { getAccount } from "@/lib/serverApi";
 
 const PRO_PRICE_LABEL = process.env.NEXT_PUBLIC_PRO_PRICE_LABEL || "$5/month";
@@ -34,15 +36,12 @@ function Check() {
   );
 }
 
-export default async function BillingPage({ searchParams }: { searchParams: Promise<{ upgraded?: string }> }) {
-  const session = await getSession();
-  if (!session) redirect("/sign-in?returnTo=/dashboard/billing");
-  const [{ upgraded }, account] = await Promise.all([searchParams, getAccount(session)]);
+async function BillingBody({ session, upgraded }: { session: Session; upgraded?: string }) {
+  const account = await getAccount(session);
 
   if (!account) {
     return (
       <div>
-        <h1 className="text-3xl text-(--pt-ink)">Plan &amp; billing</h1>
         <p role="alert" className="pt-alert-danger mt-5 px-4 py-3 text-sm">
           Your plan couldn&apos;t be loaded. Refresh to try again.
         </p>
@@ -56,8 +55,6 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
 
   return (
     <div>
-      <h1 className="text-3xl text-(--pt-ink)">Plan &amp; billing</h1>
-      <p className="mt-1 text-(--pt-muted)">Manage your plan, payment method and invoices.</p>
 
       {upgraded === "1" ? (
         <p role="status" className="mt-5 rounded-(--pt-radius-pop) border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
@@ -133,6 +130,28 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           </ul>
         </section>
       </div>
+    </div>
+  );
+}
+
+export default async function BillingPage({ searchParams }: { searchParams: Promise<{ upgraded?: string }> }) {
+  const session = await getSession();
+  if (!session) redirect("/sign-in?returnTo=/dashboard/billing");
+  const { upgraded } = await searchParams;
+
+  return (
+    <div>
+      <h1 className="text-3xl text-(--pt-ink)">Plan &amp; billing</h1>
+      <p className="mt-1 text-(--pt-muted)">Manage your plan, payment method and invoices.</p>
+      <Suspense
+        fallback={
+          <div className="pt-section-loading">
+            <LogoLoader label="Loading your account" />
+          </div>
+        }
+      >
+        <BillingBody session={session} upgraded={upgraded} />
+      </Suspense>
     </div>
   );
 }

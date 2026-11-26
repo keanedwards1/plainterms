@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import DeleteAccount from "@/components/dashboard/DeleteAccount";
-import { displayName, getSession } from "@/lib/auth";
+import { Suspense } from "react";
+import LogoLoader from "@/components/LogoLoader";
+import { displayName, getSession, type Session } from "@/lib/auth";
 import { getAccount } from "@/lib/serverApi";
 
 function formatJoined(iso: string | undefined) {
@@ -10,16 +12,12 @@ function formatJoined(iso: string | undefined) {
   return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
 }
 
-export default async function SettingsPage() {
-  const session = await getSession();
-  if (!session) redirect("/sign-in?returnTo=/dashboard/settings");
+async function SettingsBody({ session }: { session: Session }) {
   const account = await getAccount(session);
   const joined = formatJoined(account?.createdAt);
 
   return (
-    <div>
-      <h1 className="text-3xl text-(--pt-ink)">Account settings</h1>
-      <p className="mt-1 text-(--pt-muted)">Your profile and account controls.</p>
+    <>
 
       <section aria-labelledby="profile-heading" className="pt-panel mt-5 p-5 sm:p-6">
         <h2 id="profile-heading" className="text-xl text-(--pt-ink)">Profile</h2>
@@ -71,6 +69,27 @@ export default async function SettingsPage() {
           <DeleteAccount isPro={account?.plan === "pro"} />
         </div>
       </section>
+    </>
+  );
+}
+
+export default async function SettingsPage() {
+  const session = await getSession();
+  if (!session) redirect("/sign-in?returnTo=/dashboard/settings");
+
+  return (
+    <div>
+      <h1 className="text-3xl text-(--pt-ink)">Account settings</h1>
+      <p className="mt-1 text-(--pt-muted)">Your profile and account controls.</p>
+      <Suspense
+        fallback={
+          <div className="pt-section-loading">
+            <LogoLoader label="Loading your account" />
+          </div>
+        }
+      >
+        <SettingsBody session={session} />
+      </Suspense>
     </div>
   );
 }

@@ -542,6 +542,38 @@ html {
   animation: pt-loader-orbit 0.8s linear infinite;
 }
 
+/* The animated logo (LogoLoader.tsx): the two squares slide together and back. */
+.pt-logo-loader {
+  display: inline-grid;
+  place-items: center;
+  color: var(--pt-accent);
+}
+.pt-ll-a,
+.pt-ll-b {
+  animation: pt-ll-a 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+.pt-ll-b {
+  animation-name: pt-ll-b;
+}
+@keyframes pt-ll-a {
+  0%, 12%, 100% { transform: translate(0, 0); }
+  50%, 62% { transform: translate(38px, 38px); }
+}
+@keyframes pt-ll-b {
+  0%, 12%, 100% { transform: translate(0, 0); }
+  50%, 62% { transform: translate(-38px, -38px); }
+}
+/* A centred block that holds the loader while a section's data arrives. */
+.pt-section-loading {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  padding: 2rem 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-ll-a, .pt-ll-b { animation: none; }
+}
+
 .pt-tab-loader {
   display: inline-block;
   width: 0.72rem;
