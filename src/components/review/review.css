@@ -87,7 +87,7 @@
     padding: 40px 48px 44px 92px; font: 400 16.5px/1.85 var(--rv-body); color: #2b3b37; min-height: 560px; border-top: 14px solid var(--pt-ink); white-space: pre-wrap; overflow-wrap: anywhere;
     background: linear-gradient(90deg, transparent 62px, #f0a07a 62px, #f0a07a 64px, transparent 64px), repeating-linear-gradient(180deg, transparent 0 29px, rgb(111 167 196 / 0.28) 29px 30px), #fffdf5;
   }
-  .rv-mk { cursor: pointer; padding: 1px 2px; border-radius: 2px; transition: box-shadow 0.15s; }
+  .rv-mk { cursor: pointer; padding: 1px 3px; border-radius: 3px; transition: box-shadow 0.15s; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
   .rv-mk.rv-high { background: #f7cbb8; color: inherit; } .rv-mk.rv-medium, .rv-mk.rv-low { background: #fbe6a6; color: inherit; }
   .rv-mk[data-on="true"] { box-shadow: 0 0 0 2px var(--pt-ink); }
   .rv-mk sup { position: static; top: auto; display: inline-block; width: 18px; height: 18px; margin-left: 3px; border-radius: 50%; background: var(--pt-ink); color: #fff; font: 700 10.5px/18px var(--rv-body); text-align: center; vertical-align: 2px; }
