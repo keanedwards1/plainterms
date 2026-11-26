@@ -168,7 +168,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
     <div className="rv-stage">
       <section className="pt-framed rv-focus">
         <p className="rv-label">
-          Step 1 of {N} · Reviewed for {review.perspective.party}
+          Reviewed for {review.perspective.party}
           {review.perspective.role ? `, the ${review.perspective.role}` : ""}
         </p>
         <h2 className="rv-step-title mt-1">{review.verdict.headline}</h2>
@@ -287,8 +287,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
   ];
   const decide = (
     <section className="pt-framed rv-focus">
-      <p className="rv-label">Step 3 of {N}</p>
-      <h2 className="rv-step-title">What do you want to do?</h2>
+            <h2 className="rv-step-title">What do you want to do?</h2>
       <p className="rv-lead">Your call. Here&apos;s what each choice means for you.</p>
       <div className="rv-choices mt-6" role="radiogroup" aria-label="What you want to do">
         {decideOptions.map(([key, label, desc, meta]) => (
@@ -353,7 +352,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
     <>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="rv-label">Step 4 of {N}</p>
           <h2 className="rv-step-title">{PREP_TITLE[choice]}</h2>
         </div>
         {choice === "negotiate" ? (
@@ -521,8 +519,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
   const send = (
     <>
       <div className="mb-4">
-        <p className="rv-label">Step 5 of {N}</p>
-        <h2 className="rv-step-title">{SEND_TITLE[choice]}</h2>
+                <h2 className="rv-step-title">{SEND_TITLE[choice]}</h2>
       </div>
       {choice === "negotiate" ? (
         <>
@@ -620,8 +617,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
   const confirmation = (
     <>
       <div className="mb-4">
-        <p className="rv-label">Step 6 of {N}</p>
-        <h2 className="rv-step-title">Confirmation</h2>
+                <h2 className="rv-step-title">Confirmation</h2>
         <p className="rv-lead">The dates to keep, and what the contract says if something goes wrong.</p>
       </div>
       {choice === "walk" ? null : checklist}
@@ -690,9 +686,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
   const waitingPanel = (n: number, title: string) => (
     <>
       <div className="mb-4">
-        <p className="rv-label">
-          Step {n + 1} of {N}
-        </p>
         <h2 className="rv-step-title">{title}</h2>
       </div>
       <section className="pt-panel rv-pending" role="status" aria-live="polite">
