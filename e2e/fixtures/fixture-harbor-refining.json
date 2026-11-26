@@ -1,0 +1,79 @@
+{
+ "schema_version": "pt.ui.v1",
+ "result_id": "fixture-harbor-refining",
+ "created_at": "2026-11-24T22:43:37.512Z",
+ "headline": "Summary",
+ "overview": "Production Services Agreement dated March 4, 2026 between Harbor Media Inc. (Client) and Luna Park Studio (Vendor).",
+ "sections": [],
+ "document": {
+  "file_name": "attachment Heavy 3.docx",
+  "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "word_count": 285,
+  "extracted_text": "PRODUCTION SERVICES AGREEMENT Date: March 4, 2026 This Production Services Agreement (“Agreement”) is between Harbor Media Inc. (“Client”) and Luna Park Studio (“Vendor”). 1. Scope of Services Vendor will perform production services described in Statement of Work (SOW), Exhibit A, and technical specifications in Appendix 1, all incorporated by reference. If any exhibit is unavailable at signing, Vendor will still perform services requested by Client. 2. Fees and Payment Total project fee is $18,000. Client pays 30% deposit and remainder within Net 60 days after invoice. 3. Term and Termination Term starts on the Effective Date and continues until completion. Client may terminate for convenience on 7 days notice. Vendor may terminate for nonpayment after 30 days overdue notice. 4. Intellectual Property Upon full payment, final approved deliverables are assigned to Client. Vendor retains ownership of pre-existing tools and portfolio rights unless prohibited by Client in writing. 5. Confidentiality Vendor will keep Client confidential information private for 3 years. 6. Indemnity and Liability Vendor will indemnify Client for third-party claims arising from Vendor’s breach or negligence. Client will indemnify Vendor for claims arising from Client-provided materials. Except for fraud, willful misconduct, and confidentiality breach, each party’s liability is capped at amounts paid under this Agreement. 7. Disputes and Governing Law Any dispute first goes to mediation, then binding arbitration in Seattle, Washington. Governing law is the State of Washington. 8. Assignment and Subcontracting Vendor may subcontract portions of work to qualified contractors but remains responsible for deliverables. Neither party may assign this Agreement without written consent, except in a merger. 9. Warranties Vendor warrants deliverables will substantially conform to written specifications for 30 days after delivery. Signed: Harbor Media Inc. ___________________ Luna Park Studio ___________________",
+  "revision": {
+   "status": "ready",
+   "revised_text": "PRODUCTION SERVICES AGREEMENT\n\nDate/Effective Date: March 4, 2026\n\nThis Production Services Agreement (“Agreement”) is between Harbor Media Inc. (“Client”) and Luna Park Studio (“Vendor”).\n\n1. Scope of Services\n\nVendor will perform production services described in Statement of Work (SOW), Exhibit A, and technical specifications in Appendix 1, all incorporated by reference. If Exhibit A, Appendix 1, or any other referenced attachment is unavailable, incomplete, or inconsistent at signing, the parties will work in good faith to complete and approve it in writing within 30 days after the Effective Date. Vendor has no obligation to perform services that are not described in a signed SOW, Appendix 1, or other written approval signed by both parties, and Client requests outside those written documents are not binding unless Vendor agrees in writing to the scope, price, and schedule impact.\n\n2. Fees and Payment\n\nTotal project fee is $18,000. Client pays 30% deposit and remainder within Net 30 days after invoice receipt. Late payments accrue interest at 1.5% per month or the maximum rate permitted by law, whichever is less, from the due date until paid.\n\n3. Term and Termination\n\nTerm starts on the Effective Date and continues until completion. Client may terminate for convenience on 7 days notice. Upon termination for convenience, Client will pay Vendor for all services performed, deliverables completed or in progress, approved expenses, and non-cancelable commitments incurred before the effective termination date, less amounts previously paid. Vendor may suspend work for undisputed amounts that remain unpaid more than 10 days after written notice and a 5-business-day opportunity to cure, and Vendor may terminate for nonpayment if undisputed amounts remain unpaid 30 days after written overdue notice.\n\n4. Intellectual Property\n\nUpon full payment, final approved deliverables are assigned to Client. Vendor retains ownership of pre-existing tools and portfolio rights unless prohibited by Client in writing.\n\n5. Confidentiality\n\nEach party will keep the other party’s Confidential Information private during the term of this Agreement and for two years after the Agreement ends. “Confidential Information” means non-public business, technical, financial, creative, customer, vendor, pricing, production, marketing, or strategic information disclosed by or on behalf of a party that is marked confidential or reasonably should be understood to be confidential under the circumstances. Confidential Information does not include information that is publicly available without breach of this Agreement, already known by the receiving party without a duty of confidentiality, independently developed without use of the disclosing party’s Confidential Information, or rightfully received from a third party without a duty of confidentiality. A receiving party may disclose Confidential Information if required by law, court order, or governmental authority, provided it gives prompt notice to the disclosing party when legally permitted and limits the disclosure to what is required.\n\n6. Indemnity and Liability\n\nEach party will indemnify, defend, and hold harmless the other party from third-party claims, damages, liabilities, costs, and reasonable attorneys’ fees arising from the indemnifying party’s breach of this Agreement, negligence, or willful misconduct. Client will also indemnify, defend, and hold harmless Vendor from third-party claims arising from Client-provided materials, instructions, approvals, or content, provided Vendor used them as authorized by Client. Except for fraud, willful misconduct, confidentiality breach, indemnification obligations, and Client’s payment obligations, each party’s liability is capped at amounts paid or payable under this Agreement.\n\n7. Disputes and Governing Law\n\nAny dispute first goes to mediation in Seattle, Washington. If the dispute is not resolved within 30 days after a written request for mediation, either party may bring the dispute in the state or federal courts located in Seattle, Washington, and each party consents to jurisdiction and venue in those courts. Arbitration is not required unless both parties agree in writing after the dispute arises. Nothing in this Agreement waives either party’s right to a jury trial unless the parties separately agree in writing after the dispute arises. Governing law is the State of Washington.\n\n8. Assignment and Subcontracting\n\nVendor may subcontract portions of work to qualified contractors but remains responsible for deliverables. Neither party may assign this Agreement without written consent, except in a merger.\n\n9. Warranties\n\nVendor warrants deliverables will substantially conform to written specifications for 30 days after delivery.\n\n10. Restrictions\n\nNothing in this Agreement creates any non-compete, non-solicitation, exclusivity, right of first refusal, or similar restriction on either party. Vendor remains free to provide services to other clients, including clients in the same or similar industries, provided Vendor does not use or disclose Client’s Confidential Information in violation of this Agreement.\n\nSigned:\n\nHarbor Media Inc. ___________________\n\nLuna Park Studio ___________________",
+   "summary": "Revised for the vendor.",
+   "changes": [
+    {
+     "before": "1. Scope of Services Vendor will perform production services described in Statement of Work (SOW), Exhibit A, and technical specifications in Appendix 1, all incorporated by reference. If any exhibit is unavailable at signing, Vendor will still perform services requested by Client.",
+     "after": "1. Scope of Services\n\nVendor will perform production services described in Statement of Work (SOW), Exhibit A, and technical specifications in Appendix 1, all incorporated by reference. If Exhibit A, Appendix 1, or any other referenced attachment is unavailable, incomplete, or inconsistent at signing, the parties will work in good faith to complete and approve it in writing within 30 days after the Effective Date. Vendor has no obligation to perform services that are not described in a signed SOW, Appendix 1, or other written approval signed by both parties, and Client requests outside those written documents are not binding unless Vendor agrees in writing to the scope, price, and schedule impact.",
+     "reason": "You only owe work that's written down and agreed.",
+     "severity": "high"
+    },
+    {
+     "before": "2. Fees and Payment Total project fee is $18,000. Client pays 30% deposit and remainder within Net 60 days after invoice.",
+     "after": "2. Fees and Payment\n\nTotal project fee is $18,000. Client pays 30% deposit and remainder within Net 30 days after invoice receipt. Late payments accrue interest at 1.5% per month or the maximum rate permitted by law, whichever is less, from the due date until paid.",
+     "reason": "Net 30, with interest on late payments.",
+     "severity": "medium"
+    },
+    {
+     "before": "3. Term and Termination Term starts on the Effective Date and continues until completion. Client may terminate for convenience on 7 days notice. Vendor may terminate for nonpayment after 30 days overdue notice.",
+     "after": "3. Term and Termination\n\nTerm starts on the Effective Date and continues until completion. Client may terminate for convenience on 7 days notice. Upon termination for convenience, Client will pay Vendor for all services performed, deliverables completed or in progress, approved expenses, and non-cancelable commitments incurred before the effective termination date, less amounts previously paid. Vendor may suspend work for undisputed amounts that remain unpaid more than 10 days after written notice and a 5-business-day opportunity to cure, and Vendor may terminate for nonpayment if undisputed amounts remain unpaid 30 days after written overdue notice.",
+     "reason": "Harbor pays for work done if it cancels. Adds a cure period before you stop work.",
+     "severity": "medium"
+    },
+    {
+     "before": "5. Confidentiality Vendor will keep Client confidential information private for 3 years.",
+     "after": "5. Confidentiality\n\nEach party will keep the other party’s Confidential Information private during the term of this Agreement and for two years after the Agreement ends. “Confidential Information” means non-public business, technical, financial, creative, customer, vendor, pricing, production, marketing, or strategic information disclosed by or on behalf of a party that is marked confidential or reasonably should be understood to be confidential under the circumstances. Confidential Information does not include information that is publicly available without breach of this Agreement, already known by the receiving party without a duty of confidentiality, independently developed without use of the disclosing party’s Confidential Information, or rightfully received from a third party without a duty of confidentiality. A receiving party may disclose Confidential Information if required by law, court order, or governmental authority, provided it gives prompt notice to the disclosing party when legally permitted and limits the disclosure to what is required.",
+     "reason": "Defines what's confidential, makes it mutual, adds the usual exceptions.",
+     "severity": "medium"
+    },
+    {
+     "before": "6. Indemnity and Liability Vendor will indemnify Client for third-party claims arising from Vendor’s breach or negligence. Client will indemnify Vendor for claims arising from Client-provided materials. Except for fraud, willful misconduct, and confidentiality breach, each party’s liability is capped at amounts paid under this Agreement.",
+     "after": "6. Indemnity and Liability\n\nEach party will indemnify, defend, and hold harmless the other party from third-party claims, damages, liabilities, costs, and reasonable attorneys’ fees arising from the indemnifying party’s breach of this Agreement, negligence, or willful misconduct. Client will also indemnify, defend, and hold harmless Vendor from third-party claims arising from Client-provided materials, instructions, approvals, or content, provided Vendor used them as authorized by Client. Except for fraud, willful misconduct, confidentiality breach, indemnification obligations, and Client’s payment obligations, each party’s liability is capped at amounts paid or payable under this Agreement.",
+     "reason": "Indemnity runs both ways. Unpaid fees sit outside the cap.",
+     "severity": "medium"
+    },
+    {
+     "before": "7. Disputes and Governing Law Any dispute first goes to mediation, then binding arbitration in Seattle, Washington. Governing law is the State of Washington.",
+     "after": "7. Disputes and Governing Law\n\nAny dispute first goes to mediation in Seattle, Washington. If the dispute is not resolved within 30 days after a written request for mediation, either party may bring the dispute in the state or federal courts located in Seattle, Washington, and each party consents to jurisdiction and venue in those courts. Arbitration is not required unless both parties agree in writing after the dispute arises. Nothing in this Agreement waives either party’s right to a jury trial unless the parties separately agree in writing after the dispute arises. Governing law is the State of Washington.",
+     "reason": "Court after mediation, with no forced arbitration.",
+     "severity": "medium"
+    }
+   ],
+   "generated_at": "2026-11-24T22:46:55.278Z",
+   "model": "gpt-5.5"
+  }
+ },
+ "addons": {
+  "rewrite_contract": {
+   "state": "not_purchased"
+  },
+  "update_email": {
+   "state": "not_purchased"
+  }
+ },
+ "notices": {
+  "not_legal_advice": "This summary is for informational purposes only and is not legal advice."
+ },
+ "entitlements": {
+  "plan": "pro",
+  "rewrites": true,
+  "revised_document": true,
+  "history": true
+ },
+ "analysis_stage": "refining",
+ "owned": true,
+ "expires_at": null
+}

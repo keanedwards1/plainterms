@@ -41,7 +41,17 @@ function contractTitle(text: string, fileName?: string) {
   return (fileName ?? "Your contract").replace(/\.[a-z0-9]{2,5}$/i, "");
 }
 
-function Steps({ step, setStep, labels }: { step: number; setStep: (n: number) => void; labels: Array<[string, string, string]> }) {
+function Steps({
+  step,
+  setStep,
+  labels,
+  busy,
+}: {
+  step: number;
+  setStep: (n: number) => void;
+  labels: Array<[string, string, string]>;
+  busy: boolean[];
+}) {
   return (
     <nav className="rv-steps" aria-label="Steps">
       {labels.map(([icon, title, sub], i) => (
@@ -51,7 +61,9 @@ function Steps({ step, setStep, labels }: { step: number; setStep: (n: number) =
             {title}
             <small>{sub}</small>
           </span>
-          {i < step ? (
+          {busy[i] ? (
+            <span className="pt-spinner" aria-label="Still being written" />
+          ) : i < step ? (
             <span className="rv-tick" aria-label="Done">
               <Icon d={ICONS.check} className="h-3.5 w-3.5" />
             </span>
@@ -665,7 +677,47 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
     </>
   );
 
-  const panels = [deal, contract, decide, prepare, send, confirmation];
+  // Prepare, Send and Confirmation need the review's extras, written in the background.
+  const extrasPending = review.extras_status === "processing";
+  const extrasFailed = review.extras_status === "failed";
+  const waitingPanel = (n: number, title: string) => (
+    <>
+      <div className="mb-4">
+        <p className="rv-label">
+          Step {n + 1} of {N}
+        </p>
+        <h2 className="rv-step-title">{title}</h2>
+      </div>
+      <section className="pt-panel rv-pending" role="status" aria-live="polite">
+        {extrasFailed ? (
+          <p>We couldn&apos;t prepare this part for this document. Steps 1 to 3 have everything we found.</p>
+        ) : (
+          <>
+            <p>
+              <span className="pt-spinner shrink-0" aria-hidden="true" />
+              <span>Writing your asks and edits. This usually takes under a minute.</span>
+            </p>
+            <div className="pt-skeleton h-24 rounded-(--pt-radius)" aria-hidden="true" />
+            <div className="pt-skeleton h-24 rounded-(--pt-radius)" aria-hidden="true" />
+          </>
+        )}
+      </section>
+      <div className="rv-nav">
+        {back(n - 1, n === 3 ? "Decide" : n === 4 ? "Prepare" : "Send")}
+        {n < N - 1 ? next(n + 1, n === 3 ? "Next: send" : "Next: confirmation") : <span />}
+      </div>
+    </>
+  );
+  const needsExtras = extrasPending || extrasFailed;
+  const panels = [
+    deal,
+    contract,
+    decide,
+    needsExtras ? waitingPanel(3, PREP_TITLE[choice]) : prepare,
+    needsExtras ? waitingPanel(4, SEND_TITLE[choice]) : send,
+    needsExtras ? waitingPanel(5, "Confirmation") : confirmation,
+  ];
+  const busy = [false, false, false, extrasPending, extrasPending, extrasPending];
   const labels: Array<[string, string, string]> = [
     ["template", "The deal", other],
     ["review", "The contract", `${issues.length} issue${issues.length === 1 ? "" : "s"}`],
@@ -706,7 +758,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
       </div>
 
       <div ref={navRef}>
-        <Steps step={step} setStep={setStep} labels={labels} />
+        <Steps step={step} setStep={setStep} labels={labels} busy={busy} />
       </div>
       <div>{panels[step]}</div>
 

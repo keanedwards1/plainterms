@@ -108,3 +108,29 @@ test.describe("classic result page", () => {
     await expect(page.getByRole("link", { name: "Step-by-step view" })).toBeVisible();
   });
 });
+
+test.describe("results that are still arriving", () => {
+  test("steps 1 to 3 work while the asks and edits are still being written", async ({ page }) => {
+    await page.goto("/result/fixture-harbor-pending");
+    await expect(page.getByRole("heading", { level: 1, name: "Production services agreement" })).toBeVisible();
+    await goToStep(page, "Decide");
+    await expect(page.getByRole("heading", { name: "What do you want to do?" })).toBeVisible();
+    for (const name of ["Prepare", "Send", "Confirmation"]) {
+      await goToStep(page, name);
+      await expect(page.getByText("Writing your asks and edits.")).toBeVisible();
+    }
+  });
+
+  test("the wait shows progress and a game", async ({ page }) => {
+    await page.goto("/result/fixture-harbor-refining");
+    await expect(page.getByText("This usually takes about a minute.")).toBeVisible();
+    await expect(page.getByRole("list", { name: "Progress" })).toContainText("Finding what matters");
+    await page.getByRole("button", { name: "Play while you wait" }).click();
+    await expect(page.getByRole("button", { name: "Play while you wait" })).toHaveCount(0);
+    await page.keyboard.down("ArrowLeft");
+    await page.keyboard.up("ArrowLeft");
+    await expect(page.getByText(/Score \d+/)).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+});

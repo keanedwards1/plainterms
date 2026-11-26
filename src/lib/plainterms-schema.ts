@@ -267,6 +267,8 @@ export const PtReview = z.object({
   dates: z.array(z.object({ when: z.string(), what: z.string() })).default([]),
   what_ifs: z.array(z.object({ q: z.string(), a: z.string() })).default([]),
   questions: z.array(z.string()).default([]),
+  // The negotiation extras (asks, redlines, checklist, dates, what-ifs) arrive after the core review.
+  extras_status: z.enum(["processing", "ready", "failed"]).default("ready"),
   generated_at: z.string().optional(),
   model: z.string().optional(),
 });
