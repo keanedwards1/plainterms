@@ -1,4 +1,5 @@
 import { getLlmConfig } from "./llmConfig.mjs";
+import { logLlmUsage } from "./llmUsage.mjs";
 
 const MAX_SOURCE_CHARS = 22000;
 
@@ -265,6 +266,7 @@ export async function generateRevisedDocumentWithLlm({
   }
 
   const raw = await response.json();
+  logLlmUsage("revision", revisionModel, raw);
   const content = raw?.choices?.[0]?.message?.content;
   const parsed = findJsonObject(typeof content === "string" ? content : "");
   if (!parsed || typeof parsed !== "object") {

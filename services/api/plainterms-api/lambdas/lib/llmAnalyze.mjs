@@ -1,4 +1,5 @@
 import { getLlmConfigWithOverrides } from "./llmConfig.mjs";
+import { logLlmUsage } from "./llmUsage.mjs";
 
 const STATUS_VALUES = new Set(["found", "not_found", "not_clearly_stated"]);
 
@@ -162,6 +163,7 @@ export async function analyzeExtractedTextWithLlm({
   }
 
   const json = await res.json();
+  logLlmUsage("classic.analysis", llm.model, json);
   const content = json?.choices?.[0]?.message?.content;
   const parsed = findJsonObject(typeof content === "string" ? content : "");
   if (!parsed) throw new Error("LLM response did not include valid JSON object content.");

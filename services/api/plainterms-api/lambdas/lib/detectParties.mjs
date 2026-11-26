@@ -1,4 +1,5 @@
 import { getLlmConfigWithOverrides } from "./llmConfig.mjs";
+import { logLlmUsage } from "./llmUsage.mjs";
 
 /**
  * Finds the parties to a contract so the user can say which one they are
@@ -120,6 +121,7 @@ export async function detectPartiesWithModel(text, { timeoutMs = 8000 } = {}) {
     });
     if (!res.ok) return [];
     const json = await res.json();
+    logLlmUsage("precheck.parties", llm.model, json);
     return normalizeDetectedParties(findJsonObject(json?.choices?.[0]?.message?.content ?? ""), text);
   } catch {
     return [];

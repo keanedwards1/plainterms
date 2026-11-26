@@ -1,4 +1,5 @@
 import { getLlmConfigWithOverrides } from "./llmConfig.mjs";
+import { logLlmUsage } from "./llmUsage.mjs";
 
 function findJsonObject(text) {
   if (!text) return null;
@@ -131,6 +132,7 @@ export async function generateNegotiationEmailDraftWithLlm({ report, tier, analy
   }
 
   const json = await res.json();
+  logLlmUsage("classic.email", llm.model, json);
   const content = json?.choices?.[0]?.message?.content;
   const parsed = findJsonObject(typeof content === "string" ? content : "");
   if (!parsed) {

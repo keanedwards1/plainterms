@@ -1009,9 +1009,11 @@ export async function refineStoredAnalysis(resultId, deps = {}) {
 
   const fast = await refineWithCoreReview(resultId, item, deps).catch((err) => {
     console.warn(JSON.stringify({ event: "refine.core_failed", resultId, message: String(err?.message ?? err).slice(0, 300) }));
-    return null;
+    return { ok: false, reason: "core_failed" };
   });
-  if (fast) return fast;
+  if (fast?.ok) return fast;
+  // The review failed: keep the instant rules result rather than paying for a second, classic AI pass.
+  if (fast?.reason === "core_failed") return finishWithRulesResult(resultId);
   return refineWithFullAnalysis(resultId, item);
 }
 
@@ -1058,13 +1060,10 @@ async function refineWithCoreReview(resultId, item, deps = {}) {
     party: item.review_party?.S || undefined,
   });
   timing("refine.timing", resultId, { extract_ms: extracted - started, core_ms: Date.now() - extracted, core: core.reason });
-  if (!core.ok || !core.review) return null;
+  if (!core.ok || !core.review) return { ok: false, reason: "core_failed" };
 
   let uiResult = JSON.parse(item.ui_result?.S ?? "{}");
   uiResult = { ...uiResult, review: core.review };
-  if (plan === "pro") {
-    uiResult = withDocumentRevision(uiResult, core.review.issues.length ? { status: "processing" } : { status: "not_needed" });
-  }
   const summary = documentSummaryAttributes(uiResult);
   try {
     await db.send(
@@ -1105,6 +1104,25 @@ async function refineWithCoreReview(resultId, item, deps = {}) {
     ).catch(() => {});
   }
   return { ok: true, reason: "core_ready" };
+}
+
+/** Ends the refine pass with the instant rules result already stored, so the page stops waiting. */
+async function finishWithRulesResult(resultId) {
+  try {
+    await db.send(
+      new UpdateItemCommand({
+        TableName: process.env.RESULTS_TABLE,
+        Key: { result_id: { S: resultId } },
+        UpdateExpression: "SET #status = :complete",
+        ConditionExpression: "#status = :refining",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: { ":complete": { S: "complete" }, ":refining": { S: "refining" } },
+      })
+    );
+  } catch (err) {
+    if (err?.name !== "ConditionalCheckFailedException") throw err;
+  }
+  return { ok: true, reason: "rules_only" };
 }
 
 /** The previous single pass: AI summary fields, report and email for the classic page. */
@@ -1200,7 +1218,8 @@ export function promoteUiResultToPro(uiResult, fullReport) {
   }
   const promoted = { ...uiResult, report };
   const revision = uiResult?.document?.revision;
-  if (!revision || isLockedRevision(revision)) {
+  // The step-by-step review has its own edits, so documents with a review never start a revised draft.
+  if (!uiResult?.review && (!revision || isLockedRevision(revision))) {
     return withDocumentRevision(promoted, buildInitialDocumentRevision(promoted));
   }
   return promoted;

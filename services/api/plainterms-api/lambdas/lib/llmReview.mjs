@@ -1,5 +1,6 @@
 import { getLlmConfigWithOverrides } from "./llmConfig.mjs";
 import { reviewRiskScore } from "./reviewScore.mjs";
+import { logLlmUsage } from "./llmUsage.mjs";
 
 /**
  * review.v1: a lawyer-style review written for one side of the contract.
@@ -351,7 +352,7 @@ function findJsonObject(content) {
   }
 }
 
-async function chatJson(llm, prompt, reasoning) {
+async function chatJson(llm, prompt, reasoning, call) {
   const res = await fetch(`${llm.baseUrl}/chat/completions`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${llm.apiKey}` },
@@ -374,6 +375,7 @@ async function chatJson(llm, prompt, reasoning) {
     throw new Error(`Review request failed (${res.status}): ${detail.slice(0, 300) || res.statusText}`);
   }
   const json = await res.json();
+  logLlmUsage(call, llm.model, json);
   const content = json?.choices?.[0]?.message?.content;
   return findJsonObject(typeof content === "string" ? content : "");
 }
@@ -394,7 +396,7 @@ export async function generateCoreReview({ extractedText, analysisMode, llmModel
   if (reason) return { ok: false, review: null, reason };
   const source = (extractedText || "").slice(0, SOURCE_LIMIT);
   if (!source.trim()) return { ok: false, review: null, reason: "no_extracted_text" };
-  const raw = await chatJson(llm, buildCorePrompt({ extractedText: source, party }), reasoning);
+  const raw = await chatJson(llm, buildCorePrompt({ extractedText: source, party }), reasoning, "review.core");
   const review = normalizeReview(raw, source, { model: llm.model, extrasStatus: "processing" });
   return review ? { ok: true, review, reason: "ok" } : { ok: false, review: null, reason: "invalid_review" };
 }
@@ -404,7 +406,7 @@ export async function generateReviewExtras({ extractedText, review, analysisMode
   const { llm, reason } = await llmFor({ analysisMode, llmModel });
   if (reason) return { ok: false, review, reason };
   const source = (extractedText || "").slice(0, SOURCE_LIMIT);
-  const raw = await chatJson(llm, buildExtrasPrompt({ extractedText: source, review }), reasoning);
+  const raw = await chatJson(llm, buildExtrasPrompt({ extractedText: source, review }), reasoning, "review.extras");
   if (!raw) return { ok: false, review, reason: "invalid_extras" };
   return { ok: true, review: mergeExtras(review, raw, source), reason: "ok" };
 }
