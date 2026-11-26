@@ -30,6 +30,7 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
         // Keep test traffic out of analytics.
-        env: { NEXT_PUBLIC_GA_MEASUREMENT_ID: "", NEXT_PUBLIC_CLARITY_PROJECT_ID: "", NEXT_PUBLIC_META_PIXEL_ID: "" },
+        // E2E_FIXTURES serves /result/fixture-* from e2e/fixtures so the result page can be tested without an account.
+        env: { NEXT_PUBLIC_GA_MEASUREMENT_ID: "", NEXT_PUBLIC_CLARITY_PROJECT_ID: "", NEXT_PUBLIC_META_PIXEL_ID: "", E2E_FIXTURES: "1" },
       },
 });

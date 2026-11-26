@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ClassicResult from "@/components/result/ClassicResult";
+import ReviewResult from "@/components/review/ReviewResult";
 import { loadResult, type ResultQuery } from "@/components/result/loadResult";
 
 type Props = {
@@ -41,6 +42,19 @@ export default async function ResultPage({ params, searchParams }: Props) {
   const query = await searchParams;
   const loaded = await loadResult(id, query, `/result/${encodeURIComponent(id)}`);
   if (!loaded.ok) return loaded.notice;
+
+  // New analyses get the step-by-step review; older results keep the classic page.
+  if (loaded.data.review || loaded.data.analysis_stage === "refining") {
+    return (
+      <ReviewResult
+        initial={loaded.data}
+        retentionDays={loaded.retentionDays}
+        accessKey={loaded.accessKey || undefined}
+        abVariant={loaded.abVariant}
+        signedIn={loaded.signedIn}
+      />
+    );
+  }
 
   return (
     <ClassicResult

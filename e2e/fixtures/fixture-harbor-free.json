@@ -1,0 +1,377 @@
+{
+ "schema_version": "pt.ui.v1",
+ "result_id": "fixture-harbor-free",
+ "created_at": "2026-11-24T22:43:37.512Z",
+ "headline": "Summary",
+ "overview": "Production Services Agreement dated March 4, 2026 between Harbor Media Inc. (Client) and Luna Park Studio (Vendor).",
+ "sections": [],
+ "document": {
+  "file_name": "attachment Heavy 3.docx",
+  "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "word_count": 285,
+  "extracted_text": "PRODUCTION SERVICES AGREEMENT Date: March 4, 2026 This Production Services Agreement (“Agreement”) is between Harbor Media Inc. (“Client”) and Luna Park Studio (“Vendor”). 1. Scope of Services Vendor will perform production services described in Statement of Work (SOW), Exhibit A, and technical specifications in Appendix 1, all incorporated by reference. If any exhibit is unavailable at signing, Vendor will still perform services requested by Client. 2. Fees and Payment Total project fee is $18,000. Client pays 30% deposit and remainder within Net 60 days after invoice. 3. Term and Termination Term starts on the Effective Date and continues until completion. Client may terminate for convenience on 7 days notice. Vendor may terminate for nonpayment after 30 days overdue notice. 4. Intellectual Property Upon full payment, final approved deliverables are assigned to Client. Vendor retains ownership of pre-existing tools and portfolio rights unless prohibited by Client in writing. 5. Confidentiality Vendor will keep Client confidential information private for 3 years. 6. Indemnity and Liability Vendor will indemnify Client for third-party claims arising from Vendor’s breach or negligence. Client will indemnify Vendor for claims arising from Client-provided materials. Except for fraud, willful misconduct, and confidentiality breach, each party’s liability is capped at amounts paid under this Agreement. 7. Disputes and Governing Law Any dispute first goes to mediation, then binding arbitration in Seattle, Washington. Governing law is the State of Washington. 8. Assignment and Subcontracting Vendor may subcontract portions of work to qualified contractors but remains responsible for deliverables. Neither party may assign this Agreement without written consent, except in a merger. 9. Warranties Vendor warrants deliverables will substantially conform to written specifications for 30 days after delivery. Signed: Harbor Media Inc. ___________________ Luna Park Studio ___________________",
+  "revision": {
+   "status": "not_available",
+   "locked": true,
+   "message": "Revised drafts are part of Pro."
+  }
+ },
+ "addons": {
+  "rewrite_contract": {
+   "state": "not_purchased"
+  },
+  "update_email": {
+   "state": "not_purchased"
+  }
+ },
+ "notices": {
+  "not_legal_advice": "This summary is for informational purposes only and is not legal advice."
+ },
+ "entitlements": {
+  "plan": "free",
+  "rewrites": false,
+  "revised_document": false,
+  "history": false
+ },
+ "analysis_stage": "complete",
+ "owned": true,
+ "expires_at": null,
+ "review": {
+  "version": "review.v1",
+  "perspective": {
+   "party": "Luna Park Studio",
+   "role": "vendor",
+   "other_party": "Harbor Media Inc.",
+   "other_role": "client",
+   "other_short": "Harbor",
+   "parties": [
+    {
+     "name": "Harbor Media Inc.",
+     "role": "client"
+    },
+    {
+     "name": "Luna Park Studio",
+     "role": "vendor"
+    }
+   ],
+   "confidence": "high"
+  },
+  "verdict": {
+   "action": "do_not_sign_yet",
+   "headline": "Don't sign this yet",
+   "line": "Do not sign until the SOW and specs are attached. The current draft lets Harbor request work without clear limits."
+  },
+  "risk": {
+   "score": 60,
+   "label": "high"
+  },
+  "deal": [
+   {
+    "label": "Between",
+    "value": "You provide production services to Harbor under a March 4, 2026 agreement.",
+    "flag": ""
+   },
+   {
+    "label": "The work",
+    "value": "Work is meant to follow Exhibit A and Appendix 1, yet you must work if they are missing.",
+    "flag": "open-ended scope"
+   },
+   {
+    "label": "Fee",
+    "value": "$18,000 total project fee.",
+    "flag": ""
+   },
+   {
+    "label": "Payment",
+    "value": "30% deposit, then remaining 70% within Net 60 days after invoice.",
+    "flag": "slow final payment"
+   },
+   {
+    "label": "Timing",
+    "value": "The term starts on the undefined Effective Date and ends on completion.",
+    "flag": "start date unclear"
+   },
+   {
+    "label": "Ending it",
+    "value": "Harbor can end on 7 days notice. You can end only after a payment is 30 days overdue and notice is given.",
+    "flag": "one-sided termination"
+   },
+   {
+    "label": "Ownership",
+    "value": "Harbor gets final approved deliverables only after full payment. You keep pre-existing tools.",
+    "flag": ""
+   },
+   {
+    "label": "Disputes",
+    "value": "Mediation first, then binding arbitration in Seattle under Washington law.",
+    "flag": ""
+   }
+  ],
+  "gaps": [
+   "Exhibit A Statement of Work is missing.",
+   "Appendix 1 technical specifications are missing.",
+   "Effective Date is undefined.",
+   "No delivery schedule or milestones.",
+   "No approval, revision, or rejection process.",
+   "No expenses, taxes, or late payment terms."
+  ],
+  "issues": [
+   {
+    "id": "i1",
+    "severity": "high",
+    "priority": "must",
+    "section_ref": "1",
+    "title": "Missing exhibits leave work open-ended",
+    "quote": "If any exhibit is unavailable at signing, Vendor will still perform services requested by Client.",
+    "why": "If Exhibit A or Appendix 1 is missing, Harbor can still request services. You would have no clear scope, deliverables, limits, or specs to price and manage the job.",
+    "why_short": "You could be pushed into undefined work.",
+    "usual": "Defined SOW before work starts",
+    "ask_short": "Attach all exhibits and limit changes to written change orders.",
+    "ask_email_line": "Please attach Exhibit A and Appendix 1 before signing, and handle later changes by written change order.",
+    "fallback": "Allow only written requests within an agreed budget cap.",
+    "walk_away_if": "Harbor will not attach the SOW.",
+    "they_say": "We need flexibility while the project develops.",
+    "you_say": "Flexibility is fine through written change orders. I need the baseline scope attached before I commit the studio.",
+    "redline": {
+     "before": "If any exhibit is unavailable at signing, Vendor will still perform services requested by Client.",
+     "after": "Vendor is not required to begin or continue services unless Exhibit A and Appendix 1 are agreed in writing. Any services outside Exhibit A or Appendix 1 require a written change order signed by both parties."
+    }
+   },
+   {
+    "id": "i2",
+    "severity": "high",
+    "priority": "must",
+    "section_ref": "3",
+    "title": "Harbor can cancel without payment protection",
+    "quote": "Client may terminate for convenience on 7 days notice.",
+    "why": "Harbor can stop the project on short notice. The clause does not say it must pay for work already done, booked crew, vendor commitments, or cancellation costs.",
+    "why_short": "You may lose payment after Harbor cancels.",
+    "usual": "Pay for work performed",
+    "ask_short": "Add payment for work-to-date, expenses, commitments, and a kill fee.",
+    "ask_email_line": "Please add that Harbor will pay for work performed, incurred costs, and non-cancellable commitments if it terminates for convenience.",
+    "fallback": "No kill fee, if all work-to-date and committed costs are paid.",
+    "walk_away_if": "Harbor refuses work-to-date payment.",
+    "they_say": "We only pay for accepted deliverables.",
+    "you_say": "If Harbor stops the project, I still have crew time, supplier commitments, and blocked calendar time to cover.",
+    "redline": {
+     "before": "Client may terminate for convenience on 7 days notice.",
+     "after": "Client may terminate for convenience on 7 days notice, provided Client pays Vendor for services performed, approved expenses incurred, and non-cancellable commitments made before the termination effective date."
+    }
+   },
+   {
+    "id": "i3",
+    "severity": "medium",
+    "priority": "worth",
+    "section_ref": "2",
+    "title": "Final payment may come too late",
+    "quote": "Client pays 30% deposit and remainder within Net 60 days after invoice.",
+    "why": "You may carry 70% of the fee for 60 days after invoicing. The contract is silent on late fees. This creates cash flow risk and weak leverage if Harbor pays slowly.",
+    "why_short": "You finance most of the project.",
+    "usual": "Milestones and Net 15",
+    "ask_short": "Make final payment Net 15 with milestones and late interest.",
+    "ask_email_line": "Please change payment to milestone payments with the final invoice due Net 15 and late interest on overdue amounts.",
+    "fallback": "Net 30 with 50% deposit and late interest.",
+    "walk_away_if": "",
+    "they_say": "Our finance team uses Net 60.",
+    "you_say": "For a small studio, that shifts too much cash burden. Milestones keep the project funded.",
+    "redline": {
+     "before": "Client pays 30% deposit and remainder within Net 60 days after invoice.",
+     "after": "Client pays a 30% deposit on signing, 40% upon first delivery, and the remainder within Net 15 days after invoice. Overdue amounts accrue interest at 1.5% per month or the maximum lawful rate, whichever is less."
+    }
+   },
+   {
+    "id": "i4",
+    "severity": "medium",
+    "priority": "must",
+    "section_ref": "6",
+    "title": "Confidentiality claims are uncapped",
+    "quote": "Except for fraud, willful misconduct, and confidentiality breach, each party’s liability is capped at amounts paid under this Agreement.",
+    "why": "A confidentiality mistake could create uncapped liability for you. The cap also uses amounts paid, which could be only the deposit if a claim arises early.",
+    "why_short": "A mistake could exceed the project fee.",
+    "usual": "Capped ordinary confidentiality claims",
+    "ask_short": "Cap confidentiality claims and use amounts payable.",
+    "ask_email_line": "Please cap ordinary confidentiality claims and make the liability cap based on amounts paid or payable.",
+    "fallback": "Cap confidentiality at two times fees, except intentional misuse.",
+    "walk_away_if": "",
+    "they_say": "Confidentiality needs real consequences.",
+    "you_say": "Agreed. A clear cap still gives real protection and keeps the risk proportional to an $18,000 project.",
+    "redline": {
+     "before": "Except for fraud, willful misconduct, and confidentiality breach, each party’s liability is capped at amounts paid under this Agreement.",
+     "after": "Except for fraud and willful misconduct, each party’s liability is capped at amounts paid or payable under this Agreement. Liability for confidentiality breach is capped at two times the total project fee, except for intentional misuse of confidential information."
+    }
+   },
+   {
+    "id": "i5",
+    "severity": "medium",
+    "priority": "worth",
+    "section_ref": "4",
+    "title": "Approval process is not defined",
+    "quote": "Upon full payment, final approved deliverables are assigned to Client.",
+    "why": "The contract does not say who approves, when Harbor must respond, or how many revisions are included. That can lead to slow approvals and extra unpaid revision requests.",
+    "why_short": "Harbor can delay approval and revisions.",
+    "usual": "Deemed approval after review period",
+    "ask_short": "Add review deadlines, deemed approval, and revision limits.",
+    "ask_email_line": "Please add a clear review period, deemed approval, and a set number of included revision rounds.",
+    "fallback": "Five business day review and one included revision round.",
+    "walk_away_if": "",
+    "they_say": "We need time for internal review.",
+    "you_say": "That works if there is a set review window and specific written feedback.",
+    "redline": {
+     "before": "Upon full payment, final approved deliverables are assigned to Client.",
+     "after": "Upon full payment, final approved deliverables are assigned to Client. Client will review each submitted deliverable within 5 business days. Deliverables are deemed approved unless Client gives specific written reasons for rejection within that period. Vendor will provide up to two rounds of revisions included in the project fee."
+    }
+   },
+   {
+    "id": "i6",
+    "severity": "low",
+    "priority": "nice",
+    "section_ref": "4",
+    "title": "Harbor can block portfolio use",
+    "quote": "Vendor retains ownership of pre-existing tools and portfolio rights unless prohibited by Client in writing.",
+    "why": "Harbor can prohibit portfolio use in writing. That could stop you from showing the work later, even after it is public and paid for.",
+    "why_short": "You may lose portfolio value.",
+    "usual": "Portfolio use after public release",
+    "ask_short": "Allow portfolio use after public release, excluding confidential material.",
+    "ask_email_line": "Please allow portfolio use after Harbor publicly releases the work, with confidential material excluded.",
+    "fallback": "Allow a still image or credit after public release.",
+    "walk_away_if": "",
+    "they_say": "We need control of our brand.",
+    "you_say": "I will exclude confidential material and wait until public release. Portfolio use is how I win future work.",
+    "redline": {
+     "before": "Vendor retains ownership of pre-existing tools and portfolio rights unless prohibited by Client in writing.",
+     "after": "Vendor retains ownership of pre-existing tools. Vendor may display final deliverables in Vendor’s portfolio after Client first publicly releases them, excluding Client confidential information, unless the parties agree in writing to a specific restriction."
+    }
+   }
+  ],
+  "good": [
+   {
+    "section_ref": "4",
+    "text": "Harbor receives final approved deliverables only after full payment."
+   },
+   {
+    "section_ref": "4",
+    "text": "You keep ownership of pre-existing tools."
+   },
+   {
+    "section_ref": "6",
+    "text": "Harbor indemnifies you for claims arising from Harbor-provided materials."
+   },
+   {
+    "section_ref": "6",
+    "text": "Most liability is capped at amounts paid."
+   },
+   {
+    "section_ref": "8",
+    "text": "You may use qualified subcontractors while staying responsible for deliverables."
+   },
+   {
+    "section_ref": "8",
+    "text": "Harbor generally cannot assign the agreement without your consent."
+   }
+  ],
+  "checklist": [
+   {
+    "title": "Get Exhibit A",
+    "detail": "Attach the final SOW before signing."
+   },
+   {
+    "title": "Get Appendix 1",
+    "detail": "Attach the technical specifications before signing."
+   },
+   {
+    "title": "Fill Effective Date",
+    "detail": "Make it March 4, 2026 or another clear date."
+   },
+   {
+    "title": "Confirm signer authority",
+    "detail": "Check both signers can bind their companies."
+   },
+   {
+    "title": "Save complete copy",
+    "detail": "Keep the signed agreement, exhibits, appendices, and invoices together."
+   }
+  ],
+  "sign_as_is": [
+   {
+    "severity": "high",
+    "text": "You may have to perform requested work even if exhibits are missing."
+   },
+   {
+    "severity": "high",
+    "text": "Harbor can cancel on 7 days notice without stated work-to-date payment."
+   },
+   {
+    "severity": "medium",
+    "text": "You may wait Net 60 for 70% of the fee."
+   },
+   {
+    "severity": "medium",
+    "text": "A confidentiality breach could create uncapped liability."
+   },
+   {
+    "severity": "low",
+    "text": "Harbor can block your portfolio use in writing."
+   }
+  ],
+  "dates": [
+   {
+    "when": "Agreement date",
+    "what": "March 4, 2026."
+   },
+   {
+    "when": "Effective Date",
+    "what": "Term starts, but date is undefined."
+   },
+   {
+    "when": "Deposit",
+    "what": "30% due, timing is silent."
+   },
+   {
+    "when": "Final payment",
+    "what": "Remainder due Net 60 after invoice."
+   },
+   {
+    "when": "Client termination",
+    "what": "Harbor may end on 7 days notice."
+   },
+   {
+    "when": "Confidentiality",
+    "what": "Your obligation lasts 3 years."
+   },
+   {
+    "when": "Warranty period",
+    "what": "30 days after delivery."
+   }
+  ],
+  "what_ifs": [
+   {
+    "q": "SOW is missing",
+    "a": "You still must perform services requested by Harbor if an exhibit is unavailable at signing (§1)."
+   },
+   {
+    "q": "Harbor cancels",
+    "a": "Harbor may terminate for convenience on 7 days notice. The contract does not state a payment right for work already done (§3)."
+   },
+   {
+    "q": "Harbor pays late",
+    "a": "You may terminate for nonpayment after a 30 days overdue notice. No late fee is stated (§3)."
+   },
+   {
+    "q": "Client materials cause claims",
+    "a": "Harbor must indemnify you for claims arising from Harbor-provided materials (§6)."
+   },
+   {
+    "q": "Deliverable has defects",
+    "a": "You warrant substantial conformance to written specifications for 30 days after delivery (§9)."
+   }
+  ],
+  "questions": [
+   "Will Harbor attach Exhibit A and Appendix 1 before signing?",
+   "What is the Effective Date if it differs from March 4, 2026?",
+   "Who approves deliverables, and how many revision rounds are included?",
+   "Will Harbor pay work-to-date costs if it cancels for convenience?"
+  ],
+  "generated_at": "2026-11-26T02:32:08.710Z",
+  "model": "gpt-5.5"
+ }
+}
