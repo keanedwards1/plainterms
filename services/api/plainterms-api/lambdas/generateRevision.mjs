@@ -98,6 +98,7 @@ export const handler = async (event) => {
       creatorContract: uiResult?.report?.creator_contract === true,
       renovationContract: uiResult?.report?.renovation_contract === true,
       model: REWRITE_MODEL_BY_TIER[uiResult?.report?.tier],
+      review: uiResult?.review ?? null,
     });
 
     const readyResult = withRevision(uiResult, {

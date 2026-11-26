@@ -50,7 +50,23 @@ function sanitizeChanges(rawChanges) {
     .slice(0, 20);
 }
 
-function buildPrompt({ filename, extractedText, flags, clauses, creatorContract, renovationContract }) {
+/** "You represent ..." line and work list built from a review.v1, when the result has one. */
+function reviewWorkList(review) {
+  const p = review?.perspective ?? {};
+  const issues = asArray(review?.issues);
+  const lines = issues.map((issue, idx) => {
+    const ref = issue.section_ref ? `§${issue.section_ref} ` : "";
+    const fix = issue.redline?.after ? ` Proposed wording (use it, or improve it): "${trim(issue.redline.after, 900)}"` : "";
+    return `${idx + 1}. [${issue.severity}] ${ref}${issue.title}. ${trim(issue.why, 320)} Ask: ${trim(issue.ask_short, 200)}.${fix}`;
+  });
+  return {
+    represent: `You represent ${p.party} (the ${p.role}) in this contract with ${p.other_party} (the ${p.other_role}). Protect ${p.party}'s interests while keeping the contract professionally fair. The general editing rules further down are written without a side in mind: skip any rule that would work against ${p.party}, and never fix something that already favours them.`,
+    list: lines.length ? lines.join("\n") : "None",
+  };
+}
+
+function buildPrompt({ filename, extractedText, flags, clauses, creatorContract, renovationContract, review = null }) {
+  const fromReview = review ? reviewWorkList(review) : null;
   const flagLines = flags.length
     ? flags
         .map((flag, idx) => `${idx + 1}. [${flag.severity}] ${flag.title} — ${flag.plain_note}`)
@@ -67,7 +83,7 @@ function buildPrompt({ filename, extractedText, flags, clauses, creatorContract,
     : "None";
 
   return `
-You are a contracts attorney who reviews agreements on behalf of the person about to sign them — most often a homeowner reviewing a home renovation, remodeling, or construction contract, but also independent contractor and creator agreements. Protect the interests of the party you represent (for a renovation contract, that is the homeowner/property owner).
+${fromReview ? fromReview.represent : "You are a contracts attorney who reviews agreements on behalf of the person about to sign them — most often a homeowner reviewing a home renovation, remodeling, or construction contract, but also independent contractor and creator agreements. Protect the interests of the party you represent (for a renovation contract, that is the homeowner/property owner)."}
 Your job is to fix clauses that are risky, vague, or missing — and leave everything else exactly as written.
 
 Return ONLY valid JSON in this exact shape:
@@ -117,7 +133,7 @@ INCOMPLETE PLACEHOLDERS: Any unfilled placeholder such as [insert state], [inser
 VAGUE RATES / PAYMENT AMOUNTS: If payment rates are described only as "to be agreed" or "to be determined" with no fallback mechanism, add language requiring the parties to agree on rates in writing within 30 days of the contract start date, with no services owed until rates are confirmed.
 
 MISSING CLAUSES: If governing law, assignment restrictions, or dispute resolution are entirely absent, add balanced versions: neutral governing law with mutual consent to jurisdiction, no assignment without written consent from both parties, and good-faith negotiation followed by binding arbitration for dispute resolution.
-${creatorContract ? `
+${!review && creatorContract ? `
 CREATOR-SPECIFIC RULES (apply because this is a creator/influencer/talent agreement):
 
 LICENSE SCOPE: Irrevocable, perpetual, worldwide licenses must be narrowed to: revocable, limited to the Agreement term, non-exclusive where possible. Remove or limit waivers of approval, attribution, and removal rights — the creator should retain meaningful approval rights over how their likeness and content are used.
@@ -125,7 +141,7 @@ LICENSE SCOPE: Irrevocable, perpetual, worldwide licenses must be narrowed to: r
 EXCLUSIVITY: Exclusivity clauses must: define the competing category specifically, state the exact duration, and include either a minimum guaranteed payment or a creator right to terminate if no paid work is assigned within 30 days.
 
 WARRANTY: In a creator services agreement, broad "as is" disclaimers that shift all quality risk to the creator are one-sided. Rewrite so the creator warrants professional-quality work meeting industry standards, and remove brand-favoring "as is" language that is not appropriate in this context.
-` : renovationContract ? `
+` : !review && renovationContract ? `
 RENOVATION-SPECIFIC RULES (apply because this is a home renovation / construction / remodeling contract; protect the homeowner):
 
 DEPOSIT & PAYMENT SCHEDULE: An upfront deposit larger than roughly one-third of the contract price is high-risk for the homeowner (many states cap it lower). Reduce an oversized deposit to a reasonable amount and tie all remaining payments to a draw schedule keyed to completed, inspected milestones — never to a calendar alone. A final retainage of around 10% should be withheld until punch-list completion.
@@ -156,13 +172,16 @@ Document metadata:
 - file_name: ${filename || "Contract document"}
 
 MANDATORY WORK LIST — you must address every item below in revised_text:
-
+${fromReview ? `
+Issues to fix, most serious first (each "before" in changes must be copied exactly from the original):
+${fromReview.list}
+` : `
 Risk flags to fix:
 ${flagLines}
 
 Missing or unclear clauses to fix:
 ${clauseLines}
-
+`}
 Original document text:
 ${extractedText}
 `.trim();
@@ -176,6 +195,7 @@ export async function generateRevisedDocumentWithLlm({
   creatorContract = false,
   renovationContract = false,
   model = null,
+  review = null,
 }) {
   const sourceText = trim(extractedText, MAX_SOURCE_CHARS);
   if (!sourceText) {
@@ -214,6 +234,7 @@ export async function generateRevisedDocumentWithLlm({
     clauses,
     creatorContract,
     renovationContract,
+    review: review && review.perspective?.party ? review : null,
   });
 
   const response = await fetch(`${llm.baseUrl}/chat/completions`, {
@@ -229,7 +250,9 @@ export async function generateRevisedDocumentWithLlm({
         {
           role: "system",
           content:
-            "You are a contracts attorney who reviews agreements for the person about to sign them — most often a homeowner reviewing a renovation or construction contract. Your priority is to protect that person's interests while keeping the contract professionally fair. Apply every applicable editing rule. Return strict JSON only.",
+            review?.perspective?.party
+              ? `You are a contracts attorney acting for ${review.perspective.party}. Protect their interests while keeping the contract professionally fair. Apply every applicable editing rule. Return strict JSON only.`
+              : "You are a contracts attorney who reviews agreements for the person about to sign them — most often a homeowner reviewing a renovation or construction contract. Your priority is to protect that person's interests while keeping the contract professionally fair. Apply every applicable editing rule. Return strict JSON only.",
         },
         { role: "user", content: prompt },
       ],

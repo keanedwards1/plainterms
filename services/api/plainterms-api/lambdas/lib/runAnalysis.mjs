@@ -7,6 +7,7 @@ import {
 } from "./ptTransform.mjs";
 import { extractDocumentTextFromUpload } from "./extractDocumentText.mjs";
 import { analyzeExtractedTextWithLlm } from "./llmAnalyze.mjs";
+import { generateContractReview } from "./llmReview.mjs";
 import { generateNegotiationEmailDraftWithLlm } from "./llmNegotiationEmail.mjs";
 import { validateObjectKey, validateUploadMeta } from "./uploadPolicy.mjs";
 import { buildReportInsights } from "./reportEngine.mjs";
@@ -744,16 +745,22 @@ function resolvePlanAnalysisSelection(plan, { rulesOnly = false } = {}) {
   return { analysisMode: "llm", llmModel: modelForPlan(plan), abVariant: `${plan}_llm` };
 }
 
-function documentSummaryAttributes(uiResult) {
+export function documentSummaryAttributes(uiResult) {
   const report = uiResult?.report ?? {};
-  const flags = asArray(report.red_flags);
-  const score = Number(report?.risk?.score);
+  const review = uiResult?.review;
+  // When the lawyer-style review exists, the documents list shows its numbers,
+  // so the list and the result page agree.
+  const flags = review ? asArray(review.issues) : asArray(report.red_flags);
+  const score = Number(review ? review.risk?.score : report?.risk?.score);
+  const label = review ? review.risk?.label : report?.risk?.label;
+  const action = review ? review.verdict?.action : report?.recommendation?.action;
+  const recLabel = review ? review.verdict?.headline : report?.recommendation?.label;
   return {
     file_name: { S: String(uiResult?.document?.file_name ?? "Contract document").slice(0, 300) },
     risk_score: { N: String(Number.isFinite(score) ? Math.round(score) : 0) },
-    risk_label: { S: String(report?.risk?.label ?? "medium") },
-    recommendation_action: { S: String(report?.recommendation?.action ?? "negotiate") },
-    recommendation_label: { S: String(report?.recommendation?.label ?? "").slice(0, 120) },
+    risk_label: { S: String(label ?? "medium") },
+    recommendation_action: { S: String(action ?? "negotiate") },
+    recommendation_label: { S: String(recLabel ?? "").slice(0, 120) },
     flag_count: { N: String(flags.length) },
   };
 }
@@ -793,6 +800,17 @@ async function buildAnalysisArtifacts({
     contentType: normalizedPayload.contentType,
   });
 
+  // The lawyer-style review powers the step-by-step result page. It runs only
+  // in the plan's AI pass, alongside the field analysis.
+  const wantsReview = Boolean(plan) && !rulesOnly && finalSelection.analysisMode === "llm";
+  const reviewPromise = wantsReview
+    ? generateContractReview({
+        extractedText: extraction.extractedText,
+        analysisMode: finalSelection.analysisMode,
+        llmModel: finalSelection.llmModel,
+      }).catch((err) => ({ ok: false, review: null, reason: `review_error:${err instanceof Error ? err.message : String(err)}` }))
+    : Promise.resolve({ ok: false, review: null, reason: "not_attempted" });
+
   let llmAnalysis = { usedLlm: false, reason: "not_attempted", fields: null };
   try {
     llmAnalysis = await analyzeExtractedTextWithLlm({
@@ -808,6 +826,10 @@ async function buildAnalysisArtifacts({
       reason: `llm_error:${err instanceof Error ? err.message : String(err)}`,
       fields: null,
     };
+  }
+  const reviewOutcome = await reviewPromise;
+  if (!reviewOutcome.ok && wantsReview) {
+    console.warn("contract review unavailable", { resultId, reason: String(reviewOutcome.reason).slice(0, 300) });
   }
 
   const reportInsights = buildReportInsights({
@@ -858,6 +880,9 @@ async function buildAnalysisArtifacts({
   }
   if (initialRevision) {
     uiResult = withDocumentRevision(uiResult, initialRevision);
+  }
+  if (reviewOutcome.ok && reviewOutcome.review) {
+    uiResult = { ...uiResult, review: reviewOutcome.review };
   }
   assertPtUiV1Contract(uiResult);
 
