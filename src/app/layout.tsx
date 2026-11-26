@@ -95,10 +95,9 @@ export default async function RootLayout({
       <body className={`${displayFont.variable} ${bodyFont.variable} ${labelFont.variable} pt-body antialiased`}>
         {gaMeasurementId ? (
           <>
-            <script
-              id="google-analytics"
-              dangerouslySetInnerHTML={{
-                __html: `
+            {/* Consent defaults must run before Google's tag loads. */}
+            <Script id="google-analytics" strategy="beforeInteractive">
+              {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){window.dataLayer.push(arguments);}
                 window.gtag = gtag;
@@ -111,10 +110,9 @@ export default async function RootLayout({
                 });
                 gtag('js', new Date());
                 gtag('config', '${gaMeasurementId}', { send_page_view: false });
-              `,
-              }}
-            />
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} />
+              `}
+            </Script>
+            <Script id="google-analytics-tag" strategy="afterInteractive" src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} />
             <Suspense fallback={null}>
               <GoogleAnalytics measurementId={gaMeasurementId} />
             </Suspense>
