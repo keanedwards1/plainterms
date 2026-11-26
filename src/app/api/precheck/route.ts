@@ -39,6 +39,8 @@ export async function POST(req: Request) {
     upstreamError: "Upstream /precheck failed.",
     contractError: "Upstream /precheck response violated contract.",
     requestFailedError: "Precheck request failed.",
+    // Signed-in users can get the AI fallback for naming the parties.
+    auth: "optional",
   });
 
   if (!upstreamResponse.ok) {

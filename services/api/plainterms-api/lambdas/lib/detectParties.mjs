@@ -95,7 +95,7 @@ export function normalizeDetectedParties(raw, text) {
   );
 }
 
-async function detectPartiesWithModel(text, { timeoutMs = 8000 } = {}) {
+export async function detectPartiesWithModel(text, { timeoutMs = 8000 } = {}) {
   const llm = await getLlmConfigWithOverrides({ analysisMode: "llm", llmModel: "gpt-5-mini" });
   if (!llm.apiKey) return [];
   const controller = new AbortController();

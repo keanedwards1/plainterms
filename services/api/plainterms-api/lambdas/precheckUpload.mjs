@@ -11,7 +11,23 @@ import {
 } from "./lib/precheckToken.mjs";
 import { scanBufferForMalwareSignals } from "./lib/malwareScan.mjs";
 import { jsonResponse, methodGuard, parseJsonBody } from "./lib/http.mjs";
-import { detectParties } from "./lib/detectParties.mjs";
+import { detectParties, detectPartiesWithModel } from "./lib/detectParties.mjs";
+import { optionalUser } from "./lib/auth.mjs";
+import { reserveDaily } from "./lib/usage.mjs";
+
+// Precheck is open to signed-out visitors, so the AI fallback for finding the
+// parties only runs for signed-in users, and at most this many times a day each.
+const PARTY_AI_DAILY_LIMIT = 40;
+
+/** The model fallback for party names; returns nothing for signed-out or over-limit callers. Only runs when the rules fail. */
+export function partyFallbackFor(event, deps = {}) {
+  return async (text) => {
+    const viewer = await (deps.optionalUser ?? optionalUser)(event);
+    if (!viewer) return [];
+    const allowed = await (deps.reserveDaily ?? reserveDaily)(viewer.userId, "party-ai", PARTY_AI_DAILY_LIMIT).catch(() => ({ ok: false }));
+    return allowed.ok ? (deps.detectPartiesWithModel ?? detectPartiesWithModel)(text) : [];
+  };
+}
 
 const s3 = new S3Client({});
 const METHODS = "POST,OPTIONS";
@@ -40,7 +56,7 @@ function mapHeadError(err) {
   return { statusCode: 502, message: "Failed to read uploaded file metadata." };
 }
 
-export const handler = async (event) => {
+export const handler = async (event, _context, deps = {}) => {
   const methodResponse = methodGuard(event, "POST", METHODS);
   if (methodResponse) return methodResponse;
 
@@ -161,7 +177,9 @@ export const handler = async (event) => {
   }
 
   // Who the contract is between, so the user can say which side they're on before analysis.
-  const parties = await detectParties(extraction.extractedText).catch(() => []);
+  const parties = await detectParties(extraction.extractedText, {
+    detectWithModel: partyFallbackFor(event, deps),
+  }).catch(() => []);
 
   const precheckToken = await createPrecheckToken({
     objectKey: objectKeyCheck.objectKey,

@@ -603,12 +603,15 @@ Resources:
           PRECHECK_MIN_WORDS: "5"
           PRECHECK_TOKEN_TTL_SEC: "900"
           PRECHECK_TOKEN_SECRET_PARAM: !Ref PrecheckTokenSecretParamName
-          # A small model call names the parties when the rules can't.
+          # A small model call names the parties when the rules can't (signed-in users, capped per day).
           LLM_BASE_URL: "https://api.openai.com/v1"
           LLM_API_KEY_PARAM: !Ref LlmApiKeyParamName
+          USAGE_TABLE: !Ref UsageTable
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref UploadBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsageTable
         - Statement:
             Effect: Allow
             Action:

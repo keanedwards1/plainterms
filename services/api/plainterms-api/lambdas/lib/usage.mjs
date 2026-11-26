@@ -51,6 +51,29 @@ export async function reserveDocument(userId, limit, { db = defaultDb, now = new
   }
 }
 
+/**
+ * Counts one use of a metered feature for today (UTC) and refuses past `limit`.
+ * Used for paid AI calls that aren't a full document analysis.
+ */
+export async function reserveDaily(userId, feature, limit, { db = defaultDb, now = new Date() } = {}) {
+  const expiresAt = Math.floor(now.getTime() / 1000) + 3 * 24 * 60 * 60;
+  try {
+    await db.send(
+      new UpdateItemCommand({
+        TableName: usageTable(),
+        Key: { user_id: { S: userId }, period: { S: `${feature}:${now.toISOString().slice(0, 10)}` } },
+        UpdateExpression: "ADD uses :one SET expires_at = if_not_exists(expires_at, :exp)",
+        ConditionExpression: "attribute_not_exists(uses) OR uses < :limit",
+        ExpressionAttributeValues: { ":one": { N: "1" }, ":limit": { N: String(limit) }, ":exp": { N: String(expiresAt) } },
+      })
+    );
+    return { ok: true };
+  } catch (err) {
+    if (err?.name === "ConditionalCheckFailedException") return { ok: false, reason: "limit_reached" };
+    throw err;
+  }
+}
+
 /** Gives back a reserved document when the analysis could not start. Best effort. */
 export async function releaseDocument(userId, { db = defaultDb, now = new Date() } = {}) {
   try {
