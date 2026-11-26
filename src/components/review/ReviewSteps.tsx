@@ -315,9 +315,6 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
     <section className="pt-panel rv-card rv-loose">
       <div className="rv-card-h" style={{ marginBottom: 6 }}>
         <h3>Before you sign: loose ends to tie up</h3>
-        <span className="rv-label">
-          {checked.size} of {review.checklist.length} done
-        </span>
       </div>
       <div className="rv-checks">
         {review.checklist.map((c, i) => (

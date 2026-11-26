@@ -218,7 +218,6 @@
   .rv-card-foot { margin-top: auto; padding-top: 16px; }
   .rv-loose { margin-bottom: 16px; }
   .rv-loose .rv-card-h { justify-content: flex-start; align-items: center; gap: 12px; margin-bottom: 18px !important; }
-  .rv-loose .rv-card-h .rv-label { padding: 4px 9px; border-radius: 999px; background: var(--pt-surface-soft); }
   .rv-loose .rv-checks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .rv-loose .rv-checks label { border-top: 0; padding: 16px 18px; gap: 12px; border-radius: var(--pt-radius); background: var(--pt-surface-soft); transition: opacity 0.15s; }
   .rv-loose .rv-checks label:has(input:checked) { opacity: 0.6; }
