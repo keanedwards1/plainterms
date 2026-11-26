@@ -2,7 +2,7 @@
 
 import "./review.css";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import type { PtResult, PtReview, PtReviewIssue } from "@/lib/plainterms-schema";
 import { formatContractText } from "@/lib/contractText";
 import { datesCalendar, declineEmail, downloadText, mailtoHref, negotiationEmail, type SendMode } from "@/lib/reviewSend";
@@ -36,6 +36,29 @@ function contractTitle(text: string, fileName?: string) {
     return lower[0].toUpperCase() + lower.slice(1);
   }
   return (fileName ?? "Your contract").replace(/\.[a-z0-9]{2,5}$/i, "");
+}
+
+/** One what-if row that opens smoothly (height and fade), with a plus that turns into a minus. */
+function WhatIf({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <div className="rv-wi-item">
+      <button type="button" className="rv-wi-q" aria-expanded={open} aria-controls={id} onClick={() => setOpen((o) => !o)}>
+        <span>
+          <G>{q}</G>
+        </span>
+        <span className="rv-wi-icon" aria-hidden="true" />
+      </button>
+      <div id={id} className="rv-wi-panel" data-open={open} aria-hidden={!open}>
+        <div>
+          <p>
+            <G>{a}</G>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Steps({
@@ -640,16 +663,7 @@ export default function ReviewSteps({ data, review, signedIn, classicHref }: Pro
             <h3>What if…</h3>
           </div>
           {review.what_ifs.map((w) => (
-            <details key={w.q}>
-              <summary>
-                <span>
-                  <G>{w.q}</G>
-                </span>
-              </summary>
-              <p>
-                <G>{w.a}</G>
-              </p>
-            </details>
+            <WhatIf key={w.q} q={w.q} a={w.a} />
           ))}
         </section>
         <section className="pt-panel rv-card">
