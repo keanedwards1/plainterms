@@ -1,4 +1,4 @@
-import { BRAND_TEXT, fill, infoRows, isSignatureImage, signKey, type Piece } from "@/lib/templateKit/fill";
+import { BRAND_TEXT, LINE_INCHES, fill, infoRows, isSignatureImage, rowField, signKey, type Piece } from "@/lib/templateKit/fill";
 import type { Branding, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 // US Letter in points, 0.75in margins, 11pt Times.
@@ -187,7 +187,8 @@ export async function templatePdf(
             font(false);
             pdf.text(`${row.label}:`, M, base);
             pdf.setLineWidth(0.6);
-            pdf.line(M + labelW, base + 2.5, RIGHT, base + 2.5);
+            const inches = LINE_INCHES[rowField(doc, row)?.type ?? "text"];
+            pdf.line(M + labelW, base + 2.5, inches ? Math.min(RIGHT, M + labelW + inches * 72) : RIGHT, base + 2.5);
             const value = fill(row.text, doc, values)
               .map((p) => (p.kind === "text" ? p.text : p.value))
               .join("")

@@ -139,3 +139,15 @@ export function readSignatures(doc: TemplateDoc, input: unknown): Signatures {
 }
 
 export const BRAND_TEXT = "Made with PlainTerms";
+
+/**
+ * How long a form row's line is, in inches, by the kind of answer: short for dates, amounts and
+ * numbers, full width (null) for names, addresses and anything open-ended.
+ */
+export const LINE_INCHES: Record<FieldType, number | null> = { date: 2.2, money: 1.8, number: 1.1, phone: 2.4, email: null, text: null, long: null };
+
+/** The field a form row asks for. */
+export function rowField(doc: TemplateDoc, row: InfoRow): TemplateField | undefined {
+  const id = tokensIn(row.text)[0];
+  return doc.fields.find((f) => f.id === id);
+}

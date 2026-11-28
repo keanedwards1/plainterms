@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BRAND_TEXT, fill, infoRows, signKey, type Piece } from "@/lib/templateKit/fill";
+import { BRAND_TEXT, LINE_INCHES, fill, infoRows, rowField, signKey, type Piece } from "@/lib/templateKit/fill";
 import { LogoMark } from "@/components/shell/Logo";
 import type { Block, Signatures, TemplateDoc, TemplateValues } from "@/lib/templateKit/types";
 
@@ -80,14 +80,19 @@ function BlockView({
       if (rows) {
         return (
           <dl className="pt-tdoc-info">
-            {rows.map((row, i) => (
-              <div key={i}>
-                <dt>{row.label}</dt>
-                <dd>
-                  <Text text={row.text} at={`${at}.${i}`} ctx={ctx} where="line" />
-                </dd>
-              </div>
-            ))}
+            {rows.map((row, i) => {
+              // Short lines for dates, amounts and numbers; full width for names and addresses.
+              const field = rowField(ctx.doc, row);
+              const inches = field ? LINE_INCHES[field.type] : null;
+              return (
+                <div key={i}>
+                  <dt>{row.label}:</dt>
+                  <dd style={inches ? { maxWidth: `${inches}in` } : undefined}>
+                    <Text text={row.text} at={`${at}.${i}`} ctx={ctx} where="line" />
+                  </dd>
+                </div>
+              );
+            })}
           </dl>
         );
       }

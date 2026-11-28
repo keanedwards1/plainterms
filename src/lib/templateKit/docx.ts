@@ -1,4 +1,4 @@
-import { BRAND_TEXT, fill, infoRows, isSignatureImage, signKey, type Piece } from "@/lib/templateKit/fill";
+import { BRAND_TEXT, LINE_INCHES, fill, infoRows, isSignatureImage, rowField, signKey, type Piece } from "@/lib/templateKit/fill";
 import type { Block, Branding, SignatureMark, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 /** An empty inline blank prints as a line to write on, sized to the kind of answer. */
@@ -77,7 +77,7 @@ export async function templateDocx(
           tabStops: [{ type: TabStopType.LEFT, position: labelW }],
           children: value
             ? [new TextRun(`${row.label}:\t`), new TextRun({ text: value, underline: {} })]
-            : [new TextRun(`${row.label}:\t${underscores(TEXT_WIDTH - labelW)}`)],
+            : [new TextRun(`${row.label}:\t${underscores(Math.min(TEXT_WIDTH - labelW, (LINE_INCHES[rowField(doc, row)?.type ?? "text"] ?? 99) * INCH))}`)],
         })
       );
     }
