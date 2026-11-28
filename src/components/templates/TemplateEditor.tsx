@@ -174,8 +174,7 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
           Sign as {role}
         </button>
         <span id={tipId} role="tooltip" className="pt-tip-bubble">
-          <b>Sign only on your own line</b>
-          Each person signs for themselves. After you sign, send the document to the other party so they can add their signature. Don&apos;t sign for anyone else unless they have authorized you to.
+          Sign only your own line. Then send it to the other party to sign theirs.
         </span>
       </span>
     );
@@ -263,7 +262,7 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
                 <i style={{ width: `${doc.fields.length ? Math.round((filled / doc.fields.length) * 100) : 0}%` }} />
               </span>
               <button type="button" className="pt-teditor-link" onClick={nextBlank} disabled={filled === doc.fields.length}>
-                Next blank
+                Next field
               </button>
               {filled || signedCount ? (
                 <button
@@ -349,6 +348,14 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
           </p>
           {doc.basedOn ? <p>Based on {doc.basedOn}</p> : null}
           {signedIn ? null : <p>Downloading needs a free account. Your answers stay on this device and come back after you sign in.</p>}
+          {branded ? (
+            <p>
+              Free documents include a small PlainTerms mark.{" "}
+              <a href="/dashboard/billing" className="underline underline-offset-3">
+                Remove it with Pro
+              </a>
+            </p>
+          ) : null}
         </section>
       </div>
 

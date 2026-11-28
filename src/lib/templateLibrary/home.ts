@@ -8,7 +8,7 @@ export const HOME_LIBRARY: TemplateDoc[] = [
     title: "Change Order",
     summary: "Records extra or different work on a job, its price and the new finish date, signed before the work starts.",
     fields: [
-      { id: "changeNumber", label: "Change order number", type: "number", placeholder: "1" },
+      { id: "changeNumber", label: "No. (optional)", type: "number", placeholder: "1" },
       { id: "changeDate", label: "Date", type: "date" },
       { id: "ownerName", label: "Owner's name", type: "text", placeholder: "Jordan Lee" },
       { id: "contractorName", label: "Contractor's name or company", type: "text", placeholder: "Brightline Remodeling LLC" },
@@ -30,12 +30,11 @@ export const HOME_LIBRARY: TemplateDoc[] = [
       { title: "Price and time", fields: ["originalPrice", "previousChanges", "changePrice", "newPrice", "paymentTerms", "daysAdded", "newFinishDate"] },
     ],
     body: [
-      { t: "title", text: "Change Order" },
+      { t: "title", text: "Change Order", aside: "No. {{changeNumber}}" },
       {
         t: "boxes",
         rows: [
           [
-            { label: "Change order no.", value: "{{changeNumber}}" },
             { label: "Date", value: "{{changeDate}}" },
             { label: "Original contract date", value: "{{originalContractDate}}" },
           ],

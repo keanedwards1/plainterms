@@ -74,7 +74,7 @@ export const WORK_LIBRARY: TemplateDoc[] = [
     title: "Statement of Work",
     summary: "The tasks, deliverables, dates and price for one project under an existing agreement.",
     fields: [
-      { id: "sowNumber", label: "Statement of work number", type: "number", placeholder: "1" },
+      { id: "sowNumber", label: "No. (optional)", type: "number", placeholder: "1" },
       { id: "sowDate", label: "Date", type: "date" },
       { id: "providerName", label: "Provider's name or company", type: "text", placeholder: "Jordan Lee Design" },
       { id: "clientName", label: "Client's name or company", type: "text", placeholder: "Northwind Coffee Co." },
@@ -95,14 +95,11 @@ export const WORK_LIBRARY: TemplateDoc[] = [
       { title: "Price", fields: ["price", "paymentTerms"] },
     ],
     body: [
-      { t: "title", text: "Statement of Work" },
+      { t: "title", text: "Statement of Work", aside: "No. {{sowNumber}}" },
       {
         t: "boxes",
         rows: [
-          [
-            { label: "Statement of work no.", value: "{{sowNumber}}" },
-            { label: "Date", value: "{{sowDate}}" },
-          ],
+          [{ label: "Date", value: "{{sowDate}}" }],
           [
             { label: "Provider", value: "{{providerName}}" },
             { label: "Client", value: "{{clientName}}" },

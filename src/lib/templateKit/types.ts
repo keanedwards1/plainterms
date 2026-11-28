@@ -16,7 +16,8 @@ export type TemplateField = {
 export type FieldGroup = { title: string; fields: string[] };
 
 export type Block =
-  | { t: "title"; text: string }
+  /** The document title. `aside` sits at the top right, e.g. "No. {{number}}". */
+  | { t: "title"; text: string; aside?: string }
   | { t: "h"; text: string }
   /** A paragraph. "\n" starts a new line in the same paragraph. */
   | { t: "p"; text: string }

@@ -96,6 +96,9 @@ export async function templateDocx(
   const add = (block: Block, index: number) => {
     switch (block.t) {
       case "title":
+        if (block.aside) {
+          children.push(new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 0 }, children: runs(block.aside) }));
+        }
         children.push(
           new Paragraph({
             alignment: AlignmentType.CENTER,

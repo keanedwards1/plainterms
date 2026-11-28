@@ -161,6 +161,22 @@ export async function templatePdf(
         font(true, 15);
         const lines = pdf.splitTextToSize(text, WIDTH) as string[];
         ensure(lines.length * 19 + 22);
+        if (block.aside) {
+          // "No. ____" at the top right, on the title's line.
+          const asideText = fill(block.aside, doc, values)
+            .map((p) => (p.kind === "text" ? p.text : p.value))
+            .join("")
+            .trim();
+          const hasValue = fill(block.aside, doc, values).some((p) => p.kind === "blank" && p.value);
+          font(false, SIZE);
+          if (hasValue) pdf.text(asideText, RIGHT, y + 13, { align: "right" });
+          else {
+            pdf.text(asideText, RIGHT - 62, y + 13, { align: "right" });
+            pdf.setLineWidth(0.6);
+            pdf.line(RIGHT - 58, y + 15, RIGHT, y + 15);
+          }
+          font(true, 15);
+        }
         for (const l of lines) {
           pdf.text(l, PAGE_W / 2, y + 13, { align: "center" });
           y += 19;

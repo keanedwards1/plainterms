@@ -10,6 +10,7 @@ import { TEMPLATES, WRITTEN_TEMPLATES } from "@/lib/templates";
 function textsOf(block: Block): string[] {
   switch (block.t) {
     case "title":
+      return [block.text, block.aside ?? ""];
     case "h":
     case "p":
       return [block.text];

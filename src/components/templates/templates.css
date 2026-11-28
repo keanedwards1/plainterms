@@ -116,7 +116,10 @@
 
   /* ---------- The document (editor and print share these) ---------- */
   .pt-tdoc p { margin: 0 0 0.55em; white-space: pre-line; }
-  .pt-tdoc-head { margin: 0 0 1em; border-bottom: 1.5px solid #1b1f1d; padding-bottom: 0.35em; }
+  .pt-tdoc-head { position: relative; margin: 0 0 1em; border-bottom: 1.5px solid #1b1f1d; padding-bottom: 0.35em; }
+  .pt-tdoc-aside { position: absolute; right: 0; bottom: 0.45em; margin: 0 !important; white-space: nowrap; }
+  .pt-tdoc-aside .pt-tdoc-blank { min-width: 0.8in; }
+  .pt-tdoc-aside .pt-blank { min-width: 5ch; }
   .pt-tdoc-title { margin: 0; text-align: center; font: 700 1.36em/1.25 "Times New Roman", Times, serif; letter-spacing: 0; }
   .pt-tdoc-h { margin: 0.95em 0 0.2em; font: 700 1em/1.35 "Times New Roman", Times, serif; break-after: avoid; }
   .pt-tdoc-ol, .pt-tdoc-ul { margin: 0 0 0.55em; padding-left: 1.5em; display: grid; gap: 0.22em; }
@@ -177,29 +180,38 @@
     left: 0;
     z-index: 20;
     width: max-content;
-    max-width: 17rem;
-    display: grid;
-    gap: 0.25rem;
-    border-radius: 8px;
-    background: var(--pt-ink);
-    padding: 0.6rem 0.75rem;
-    font: 400 0.78rem/1.45 var(--font-sans, system-ui), sans-serif;
+    max-width: 15rem;
+    border: 1px solid var(--pt-line-strong);
+    border-radius: 6px;
+    background: #fff;
+    padding: 0.4rem 0.6rem;
+    font: 400 0.75rem/1.4 var(--font-sans, system-ui), sans-serif;
     letter-spacing: 0;
     text-transform: none;
-    color: #f3f5f2;
-    box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+    color: var(--pt-ink-soft);
+    box-shadow: 0 2px 8px rgb(21 50 44 / 0.1);
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(3px);
     pointer-events: none;
-    transition: opacity 140ms ease, transform 140ms ease;
+    transition: opacity 120ms ease, transform 120ms ease;
   }
-  .pt-tip-bubble b { font-weight: 600; color: #fff; }
-  .pt-tip-bubble::after { content: ""; position: absolute; top: 100%; left: 1.1rem; border: 6px solid transparent; border-top-color: var(--pt-ink); }
+  .pt-tip-bubble::after {
+    content: "";
+    position: absolute;
+    top: calc(100% - 4px);
+    left: 1rem;
+    width: 8px;
+    height: 8px;
+    border-right: 1px solid var(--pt-line-strong);
+    border-bottom: 1px solid var(--pt-line-strong);
+    background: #fff;
+    transform: rotate(45deg);
+  }
   .pt-tip:hover .pt-tip-bubble, .pt-tip:focus-within .pt-tip-bubble { opacity: 1; transform: translateY(0); }
   @media (prefers-reduced-motion: reduce) { .pt-tip-bubble { transition: none; } }
 
   .pt-tdoc-brandrow { margin-top: 2em !important; }
-  .pt-tdoc-brandrow .pt-tdoc-brand { margin-top: 0 !important; text-decoration: none; border-radius: 4px; }
+  .pt-tdoc-brandrow .pt-tdoc-brand { display: inline-flex; margin-top: 0 !important; text-decoration: none; border-radius: 4px; }
   .pt-tdoc-brandrow .pt-tdoc-brand:hover { color: var(--pt-ink); }
   .pt-tdoc-brandrow .pt-tdoc-brand:focus-visible { outline: 2px solid var(--pt-ring); outline-offset: 3px; }
   .pt-tdoc-brand { display: flex; align-items: center; gap: 0.45em; margin-top: 2em !important; font: 500 0.72em/1 var(--font-sans, system-ui), sans-serif; color: #7a7f7b; }

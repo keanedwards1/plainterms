@@ -76,6 +76,11 @@ function BlockView({
           <h2 className="pt-tdoc-title">
             <Text text={block.text} at={at} ctx={ctx} />
           </h2>
+          {block.aside ? (
+            <p className="pt-tdoc-aside">
+              <Text text={block.aside} at={`${at}.a`} ctx={ctx} />
+            </p>
+          ) : null}
         </header>
       );
     case "h":
@@ -293,8 +298,7 @@ export default function TemplateDocument({
             <LogoMark className="h-[1.1em] w-[1.1em] text-(--pt-accent)" />
             {BRAND_TEXT}
             <span id={`${doc.slug}-brand-tip`} role="tooltip" className="pt-tip-bubble">
-              <b>Remove this mark with Pro</b>
-              Free documents include this small PlainTerms mark. With Pro, your PDFs, Word files and printouts carry no PlainTerms branding.
+              Pro removes this mark from every download.
             </span>
           </a>
         </p>

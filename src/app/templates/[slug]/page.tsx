@@ -44,7 +44,7 @@ export default async function TemplatePage({ params }: Props) {
           <p className="mt-1.5 text-sm text-(--pt-muted)">
             A general template, not legal advice.{" "}
             <a href="#notes" className="underline underline-offset-3">
-              Read the notes
+              Read more
             </a>
           </p>
         </header>

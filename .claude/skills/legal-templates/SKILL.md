@@ -35,7 +35,8 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
    - Forms (change order, sign-off, bill of sale, checklist, SOW, travel consent): `boxes` for the who/when/where details, `amounts` for money (right-aligned with a bold total), `clause` sections.
    - Letters: a `letter` block (sender, date, recipient, bold Re line) and `blanks: "brackets"`, so empty blanks print as `[Your name]` instead of lines.
    - A `long` blank left empty prints as three writing lines; form-row lines are sized to the answer (`LINE_INCHES`); signers sit two per row with signature, date and printed-name lines. Government forms (EPA lead disclosure) keep their own headings and wording.
-10. **Signing tooltip:** each Sign button explains that people sign only their own line and send the document to the other party. Keep that wording plain and never suggest signing for someone else.
+10. **Tooltips** are light (white, thin border) with one or two short sentences. Sign buttons: "Sign only your own line. Then send it to the other party to sign theirs." Never suggest signing for someone else. The PlainTerms mark's tooltip covers only the logo and text, and the notes under the page keep the "Remove it with Pro" line.
+11. Document numbers ("No. ____") go at the top right of the title via `title.aside`, labelled optional.
 
 To add a template: write it in the right category file, add the slug to `WRITTEN_TEMPLATES`, run `npx vitest run src/lib/templateLibrary`.
 
