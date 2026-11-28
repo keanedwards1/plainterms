@@ -1,6 +1,6 @@
 "use client";
 
-import Mark from "./Mark";
+import Mark from "@/components/loader/Mark";
 
 type P = { size?: number; label?: string };
 

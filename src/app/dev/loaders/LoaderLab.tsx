@@ -108,7 +108,7 @@ const OPTIONS: { key: string; name: string; note: string; Loader: Loader }[] = [
   },
   {
     key: "spiral",
-    name: "F · Spiral",
+    name: "F · Spiral (live)",
     note: "The squares orbit the centre, spiralling inward while staying upright, and settle into the mark. Then they spin back out.",
     Loader: SpiralLoader,
   },
@@ -132,7 +132,7 @@ const OPTIONS: { key: string; name: string; note: string; Loader: Loader }[] = [
   },
   {
     key: "scatter",
-    name: "J · Scatter (live)",
+    name: "J · Scatter",
     note: "Tiles fly in from all over, spinning, and lock into the mark. Then it blows apart and does it again.",
     Loader: ScatterLoader,
   },

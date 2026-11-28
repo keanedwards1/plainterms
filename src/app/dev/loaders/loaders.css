@@ -121,12 +121,6 @@
 }
 
 /* ---- Options D-I: parts coming together ---- */
-.ld-mark {
-  display: inline-grid;
-  place-items: center;
-  color: var(--pt-accent);
-}
-
 /* D · Dock */
 .ld-dk-c { animation: ld-dk-c 3.6s cubic-bezier(0.6, 0, 0.3, 1.25) infinite both; }
 .ld-dk-c1 { --x: -70px; --y: -70px; }
@@ -192,43 +186,6 @@
   60%, 100% { opacity: 0; transform: scale(1.5); }
 }
 
-/* F · Spiral */
-.ld-sp-a,
-.ld-sp-b {
-  transform-box: view-box;
-  transform-origin: 50% 50%;
-  animation: ld-sp-orbit 4s cubic-bezier(0.3, 0, 0.2, 1) infinite both;
-}
-.ld-sp-a2 { animation: ld-sp-in-a 4s cubic-bezier(0.3, 0, 0.2, 1) infinite both; }
-.ld-sp-b2 { animation: ld-sp-in-b 4s cubic-bezier(0.3, 0, 0.2, 1) infinite both; }
-.ld-sp-a3,
-.ld-sp-b3 {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ld-sp-upright 4s cubic-bezier(0.3, 0, 0.2, 1) infinite both;
-}
-@keyframes ld-sp-orbit {
-  0% { transform: rotate(-420deg); opacity: 0; }
-  12% { opacity: 1; }
-  45%, 74% { transform: rotate(0deg); opacity: 1; animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
-  100% { transform: rotate(300deg); opacity: 0; }
-}
-@keyframes ld-sp-upright {
-  0% { transform: rotate(420deg); }
-  45%, 74% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
-  100% { transform: rotate(-300deg); }
-}
-@keyframes ld-sp-in-a {
-  0% { transform: translate(-110px, -110px); }
-  45%, 74% { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
-  100% { transform: translate(-110px, -110px); }
-}
-@keyframes ld-sp-in-b {
-  0% { transform: translate(110px, 110px); }
-  45%, 74% { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
-  100% { transform: translate(110px, 110px); }
-}
-
 /* G · Slices */
 .ld-sl-strip { animation: ld-sl 3.4s var(--d) infinite both; }
 @keyframes ld-sl {
@@ -286,7 +243,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ld-mark * { animation: none !important; transform: none !important; opacity: 1 !important; }
   .ld-mg-flash { display: none; }
 }
 

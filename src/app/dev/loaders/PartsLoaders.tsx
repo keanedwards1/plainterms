@@ -1,7 +1,10 @@
 "use client";
 
 import { useId, type CSSProperties } from "react";
-import Mark, { SQ_A, SQ_B, SQ_XOR } from "./Mark";
+import Mark, { SQ_A, SQ_B, SQ_XOR } from "@/components/loader/Mark";
+import SpiralLoader from "@/components/loader/SpiralLoader";
+
+export { SpiralLoader };
 
 type P = { size?: number; label?: string };
 
@@ -33,11 +36,6 @@ export function MagnetLoader(props: P) {
       <rect className="ld-mg-flash" x="92" y="92" width="123" height="115" rx="6" fill="currentColor" />
     </Mark>
   );
-}
-
-/** F · Spiral: the squares orbit the centre, spiralling inward while staying upright, and settle into the mark. */
-export function SpiralLoader(props: P) {
-  return <Mark p="ld-sp" {...props} />;
 }
 
 const STRIPS = 6;
