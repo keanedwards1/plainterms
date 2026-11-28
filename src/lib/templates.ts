@@ -57,12 +57,12 @@ export const TEMPLATES: TemplateInfo[] = [
   { slug: "lease-addendum", name: "Lease addendum", line: "One change to a lease both of you sign: a pet, a parking space, a date.", keywords: "lease amendment pet parking", group: "Renting" },
   { slug: "roommate-agreement", name: "Roommate agreement", line: "Rent split, bills, quiet hours and what happens when someone leaves.", keywords: "flatmate housemate shared house", group: "Renting" },
   { slug: "move-in-checklist", name: "Move-in condition checklist", line: "A room-by-room record of the place on day one, so the deposit isn't a fight later.", keywords: "inspection condition report move out", group: "Renting" },
-  { slug: "lead-paint-disclosure", name: "Lead paint disclosure", line: "The federal lead notice every lease needs for a home built before 1978.", keywords: "lead based paint epa", group: "Renting" },
   { slug: "notice-to-vacate", name: "Notice of moving out", line: "Tells your landlord in writing the date you're leaving.", keywords: "move out notice end lease termination", group: "Renting" },
   { slug: "security-deposit", name: "Security deposit request", line: "Asks a landlord for your deposit back, with your state's deadline.", keywords: "landlord deposit back refund tenant", group: "Renting" },
 
   { slug: "repair-request", name: "Repair request to landlord", line: "The problem, when it started, and when you need it fixed.", keywords: "maintenance request landlord fix broken leak", group: "Renting" },
   { slug: "move-out-checklist", name: "Move-out condition checklist", line: "A room-by-room record when you hand back the keys.", keywords: "move out inspection condition report deposit", group: "Renting" },
+  { slug: "lead-paint-disclosure", name: "Lead paint disclosure", line: "The federal lead notice every lease needs for a home built before 1978.", keywords: "lead based paint epa", group: "Renting" },
 
   // Work and freelancing
   { slug: "freelance-contract", name: "Freelance contract", line: "What you'll deliver, what it costs, when you get paid and who owns the work.", keywords: "freelancer contractor client agreement", group: "Work and freelancing" },
