@@ -81,7 +81,7 @@ const PRINTER = "M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 
 const DOWNLOAD = "M12 4v11m0 0-4-4m4 4 4-4M5 20h14";
 
 export default function TemplateEditor({ doc, signedIn, branded }: { doc: TemplateDoc; signedIn: boolean; branded: boolean }) {
-  const [mode, setMode] = useState<Mode>("blank");
+  const [mode, setMode] = useState<Mode>("fill");
   const [values, setValues] = useState<TemplateValues>({});
   const [signatures, setSignatures] = useState<Signatures>({});
   const [signing, setSigning] = useState<{ key: string; role: string; name: string } | null>(null);
@@ -111,7 +111,7 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setValues(draft.values);
       setSignatures(readSignatures(doc, parsed.signatures));
-      setMode(parsed.mode === "fill" ? "fill" : "blank");
+      setMode(parsed.mode === "blank" ? "blank" : "fill");
     } catch {
       // A damaged draft is ignored.
     }

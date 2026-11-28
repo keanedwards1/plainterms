@@ -15,7 +15,7 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
 | Template text (server-only; one file per category, plus `everyday.ts`; `lineItems()` in `shared.ts` builds invoice-style tables) | `src/lib/templateLibrary/*.ts`, registry in `index.ts` |
 | Shared clauses (`GENERAL_TERMS`, `GOVERNING_STATE`, `LETTER_FIELDS`) | `src/lib/templateLibrary/shared.ts` |
 | Types, filling, validation, Word and PDF export (`docx.ts`, `pdf.ts` with jsPDF, both loaded on click) | `src/lib/templateKit/` |
-| Fill-in page (document-style editor with a Blank template / Fill in and sign switch, blank by default; click a blank to type; `SignatureDialog.tsx` draws or types a signature; a plain copy is portalled into `<body>` for printing) | `src/app/templates/[slug]/page.tsx`, `src/components/templates/TemplateEditor.tsx`, `TemplateDocument.tsx`, `templates.css` |
+| Fill-in page (document-style editor with a Blank template / Fill in and sign switch, Fill in and sign by default; click a blank to type; `SignatureDialog.tsx` draws or types a signature; a plain copy is portalled into `<body>` for printing) | `src/app/templates/[slug]/page.tsx`, `src/components/templates/TemplateEditor.tsx`, `TemplateDocument.tsx`, `templates.css` |
 | List page, filters, search | `src/app/templates/page.tsx`, `src/components/templates/TemplateBrowser.tsx`, `src/components/search/TemplateSearch.tsx`, `src/lib/templateSearch.ts` |
 | Downloaded public-domain and statutory sources, with licences | `templates/sources/` and `templates/sources/SOURCES.md` |
 | Tests (wiring of every template, Word build, escaping, drafts) | `src/lib/templateLibrary/library.test.ts`, `src/lib/templateSearch.test.ts` |
