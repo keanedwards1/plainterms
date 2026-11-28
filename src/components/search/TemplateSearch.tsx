@@ -68,6 +68,8 @@ export default function TemplateSearch() {
     if (window.location.hash === `#${template.slug}`) {
       document.getElementById(template.slug)?.scrollIntoView({ block: "center", behavior: "smooth" });
     } else {
+      // A real hash change (not router.push) so the browser scrolls to the card and :target marks it.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign(`#${template.slug}`);
     }
   }
