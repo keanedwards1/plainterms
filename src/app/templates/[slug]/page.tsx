@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import TemplateFiller from "@/components/templates/TemplateFiller";
+import TemplateEditor from "@/components/templates/TemplateEditor";
 import { getSession } from "@/lib/auth";
 import { LIBRARY, templateDoc } from "@/lib/templateLibrary";
 import { TEMPLATES } from "@/lib/templates";
@@ -33,14 +33,14 @@ export default async function TemplatePage({ params }: Props) {
   return (
     <main className="pt-page-pad">
       <div className="pt-container-wide pb-12">
-        <header className="pb-6 pt-6 sm:pt-10">
+        <header className="pb-4 pt-5 sm:pt-8">
           <Link href="/templates" className="text-sm text-(--pt-muted) underline-offset-4 hover:underline">
             Templates{info ? ` · ${info.group}` : ""}
           </Link>
-          <h1 className="mt-2 text-[clamp(2rem,4vw,3.25rem)] leading-[1] tracking-[-0.04em]">{info?.name ?? doc.title}</h1>
-          <p className="mt-3 max-w-[62ch] text-lg text-(--pt-muted)">{doc.summary}</p>
+          <h1 className="mt-2 text-[clamp(1.75rem,3vw,2.5rem)] leading-[1.05] tracking-[-0.035em]">{info?.name ?? doc.title}</h1>
+          <p className="mt-2 max-w-[70ch] text-(--pt-muted)">{doc.summary}</p>
         </header>
-        <TemplateFiller doc={doc} signedIn={Boolean(session)} />
+        <TemplateEditor doc={doc} signedIn={Boolean(session)} />
       </div>
     </main>
   );

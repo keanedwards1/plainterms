@@ -15,7 +15,7 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
 | Template text (server-only; one file per category) | `src/lib/templateLibrary/*.ts`, registry in `index.ts` |
 | Shared clauses (`GENERAL_TERMS`, `GOVERNING_STATE`, `LETTER_FIELDS`) | `src/lib/templateLibrary/shared.ts` |
 | Types, filling, validation, Word export | `src/lib/templateKit/` |
-| Fill-in page | `src/app/templates/[slug]/page.tsx`, `src/components/templates/TemplateFiller.tsx`, `TemplateDocument.tsx`, `templates.css` |
+| Fill-in page (document-style editor: click a blank in the page to type; a plain copy is portalled into `<body>` for printing) | `src/app/templates/[slug]/page.tsx`, `src/components/templates/TemplateEditor.tsx`, `TemplateDocument.tsx`, `templates.css` |
 | List page, filters, search | `src/app/templates/page.tsx`, `src/components/templates/TemplateBrowser.tsx`, `src/components/search/TemplateSearch.tsx`, `src/lib/templateSearch.ts` |
 | Downloaded public-domain and statutory sources, with licences | `templates/sources/` and `templates/sources/SOURCES.md` |
 | Tests (wiring of every template, Word build, escaping, drafts) | `src/lib/templateLibrary/library.test.ts`, `src/lib/templateSearch.test.ts` |
@@ -29,6 +29,7 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
 5. Bump `version` when wording changes. Drafts carry the version they were made from.
 6. Plain English, user-facing only (no developer notes in UI copy). Use `GENERAL_TERMS` for closing clauses.
 7. Creator templates keep the FTC Endorsement Guides disclosure clause. The NDA keeps the 18 U.S.C. § 1833(b) whistleblower notice.
+8. **US Letter, 1 page normally, 2 pages at most.** Print and Word both use 8.5 x 11 in with 0.75 in margins and 11pt Times New Roman. The "page length" test estimates each template's printed height with example answers and fails above 1.9 pages. Trim wording, merge checklist rows or put signers side by side before adding length.
 
 To add a template: write it in the right category file, add the slug to `WRITTEN_TEMPLATES`, run `npx vitest run src/lib/templateLibrary`.
 
@@ -67,7 +68,7 @@ This is research, not legal advice.
 - Answers are rendered only as React text nodes and docx `TextRun`s. Never use `dangerouslySetInnerHTML`, HTML strings or templating that produces markup.
 - Any draft from outside the component (session storage now, the account later) goes through `readDraft`: matching slug, known field ids only, strings only, `cleanValue` length caps and control-character stripping.
 - The sign-in handoff stores the draft in `sessionStorage` (`pt.templateDraft`, per tab) and deletes it as soon as it's restored.
-- The form and preview carry `data-clarity-mask="true"`. Don't send answers to analytics. Meta pixel "automatic advanced matching" must stay off in Events Manager, because it can read form fields.
+- The document (with its editable blanks) carries `data-clarity-mask="true"`. Don't send answers to analytics. Meta pixel "automatic advanced matching" must stay off in Events Manager, because it can read form fields.
 - The library is `server-only`; each page sends only its own template.
 - Download file names go through `fileName()` (letters, digits and dashes only).
 - The sign-in gate is a sign-up prompt, not a security boundary: the template text is public on the page.

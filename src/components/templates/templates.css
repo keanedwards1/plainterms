@@ -2,100 +2,150 @@
 @layer properties, theme, base, components, utilities;
 
 @layer components {
-  /* Fill-in page: form and notes on the left, the live document on the right. */
-  .pt-tfill {
-    display: grid;
-    gap: 1.5rem;
-    align-items: start;
-  }
+  /* ---------- Editor: toolbar, grey canvas with a Letter page, notes beside it ---------- */
+  .pt-teditor { display: grid; gap: 0.75rem; }
 
-  @media (min-width: 1024px) {
-    .pt-tfill { grid-template-columns: minmax(0, 25rem) minmax(0, 1fr); gap: 2rem; }
-    .pt-tfill-preview { position: sticky; top: 1rem; max-height: calc(100dvh - 2rem); overflow: auto; }
-  }
-
-  .pt-tfill-side { display: grid; gap: 1.25rem; }
-
-  .pt-tform { display: grid; gap: 1.25rem; }
-  .pt-tform-group { display: grid; gap: 0.875rem; border: 1px solid var(--pt-line); border-radius: var(--pt-radius); background: var(--pt-surface); padding: 1rem 1rem 1.125rem; }
-  .pt-tform-group legend { padding: 0 0.375rem; margin-left: -0.375rem; font-weight: 600; }
-  .pt-tform-field { display: grid; gap: 0.375rem; }
-  .pt-tform-field label { font-size: 0.875rem; font-weight: 500; }
-  .pt-tform-input {
-    width: 100%;
-    border: 1px solid var(--pt-line-strong);
-    border-radius: var(--pt-radius-control);
-    background: var(--pt-paper);
-    padding: 0.55rem 0.7rem;
-    font-size: 1rem;
-    color: var(--pt-ink);
-  }
-  textarea.pt-tform-input { resize: vertical; min-height: 5rem; line-height: 1.5; }
-  .pt-tform-input::placeholder { color: color-mix(in oklab, var(--pt-muted) 70%, transparent); }
-  .pt-tform-input:focus-visible { outline: 2px solid var(--pt-ring); outline-offset: 1px; border-color: var(--pt-ink); }
-  .pt-tform-hint, .pt-tform-note { font-size: 0.8125rem; color: var(--pt-muted); }
-
-  .pt-tfill-notes { border-radius: var(--pt-radius); background: var(--pt-warn-bg); padding: 1rem 1.125rem; font-size: 0.9375rem; }
-  .pt-tfill-notes h2 { font-size: 1rem; font-weight: 600; }
-  .pt-tfill-notes ul { margin-top: 0.5rem; display: grid; gap: 0.4rem; padding-left: 1.1rem; list-style: disc; }
-  .pt-tfill-legal { margin-top: 0.75rem; border-top: 1px solid color-mix(in oklab, var(--pt-warn) 25%, transparent); padding-top: 0.75rem; font-size: 0.8125rem; }
-  .pt-tfill-source { margin-top: 0.5rem; font-size: 0.8125rem; color: var(--pt-muted); }
-
-  .pt-tfill-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.625rem; }
-  .pt-tfill-hint { flex-basis: 100%; font-size: 0.8125rem; color: var(--pt-muted); }
-  .pt-tfill-clear { font-size: 0.875rem; color: var(--pt-muted); text-decoration: underline; text-underline-offset: 3px; }
-  .pt-tfill-error { flex-basis: 100%; font-size: 0.875rem; color: var(--pt-bad); }
-
-  /* The document. */
-  .pt-tdoc {
+  .pt-teditor-bar {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
     border: 1px solid var(--pt-line);
-    border-radius: 4px;
-    background: #fff;
-    padding: clamp(1.25rem, 4vw, 3rem);
+    border-radius: var(--pt-radius);
+    background: color-mix(in oklab, var(--pt-surface) 94%, transparent);
+    backdrop-filter: blur(8px);
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
     box-shadow: 0 1px 2px var(--pt-shadow);
-    font: 400 0.9375rem/1.65 Georgia, "Times New Roman", serif;
-    color: #1d2422;
   }
-  .pt-tdoc p { margin: 0 0 0.85em; white-space: pre-line; }
-  .pt-tdoc-title { margin: 0 0 1.25em; text-align: center; font: 700 1.25rem/1.3 Georgia, "Times New Roman", serif; letter-spacing: 0; }
-  .pt-tdoc-h { margin: 1.4em 0 0.5em; font: 700 0.9375rem/1.4 Georgia, "Times New Roman", serif; }
-  .pt-tdoc-ol, .pt-tdoc-ul { margin: 0 0 0.85em; padding-left: 1.4em; display: grid; gap: 0.4em; }
+  .pt-teditor-status { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem; font-size: 0.875rem; font-weight: 500; }
+  .pt-teditor-meter { display: inline-block; width: 5.5rem; height: 6px; overflow: hidden; border-radius: 999px; background: var(--pt-line); }
+  .pt-teditor-meter i { display: block; height: 100%; border-radius: inherit; background: var(--pt-teal); transition: width 200ms ease; }
+  .pt-teditor-pages { font-weight: 400; color: var(--pt-muted); }
+  .pt-teditor-over { font-weight: 600; color: var(--pt-bad); }
+  .pt-teditor-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; }
+  .pt-teditor-error { font-size: 0.875rem; color: var(--pt-bad); }
+
+  .pt-teditor-body { display: grid; gap: 1.25rem; align-items: start; }
+  @media (min-width: 1280px) {
+    .pt-teditor-body { grid-template-columns: minmax(0, 1fr) 17rem; }
+    .pt-teditor-side { position: sticky; top: 5rem; }
+  }
+
+  .pt-teditor-canvas {
+    overflow-x: auto;
+    border-radius: var(--pt-radius);
+    background: #e8e7e1;
+    padding: 1.5rem 0.75rem;
+  }
+
+  /* The page: real US Letter size on wide screens, full width on phones. */
+  .pt-tsheet {
+    position: relative;
+    margin-inline: auto;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12), 0 6px 18px rgb(0 0 0 / 0.06);
+    padding: 1.25rem;
+    font: 400 15px/1.5 "Times New Roman", Times, serif;
+    color: #1b1f1d;
+  }
+  @media (min-width: 900px) {
+    .pt-tsheet {
+      width: 8.5in;
+      min-height: calc(var(--pt-pages, 1) * 11in);
+      padding: 0.75in;
+      font-size: 11pt;
+      line-height: 1.35;
+    }
+  }
+  .pt-tsheet-break { display: none; }
+  @media (min-width: 900px) {
+    .pt-tsheet-break {
+      position: absolute;
+      inset-inline: 0;
+      display: block;
+      height: 0;
+      border-top: 1px dashed #b9bcb4;
+      pointer-events: none;
+    }
+    .pt-tsheet-break span {
+      position: absolute;
+      right: 0.5rem;
+      top: 0.2rem;
+      font: 500 0.6875rem/1 var(--font-sans, system-ui), sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #8d918a;
+    }
+  }
+  @media (max-width: 899px) {
+    .pt-teditor-pages { display: none; }
+  }
+
+  .pt-teditor-side { display: grid; gap: 0.6rem; border-radius: var(--pt-radius); background: var(--pt-warn-bg); padding: 1rem 1.125rem; font-size: 0.875rem; }
+  .pt-teditor-side h2 { font-size: 0.9375rem; font-weight: 600; }
+  .pt-teditor-side ul { display: grid; gap: 0.4rem; padding-left: 1.1rem; list-style: disc; }
+  .pt-teditor-legal { border-top: 1px solid color-mix(in oklab, var(--pt-warn) 25%, transparent); padding-top: 0.6rem; font-size: 0.8125rem; }
+  .pt-teditor-source { font-size: 0.8125rem; color: var(--pt-muted); }
+
+  /* Blanks you click and type into. */
+  .pt-blank {
+    max-width: 100%;
+    margin: 0 1px;
+    border: 0;
+    border-bottom: 1.5px dashed #6d7a74;
+    border-radius: 3px 3px 0 0;
+    background: color-mix(in oklab, var(--pt-butter) 60%, transparent);
+    padding: 0 0.25em;
+    font: inherit;
+    line-height: 1.25;
+    color: inherit;
+    field-sizing: content;
+    min-width: 4ch;
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+  .pt-blank:not([data-empty]) { border-bottom-style: solid; border-bottom-color: color-mix(in oklab, var(--pt-teal) 55%, transparent); background: color-mix(in oklab, var(--pt-leaf) 30%, transparent); }
+  .pt-blank::placeholder { font-style: italic; color: #7d8076; opacity: 1; }
+  .pt-blank:hover { background: color-mix(in oklab, var(--pt-butter) 90%, transparent); }
+  .pt-blank:focus-visible, .pt-blank:focus { outline: 2px solid var(--pt-ring); outline-offset: 1px; background: #fff; border-bottom-color: var(--pt-ink); }
+  .pt-blank-date { min-width: 9.5em; }
+  .pt-blank-long { display: block; width: 100%; margin: 0.2em 0; resize: none; line-height: inherit; white-space: pre-wrap; }
+
+  /* ---------- The document (editor and print share these) ---------- */
+  .pt-tdoc p { margin: 0 0 0.55em; white-space: pre-line; }
+  .pt-tdoc-title { margin: 0 0 0.9em; text-align: center; font: 700 1.3em/1.25 "Times New Roman", Times, serif; letter-spacing: 0; }
+  .pt-tdoc-h { margin: 0.9em 0 0.25em; font: 700 1em/1.35 "Times New Roman", Times, serif; break-after: avoid; }
+  .pt-tdoc-ol, .pt-tdoc-ul { margin: 0 0 0.55em; padding-left: 1.5em; display: grid; gap: 0.25em; }
   .pt-tdoc-ol { list-style: decimal; }
   .pt-tdoc-ul { list-style: disc; }
-  .pt-tdoc-fill { background: color-mix(in oklab, var(--pt-leaf) 45%, transparent); border-radius: 2px; box-decoration-break: clone; padding: 0 0.15em; white-space: pre-line; }
-  .pt-tdoc-blank { border-radius: 2px; background: var(--pt-butter); padding: 0 0.3em; font-family: var(--font-sans, system-ui), sans-serif; font-size: 0.8em; color: var(--pt-ink-soft); }
-  .pt-tdoc-sign { display: grid; gap: 1.25rem 2rem; margin-top: 1.75rem; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); }
-  .pt-tdoc-signer { display: grid; gap: 0.9rem; }
-  .pt-tdoc-signer > span:not(:has(.pt-tdoc-fill, .pt-tdoc-blank)) { border-top: 1px solid #1d2422; padding-top: 0.2rem; font-size: 0.8125rem; color: #59605d; }
-  .pt-tdoc-signer > span:has(.pt-tdoc-fill, .pt-tdoc-blank) { font-size: 0.875rem; }
-  .pt-tdoc-grid { width: 100%; margin: 0 0 1em; border-collapse: collapse; font-size: 0.8125rem; }
-  .pt-tdoc-grid th, .pt-tdoc-grid td { border: 1px solid #b9bfbc; padding: 0.4rem 0.5rem; text-align: left; vertical-align: top; }
-  .pt-tdoc-grid thead th { background: #f4f4f1; }
-  .pt-tdoc-grid tbody th { width: 34%; font-weight: 400; }
-  .pt-tdoc-grid td { height: 2.1rem; }
-  .pt-tdoc-foot { margin-top: 2em !important; border-top: 1px solid #e2e2de; padding-top: 0.6em; font-size: 0.75rem; color: #6b6b6b; }
+  .pt-tdoc-sign { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1em 2em; margin-top: 1.3em; }
+  .pt-tdoc-signer { display: grid; gap: 1.05em; break-inside: avoid; }
+  .pt-tdoc-sigline { border-top: 1px solid #1b1f1d; padding-top: 0.15em; font-size: 0.82em; color: #555b58; }
+  .pt-tdoc-signame { font-size: 0.92em; }
+  .pt-tdoc-grid { width: 100%; margin: 0 0 0.6em; border-collapse: collapse; font-size: 0.86em; }
+  .pt-tdoc-grid th, .pt-tdoc-grid td { border: 1px solid #9ea39f; padding: 0.15em 0.4em; text-align: left; vertical-align: top; }
+  .pt-tdoc-grid thead th { background: #f1f1ee; }
+  .pt-tdoc-grid tbody th { width: 32%; font-weight: 400; }
+  .pt-tdoc-grid tr { height: 1.6em; break-inside: avoid; }
+  .pt-tdoc-foot { margin-top: 1.6em !important; border-top: 1px solid #ddd; padding-top: 0.4em; font-size: 0.75em; color: #6b6b6b; }
+  .pt-tdoc-fill { white-space: pre-line; }
+  .pt-tdoc-blank { display: inline-block; min-width: 1.6in; height: 1em; border-bottom: 1px solid #000; vertical-align: -0.15em; }
+  .pt-tdoc-blank-long { display: block; width: 100%; height: 2.7em; border-bottom: 1px solid #000; background: linear-gradient(transparent calc(1.35em - 1px), #000 calc(1.35em - 1px), #000 1.35em, transparent 1.35em); }
+
+  /* The plain copy that prints. Hidden on screen. */
+  .pt-tdoc-print { display: none; }
 }
 
-/* Print or "Save as PDF": only the document, with empty blanks as lines to write on. */
+/* Print or "Save as PDF": US Letter, only the plain copy of the document. */
 @media print {
-  body:has(.pt-tdoc) * { visibility: hidden !important; }
-  body:has(.pt-tdoc) .pt-tdoc,
-  body:has(.pt-tdoc) .pt-tdoc * { visibility: visible !important; }
-  body:has(.pt-tdoc) .pt-tdoc {
-    position: absolute;
-    inset: 0 auto auto 0;
-    width: 100%;
-    border: 0;
-    box-shadow: none;
-    padding: 0;
-    font-size: 11.5pt;
+  @page { size: letter; margin: 0.75in; }
+  body:has(> .pt-print-root) > :not(.pt-print-root) { display: none !important; }
+  .pt-print-root .pt-tdoc-print {
+    display: block;
+    font: 400 11pt/1.32 "Times New Roman", Times, serif;
     color: #000;
   }
-  body:has(.pt-tdoc) .pt-tfill-preview { position: static; max-height: none; overflow: visible; }
-  .pt-tdoc-fill { background: none; padding: 0; }
-  .pt-tdoc-blank { background: none; color: transparent; border-bottom: 1px solid #000; border-radius: 0; padding: 0 1.5em; }
-  .pt-tdoc-blank-long { display: inline-block; min-width: 70%; }
-  .pt-tdoc-grid thead th { background: none; }
-  .pt-tdoc h2, .pt-tdoc h3 { break-after: avoid; }
-  .pt-tdoc-signer, .pt-tdoc-grid tr { break-inside: avoid; }
 }
