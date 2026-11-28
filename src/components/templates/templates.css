@@ -126,7 +126,7 @@
   .pt-tdoc-info { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 0.9em; row-gap: 0.15em; margin: 0 0 0.8em; }
   .pt-tdoc-info > div { display: contents; }
   .pt-tdoc-info dt { padding-top: 0.35em; }
-  .pt-tdoc-info dd { min-height: 1.6em; margin: 0; border-bottom: 1px solid #1b1f1d; padding: 0.35em 0 0.05em; }
+  .pt-tdoc-info dd { min-width: 0; min-height: 1.6em; margin: 0; border-bottom: 1px solid #1b1f1d; padding: 0.35em 0 0.05em; }
 
   /* Contract sections with the heading run into the text. */
   .pt-tdoc-clause { margin: 0.45em 0 0.55em !important; }
@@ -139,7 +139,7 @@
   /* Bordered form boxes, like a printed form. */
   .pt-tdoc-boxes { margin: 0 0 1em; border-top: 1px solid #1b1f1d; border-left: 1px solid #1b1f1d; }
   .pt-tdoc-boxrow { display: grid; }
-  .pt-tdoc-box { display: grid; align-content: start; gap: 0.15em; min-height: 3.05em; border-right: 1px solid #1b1f1d; border-bottom: 1px solid #1b1f1d; padding: 0.3em 0.5em 0.35em; }
+  .pt-tdoc-box { display: grid; align-content: start; gap: 0.15em; min-width: 0; min-height: 3.05em; border-right: 1px solid #1b1f1d; border-bottom: 1px solid #1b1f1d; padding: 0.3em 0.5em 0.35em; }
   .pt-tdoc-boxlabel { font: 700 0.62em/1.2 var(--font-sans, system-ui), sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: #5f6461; }
   .pt-tdoc-boxvalue { min-height: 1.35em; }
 
@@ -156,9 +156,9 @@
   .pt-tdoc-sign { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4em 2.2em; margin-top: 1.2em; }
   .pt-tdoc-signer { display: grid; gap: 0.35em; break-inside: avoid; }
   .pt-tdoc-role { margin: 0 0 0.2em !important; font-weight: 700; font-size: 0.86em; letter-spacing: 0.06em; text-transform: uppercase; }
-  .pt-tdoc-sigrow { display: grid; grid-template-columns: minmax(0, 1fr) 34%; gap: 0.9em; }
-  .pt-tdoc-sigcell { display: grid; gap: 0.15em; }
-  .pt-tdoc-sigspace { display: flex; align-items: flex-end; min-height: 1.7em; border-bottom: 1px solid #1b1f1d; padding-bottom: 0.1em; }
+  .pt-tdoc-sigrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 36%); gap: 0.9em; }
+  .pt-tdoc-sigcell { display: grid; gap: 0.15em; min-width: 0; }
+  .pt-tdoc-sigspace { display: flex; align-items: flex-end; min-width: 0; min-height: 1.7em; border-bottom: 1px solid #1b1f1d; padding-bottom: 0.1em; }
   .pt-tdoc-sigspace-tall { min-height: 3.1em; }
   .pt-tdoc-cap { font-size: 0.74em; color: #666b68; }
   .pt-tdoc-sigimg { display: block; max-width: 100%; height: 2.7em; object-fit: contain; object-position: left bottom; }
@@ -223,7 +223,9 @@
   .pt-tdoc-lines i { display: block; height: 1.55em; border-bottom: 1px solid #1b1f1d; }
 
   /* Editor-only: blanks on a ruled line fill it, and the Sign button. */
-  .pt-blank-line { width: 100%; border-bottom: 0; background: transparent; }
+  /* Fields on a ruled line fill it and never push past it. */
+  .pt-blank-line { width: 100%; min-width: 0; border-bottom: 0; background: transparent; }
+  .pt-blank-line.pt-blank-date { min-width: 0; font-size: 0.92em; }
   .pt-blank-line[data-empty] { background: color-mix(in oklab, var(--pt-butter) 45%, transparent); }
   .pt-tdoc-info dd:has(.pt-blank), .pt-tdoc-sigspace:has(.pt-blank) { padding-top: 0.15em; }
   .pt-sign-btn {
@@ -240,7 +242,9 @@
   }
   .pt-sign-btn:hover { background: var(--pt-accent-soft); }
   .pt-sign-btn:focus-visible { outline: 2px solid var(--pt-ring); outline-offset: 2px; }
-  .pt-sigset { display: inline-flex; align-items: flex-end; gap: 0.5em; max-width: 100%; }
+  .pt-sigset { display: inline-flex; align-items: flex-end; gap: 0.5em; min-width: 0; max-width: 100%; }
+  .pt-sigset .pt-tdoc-sigimg { min-width: 0; max-width: calc(100% - 4em); }
+  .pt-sign-btn { max-width: 100%; white-space: nowrap; }
   .pt-sigset-remove { margin-bottom: 0.2em; font: 500 0.72em/1 var(--font-sans, system-ui), sans-serif; color: var(--pt-muted); text-decoration: underline; }
 
   /* Signing dialog. */
@@ -265,6 +269,20 @@
 
   /* The plain copy that prints. Hidden on screen. */
   .pt-tdoc-print { display: none; }
+}
+
+/* Phones: the page reflows, so stack what sits side by side on a Letter page. */
+@media (max-width: 899px) {
+  .pt-tdoc-sign { grid-template-columns: minmax(0, 1fr); }
+  .pt-tdoc-boxrow { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)) !important; }
+  .pt-tdoc-info { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
+  .pt-tdoc-info dt { padding-top: 0.55em; font-size: 0.9em; color: #4d5451; }
+  .pt-tdoc-amounts td { width: 7.5rem; }
+  .pt-tdoc-head { padding-bottom: 0.5em; }
+  .pt-tdoc-aside { position: static; margin-top: 0.35em !important; text-align: center; }
+  .pt-tdoc-grid { font-size: 0.8em; }
+  .pt-tdoc-grid tbody th { width: 40%; }
+  .pt-tip-bubble { max-width: min(15rem, 70vw); }
 }
 
 /* "Read more" glides down to the notes instead of jumping. */

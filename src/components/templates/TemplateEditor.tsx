@@ -62,7 +62,7 @@ function BlankInput({ field, value, onChange, onLine }: { field: TemplateField; 
       {...common}
       type={INPUT_TYPE[field.type] ?? "text"}
       inputMode={field.type === "money" ? "decimal" : field.type === "number" ? "numeric" : undefined}
-      size={Math.max(4, (value || field.label).length + 1)}
+      size={onLine ? 1 : Math.max(4, (value || field.label).length + 1)}
       className={`pt-blank${field.type === "date" ? " pt-blank-date" : ""}${onLine ? " pt-blank-line" : ""}`}
       spellCheck={field.type === "text"}
       onChange={(e) => onChange(e.target.value)}
@@ -171,9 +171,15 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
     const tipId = `sign-tip-${key.replace(".", "-")}`;
     return (
       <span className="pt-tip">
-        <button type="button" className="pt-sign-btn" aria-describedby={tipId} onClick={() => setSigning({ key, role, name: nameFor(key) })}>
+        <button
+          type="button"
+          className="pt-sign-btn"
+          aria-label={`Sign as ${role}`}
+          aria-describedby={tipId}
+          onClick={() => setSigning({ key, role, name: nameFor(key) })}
+        >
           <Icon d="M4 18c3-1 5-9 8-9 2 0 0 7 3 7 1.5 0 2.5-2 4-2M4 21h16" />
-          Sign as {role}
+          Sign here
         </button>
         <span id={tipId} role="tooltip" className="pt-tip-bubble">
           Sign only your own line. Then send it to the other party to sign theirs.
