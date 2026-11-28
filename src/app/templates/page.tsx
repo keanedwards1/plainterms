@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SoonChip } from "@/components/tools/ToolHeader";
-import { TEMPLATES, type TemplateInfo } from "@/lib/templates";
+import { TEMPLATE_GROUPS, TEMPLATES } from "@/lib/templates";
 import "@/components/home/home.css";
 
 export const metadata: Metadata = {
   title: "Templates",
-  description: "Change orders, lien waivers, demand letters, lease addenda and more, filled in by answering a few questions.",
+  description: "Leases, NDAs, freelance contracts, bills of sale, change orders, lien waivers, demand letters and more, filled in by answering a few questions.",
 };
 
 // Templates the letter writer can already fill.
@@ -15,8 +15,6 @@ const READY: Record<string, string> = {
   "security-deposit": "/tools/write-a-letter",
   "contractor-complaint": "/tools/write-a-letter",
 };
-
-const GROUPS: TemplateInfo["group"][] = ["Home and renovation", "Renting", "Money and disputes"];
 
 export default function TemplatesPage() {
   return (
@@ -28,7 +26,7 @@ export default function TemplatesPage() {
             Answer a few questions and get a filled-in document you can sign, send or print.
           </p>
         </header>
-        {GROUPS.map((group) => (
+        {TEMPLATE_GROUPS.map((group) => (
           <section key={group} aria-labelledby={`g-${group}`} className="mt-10">
             <h2 id={`g-${group}`} className="text-2xl tracking-[-0.04em]">
               {group}
