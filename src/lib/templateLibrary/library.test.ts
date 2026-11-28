@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { cleanValue, displayValue, fileName, fill, readDraft, tokensIn } from "@/lib/templateKit/fill";
+import { cleanValue, displayValue, fileName, fill, infoRows, isSignatureImage, readDraft, readSignatures, tokensIn } from "@/lib/templateKit/fill";
 import type { Block, TemplateDoc } from "@/lib/templateKit/types";
 import { LIBRARY } from "@/lib/templateLibrary";
 import { TEMPLATES, WRITTEN_TEMPLATES } from "@/lib/templates";
@@ -90,6 +90,7 @@ describe("template filling", () => {
 
   it("makes safe file names", () => {
     expect(fileName({ ...doc, title: "../../etc/Bill of Sale!" }, "docx")).toBe("etc-bill-of-sale.docx");
+    expect(fileName({ ...doc, title: "Change Order No. {{changeNumber}}" }, "pdf", "blank")).toBe("change-order-no-blank.pdf");
   });
 });
 
@@ -104,40 +105,68 @@ describe("Word download", () => {
   });
 });
 
-/**
- * Rough printed height on US Letter (0.75in margins, 11pt Times, 1.32 line height), with each
- * field filled with its example answer. Keeps every template to 2 pages at most.
- */
-function printedPoints(doc: TemplateDoc): number {
-  const LINE = 14.5;
-  const PER_LINE = 95; // characters per 7in line, on the safe side
-  const values = Object.fromEntries(doc.fields.map((f) => [f.id, f.placeholder || f.label]));
-  const lines = (text: string) =>
-    fill(text, doc, values)
-      .map((p) => (p.kind === "text" ? p.text : p.value))
-      .join("")
-      .split("\n")
-      .reduce((n, line) => n + Math.max(1, Math.ceil(line.length / PER_LINE)), 0);
-  let pt = 30; // footer note
-  for (const b of doc.body) {
-    if (b.t === "title") pt += 32;
-    else if (b.t === "h") pt += lines(b.text) * LINE + 13;
-    else if (b.t === "p") pt += lines(b.text) * LINE + 6;
-    else if (b.t === "ol" || b.t === "ul") pt += b.items.reduce((n, item) => n + lines(item) * LINE + 3, 6);
-    else if (b.t === "sign") pt += 15 + Math.ceil(b.parties.length / 2) * 106;
-    else if (b.t === "grid") pt += 20 + b.rows.length * 17 + 6;
-  }
-  return pt;
-}
+const SIG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+const exampleValues = (doc: TemplateDoc) =>
+  Object.fromEntries(doc.fields.map((f) => [f.id, f.type === "date" ? "2027-03-05" : f.placeholder || f.label]));
+const allSigned = (doc: TemplateDoc) =>
+  Object.fromEntries(
+    doc.body.flatMap((b, i) => (b.t === "sign" ? b.parties.map((_, j) => [`${i}.${j}`, { image: SIG, signedOn: "March 5, 2027" }]) : []))
+  );
 
-describe("page length", () => {
-  const PAGE = 9.5 * 72; // printable height of a Letter page with 0.75in margins
-  it.each(LIBRARY.map((t) => [t.slug, t] as const))("%s fits on 2 Letter pages", (_slug, doc) => {
-    expect(printedPoints(doc) / PAGE).toBeLessThanOrEqual(1.9);
+describe("PDF download", () => {
+  // The real PDF layout, blank and filled in with example answers: US Letter, 2 pages at most.
+  it.each(LIBRARY.map((t) => [t.slug, t] as const))("%s fits on 2 Letter pages", async (_slug, doc) => {
+    const { templatePdf } = await import("@/lib/templateKit/pdf");
+    for (const [values, signatures] of [[{}, {}], [exampleValues(doc), allSigned(doc)]] as const) {
+      const blob = await templatePdf(doc, values, signatures);
+      const text = Buffer.from(await blob.arrayBuffer()).toString("latin1");
+      expect(text.startsWith("%PDF-")).toBe(true);
+      expect(text).toContain("/MediaBox [0 0 612. 792.]");
+      const pages = (text.match(/\/Type \/Page[^s]/g) ?? []).length;
+      expect(pages).toBeGreaterThanOrEqual(1);
+      expect(pages).toBeLessThanOrEqual(2);
+    }
   });
-  it("prints the estimates", () => {
-    const rows = LIBRARY.map((d) => `${d.slug}: ${(printedPoints(d) / PAGE).toFixed(2)} pages`);
-    expect(rows.length).toBe(LIBRARY.length);
-    if (process.env.PT_PAGE_REPORT) console.log(rows.join("\n"));
+
+  it("builds a Word file with signatures", async () => {
+    const { templateDocx } = await import("@/lib/templateKit/docx");
+    const doc = LIBRARY.find((t) => t.slug === "change-order")!;
+    const blob = await templateDocx(doc, exampleValues(doc), allSigned(doc));
+    expect(blob.size).toBeGreaterThan(2000);
+  });
+});
+
+describe("signatures", () => {
+  const doc = LIBRARY.find((t) => t.slug === "change-order")!;
+  const signIndex = doc.body.findIndex((b) => b.t === "sign");
+
+  it("keeps only real signer slots with PNG images", () => {
+    expect(
+      readSignatures(doc, {
+        [`${signIndex}.0`]: { image: SIG, signedOn: "March 5, 2027" },
+        [`${signIndex}.9`]: { image: SIG, signedOn: "x" },
+        "0.0": { image: SIG, signedOn: "x" },
+        [`${signIndex}.1`]: { image: "javascript:alert(1)", signedOn: "x" },
+        evil: { image: SIG, signedOn: "x" },
+      })
+    ).toEqual({ [`${signIndex}.0`]: { image: SIG, signedOn: "March 5, 2027" } });
+    expect(readSignatures(doc, "nope")).toEqual({});
+  });
+
+  it("only accepts PNG data URLs", () => {
+    expect(isSignatureImage(SIG)).toBe(true);
+    expect(isSignatureImage("data:image/svg+xml;base64,PHN2Zz4=")).toBe(false);
+    expect(isSignatureImage(`data:image/png;base64,${"A".repeat(500_000)}`)).toBe(false);
+  });
+});
+
+describe("form rows", () => {
+  it("treats label-and-blank paragraphs as form rows", () => {
+    expect(infoRows("Date: {{a}}\nOwner: {{b}}")).toEqual([
+      { label: "Date", text: "{{a}}" },
+      { label: "Owner", text: "{{b}}" },
+    ]);
+    expect(infoRows("Date: {{a}}\nBetween {{b}} and {{c}}")).toBeNull();
+    expect(infoRows("Date: {{a}}")).toBeNull();
   });
 });

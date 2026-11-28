@@ -1,4 +1,4 @@
-import type { FieldType, TemplateDoc, TemplateDraft, TemplateField, TemplateValues } from "@/lib/templateKit/types";
+import type { FieldType, SignatureMark, Signatures, TemplateDoc, TemplateDraft, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 /** The longest answer each kind of field accepts. Keeps documents and drafts a sane size. */
 export const MAX_LENGTH: Record<FieldType, number> = {
@@ -85,7 +85,55 @@ export function readDraft(doc: TemplateDoc, input: unknown): TemplateDraft | nul
 }
 
 /** A safe file name for a download: letters, digits and dashes only. */
-export function fileName(doc: TemplateDoc, ext: "docx"): string {
-  const base = doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "document";
+export function fileName(doc: TemplateDoc, ext: "docx" | "pdf", suffix = ""): string {
+  const base = `${doc.title.replace(/\{\{[^}]*\}\}/g, "")} ${suffix}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "document";
   return `${base}.${ext}`;
+}
+
+export type InfoRow = { label: string; text: string };
+
+const INFO_LINE = /^([^{}\n:]{1,40}): (\{\{[a-zA-Z][a-zA-Z0-9_]*\}\})$/;
+
+/**
+ * A paragraph made only of "Label: {{blank}}" lines reads better as aligned fields with full-width
+ * lines, like a form. Returns those rows, or null for an ordinary paragraph.
+ */
+export function infoRows(text: string): InfoRow[] | null {
+  const lines = text.split("\n");
+  if (lines.length < 2) return null;
+  const rows: InfoRow[] = [];
+  for (const line of lines) {
+    const m = INFO_LINE.exec(line.trim());
+    if (!m) return null;
+    rows.push({ label: m[1], text: m[2] });
+  }
+  return rows;
+}
+
+export const signKey = (block: number, party: number) => `${block}.${party}`;
+
+const MAX_SIGNATURE_CHARS = 400_000;
+
+/** Only a PNG data URL of a sane size counts as a signature image. */
+export function isSignatureImage(value: unknown): value is string {
+  return typeof value === "string" && value.length < MAX_SIGNATURE_CHARS && /^data:image\/png;base64,[A-Za-z0-9+/]+=*$/.test(value);
+}
+
+/** Today's date, spelled out, in the signer's own time zone. */
+export function todayLabel(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(now);
+}
+
+/** Signatures from outside the editor (the sign-in handoff): only real signer slots, PNG images and short dates. */
+export function readSignatures(doc: TemplateDoc, input: unknown): Signatures {
+  const out: Signatures = {};
+  if (!input || typeof input !== "object") return out;
+  for (const [key, mark] of Object.entries(input as Record<string, unknown>)) {
+    const m = /^(\d{1,3})\.(\d{1,2})$/.exec(key);
+    const block = m ? doc.body[Number(m[1])] : undefined;
+    if (!m || !block || block.t !== "sign" || !block.parties[Number(m[2])]) continue;
+    const { image, signedOn } = (mark ?? {}) as Partial<SignatureMark>;
+    if (isSignatureImage(image) && typeof signedOn === "string" && signedOn.length <= 40) out[key] = { image, signedOn };
+  }
+  return out;
 }

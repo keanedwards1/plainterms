@@ -14,8 +14,8 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
 | Template list, groups, search keywords, `WRITTEN_TEMPLATES` | `src/lib/templates.ts` |
 | Template text (server-only; one file per category) | `src/lib/templateLibrary/*.ts`, registry in `index.ts` |
 | Shared clauses (`GENERAL_TERMS`, `GOVERNING_STATE`, `LETTER_FIELDS`) | `src/lib/templateLibrary/shared.ts` |
-| Types, filling, validation, Word export | `src/lib/templateKit/` |
-| Fill-in page (document-style editor: click a blank in the page to type; a plain copy is portalled into `<body>` for printing) | `src/app/templates/[slug]/page.tsx`, `src/components/templates/TemplateEditor.tsx`, `TemplateDocument.tsx`, `templates.css` |
+| Types, filling, validation, Word and PDF export (`docx.ts`, `pdf.ts` with jsPDF, both loaded on click) | `src/lib/templateKit/` |
+| Fill-in page (document-style editor with a Blank template / Fill in and sign switch, blank by default; click a blank to type; `SignatureDialog.tsx` draws or types a signature; a plain copy is portalled into `<body>` for printing) | `src/app/templates/[slug]/page.tsx`, `src/components/templates/TemplateEditor.tsx`, `TemplateDocument.tsx`, `templates.css` |
 | List page, filters, search | `src/app/templates/page.tsx`, `src/components/templates/TemplateBrowser.tsx`, `src/components/search/TemplateSearch.tsx`, `src/lib/templateSearch.ts` |
 | Downloaded public-domain and statutory sources, with licences | `templates/sources/` and `templates/sources/SOURCES.md` |
 | Tests (wiring of every template, Word build, escaping, drafts) | `src/lib/templateLibrary/library.test.ts`, `src/lib/templateSearch.test.ts` |
@@ -29,7 +29,8 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
 5. Bump `version` when wording changes. Drafts carry the version they were made from.
 6. Plain English, user-facing only (no developer notes in UI copy). Use `GENERAL_TERMS` for closing clauses.
 7. Creator templates keep the FTC Endorsement Guides disclosure clause. The NDA keeps the 18 U.S.C. § 1833(b) whistleblower notice.
-8. **US Letter, 1 page normally, 2 pages at most.** Print and Word both use 8.5 x 11 in with 0.75 in margins and 11pt Times New Roman. The "page length" test estimates each template's printed height with example answers and fails above 1.9 pages. Trim wording, merge checklist rows or put signers side by side before adding length.
+8. **US Letter, 1 page normally, 2 pages at most.** Print, PDF and Word all use 8.5 x 11 in with 0.75 in margins and 11pt Times. The "PDF download" test builds every template's real PDF, blank and filled with example answers and all signatures, and fails above 2 pages. Short documents (letters, change order, bill of sale) should stay on 1 page blank. Trim wording or make short answers `text` instead of `long` before adding length.
+9. **Layout conventions** (rendered the same in the page, PDF and Word): a paragraph made only of `Label: {{blank}}` lines becomes aligned form rows with ruled lines; a `long` blank left empty becomes three writing lines; signers sit two per row with signature, date and printed-name lines; the title can hold a blank (e.g. `Change Order No. {{changeNumber}}`).
 
 To add a template: write it in the right category file, add the slug to `WRITTEN_TEMPLATES`, run `npx vitest run src/lib/templateLibrary`.
 
@@ -67,7 +68,8 @@ This is research, not legal advice.
 - Answers never leave the browser. No server route receives template answers today.
 - Answers are rendered only as React text nodes and docx `TextRun`s. Never use `dangerouslySetInnerHTML`, HTML strings or templating that produces markup.
 - Any draft from outside the component (session storage now, the account later) goes through `readDraft`: matching slug, known field ids only, strings only, `cleanValue` length caps and control-character stripping.
-- The sign-in handoff stores the draft in `sessionStorage` (`pt.templateDraft`, per tab) and deletes it as soon as it's restored.
+- The sign-in handoff stores the draft (answers, signatures, mode) in `sessionStorage` (`pt.templateDraft`, per tab) and deletes it as soon as it's restored. Restored signatures go through `readSignatures`: real signer slots only, PNG data URLs only (`isSignatureImage`, size-capped), short date strings.
+- Signatures are drawn or typed into a canvas in the browser and exported as PNG. They never leave the device except inside the file the person downloads. This is a self-signing tool: there is no audit trail or sending to other signers. Don't describe it as more than that.
 - The document (with its editable blanks) carries `data-clarity-mask="true"`. Don't send answers to analytics. Meta pixel "automatic advanced matching" must stay off in Events Manager, because it can read form fields.
 - The library is `server-only`; each page sends only its own template.
 - Download file names go through `fileName()` (letters, digits and dashes only).

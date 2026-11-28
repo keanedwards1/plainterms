@@ -47,3 +47,9 @@ export type TemplateDoc = {
 export type TemplateValues = Record<string, string>;
 
 export type TemplateDraft = { slug: string; version: number; values: TemplateValues };
+
+/** A signature added in the browser: a PNG drawn or typed by the signer, and the day they signed. */
+export type SignatureMark = { image: string; signedOn: string };
+
+/** Signatures by signer slot, keyed `${blockIndex}.${partyIndex}`. Kept in memory only. */
+export type Signatures = Record<string, SignatureMark>;
