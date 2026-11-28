@@ -1,7 +1,5 @@
-import { fill, infoRows, isSignatureImage, signKey, type Piece } from "@/lib/templateKit/fill";
-import type { Block, SignatureMark, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
-
-export const DOC_FOOTER = "Made from a PlainTerms template. PlainTerms is not a law firm and this is not legal advice.";
+import { BRAND_TEXT, fill, infoRows, isSignatureImage, signKey, type Piece } from "@/lib/templateKit/fill";
+import type { Block, Branding, SignatureMark, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 /** An empty inline blank prints as a line to write on, sized to the kind of answer. */
 const BLANK_CHARS: Record<TemplateField["type"], number> = { text: 24, long: 60, date: 18, money: 14, email: 26, phone: 18, number: 8 };
@@ -26,7 +24,12 @@ function pngSize(bytes: Uint8Array): { width: number; height: number } {
  * as plain text runs (the docx library escapes them), so nothing typed can become markup in the file.
  * Loaded on demand.
  */
-export async function templateDocx(doc: TemplateDoc, values: TemplateValues, signatures: Signatures = {}): Promise<Blob> {
+export async function templateDocx(
+  doc: TemplateDoc,
+  values: TemplateValues,
+  signatures: Signatures = {},
+  brand: Branding = { show: true }
+): Promise<Blob> {
   const d = await import("docx");
   const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, PageNumber, TabStopType } = d;
 
@@ -225,13 +228,15 @@ export async function templateDocx(doc: TemplateDoc, values: TemplateValues, sig
   };
   doc.body.forEach(add);
 
+  // Footer: the PlainTerms mark on free plans, and page numbers.
+  const logo = brand.show && brand.logo && isSignatureImage(brand.logo) ? brand.logo : null;
   const footer = new Footer({
     children: [
       new Paragraph({
-        border: { top: { style: BorderStyle.SINGLE, size: 4, color: "D2D2D2", space: 4 } },
         tabStops: [{ type: TabStopType.RIGHT, position: TEXT_WIDTH }],
         children: [
-          new TextRun({ text: DOC_FOOTER, size: 15, color: "6B6B6B" }),
+          ...(logo ? [new ImageRun({ type: "png", data: base64Bytes(logo), transformation: { width: 12, height: 12 } }), new TextRun({ text: " ", size: 15 })] : []),
+          ...(brand.show ? [new TextRun({ text: BRAND_TEXT, size: 15, color: "6B6B6B" })] : []),
           new TextRun({ children: ["\tPage ", PageNumber.CURRENT, " of ", PageNumber.TOTAL_PAGES], size: 15, color: "6B6B6B" }),
         ],
       }),

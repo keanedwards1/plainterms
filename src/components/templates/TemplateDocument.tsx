@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { fill, infoRows, signKey, type Piece } from "@/lib/templateKit/fill";
-import { DOC_FOOTER } from "@/lib/templateKit/docx";
+import { BRAND_TEXT, fill, infoRows, signKey, type Piece } from "@/lib/templateKit/fill";
+import { LogoMark } from "@/components/shell/Logo";
 import type { Block, Signatures, TemplateDoc, TemplateValues } from "@/lib/templateKit/types";
 
 type Blank = Extract<Piece, { kind: "blank" }>;
@@ -182,6 +182,7 @@ export default function TemplateDocument({
   signatures = {},
   renderBlank = staticBlank,
   renderSignature,
+  branded = true,
   className = "",
 }: {
   doc: TemplateDoc;
@@ -189,6 +190,8 @@ export default function TemplateDocument({
   signatures?: Signatures;
   renderBlank?: RenderBlank;
   renderSignature?: RenderSignature;
+  /** Shows the small PlainTerms mark at the end (free plans). */
+  branded?: boolean;
   className?: string;
 }) {
   const ctx: Ctx = { doc, values, blank: renderBlank };
@@ -197,7 +200,12 @@ export default function TemplateDocument({
       {doc.body.map((block, i) => (
         <BlockView key={i} block={block} index={i} ctx={ctx} signatures={signatures} renderSignature={renderSignature} />
       ))}
-      <p className="pt-tdoc-foot">{DOC_FOOTER}</p>
+      {branded ? (
+        <p className="pt-tdoc-brand">
+          <LogoMark className="h-[1.1em] w-[1.1em] text-(--pt-accent)" />
+          {BRAND_TEXT}
+        </p>
+      ) : null}
     </article>
   );
 }

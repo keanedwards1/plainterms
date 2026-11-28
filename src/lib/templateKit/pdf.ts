@@ -1,6 +1,5 @@
-import { fill, infoRows, isSignatureImage, signKey, type Piece } from "@/lib/templateKit/fill";
-import { DOC_FOOTER } from "@/lib/templateKit/docx";
-import type { Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
+import { BRAND_TEXT, fill, infoRows, isSignatureImage, signKey, type Piece } from "@/lib/templateKit/fill";
+import type { Branding, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 // US Letter in points, 0.75in margins, 11pt Times.
 const PAGE_W = 612;
@@ -23,7 +22,12 @@ type Tok = { kind: "word"; text: string; bold: boolean } | { kind: "space" } | {
  * Builds the PDF in the browser with jsPDF's built-in Times font. Answers are drawn as plain text,
  * so nothing typed can become anything but text. Loaded on demand.
  */
-export async function templatePdf(doc: TemplateDoc, values: TemplateValues, signatures: Signatures = {}): Promise<Blob> {
+export async function templatePdf(
+  doc: TemplateDoc,
+  values: TemplateValues,
+  signatures: Signatures = {},
+  brand: Branding = { show: true }
+): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
   const pdf = new jsPDF({ unit: "pt", format: "letter", compress: true });
   pdf.setProperties({ title: doc.title, creator: "PlainTerms" });
@@ -290,19 +294,24 @@ export async function templatePdf(doc: TemplateDoc, values: TemplateValues, sign
     }
   });
 
-  // Footer on every page: the notice, and page numbers.
+  // Footer on every page: page numbers, and the PlainTerms mark on free plans.
   const pages = pdf.getNumberOfPages();
+  const logo = brand.logo && isSignatureImage(brand.logo) ? brand.logo : null;
   for (let p = 1; p <= pages; p++) {
     pdf.setPage(p);
-    pdf.setDrawColor(210);
-    pdf.setLineWidth(0.5);
-    pdf.line(M, PAGE_H - M + 6, RIGHT, PAGE_H - M + 6);
-    caption(DOC_FOOTER, M, PAGE_H - M + 18);
+    const at = PAGE_H - M + 22;
+    if (brand.show) {
+      let x = M;
+      if (logo) {
+        pdf.addImage(logo, "PNG", x, at - 8, 10, 10);
+        x += 14;
+      }
+      caption(BRAND_TEXT, x, at);
+    }
     font(false, 8);
     pdf.setTextColor(SOFT);
-    pdf.text(`Page ${p} of ${pages}`, RIGHT, PAGE_H - M + 18, { align: "right" });
+    pdf.text(`Page ${p} of ${pages}`, RIGHT, at, { align: "right" });
     pdf.setTextColor(INK);
-    pdf.setDrawColor(INK);
   }
 
   return pdf.output("blob");

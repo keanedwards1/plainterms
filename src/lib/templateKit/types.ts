@@ -53,3 +53,6 @@ export type SignatureMark = { image: string; signedOn: string };
 
 /** Signatures by signer slot, keyed `${blockIndex}.${partyIndex}`. Kept in memory only. */
 export type Signatures = Record<string, SignatureMark>;
+
+/** The small "Made with PlainTerms" mark in the footer. Free plans show it; Pro removes it. */
+export type Branding = { show: boolean; /** The logo as a PNG data URL, drawn in the browser. */ logo?: string };

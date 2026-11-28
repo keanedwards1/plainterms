@@ -137,3 +137,5 @@ export function readSignatures(doc: TemplateDoc, input: unknown): Signatures {
   }
   return out;
 }
+
+export const BRAND_TEXT = "Made with PlainTerms";

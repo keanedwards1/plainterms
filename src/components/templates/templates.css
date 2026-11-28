@@ -35,12 +35,7 @@
   .pt-teditor-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; }
   .pt-teditor-error { font-size: 0.875rem; color: var(--pt-bad); }
 
-  .pt-teditor-body { display: grid; gap: 1.25rem; align-items: start; }
-  @media (min-width: 1280px) {
-    .pt-teditor-body { grid-template-columns: minmax(0, 1fr) 17rem; }
-    .pt-teditor-side { position: sticky; top: 5rem; }
-  }
-
+  .pt-teditor-body { display: grid; gap: 1.5rem; }
   .pt-teditor-canvas {
     overflow-x: auto;
     border-radius: var(--pt-radius);
@@ -91,11 +86,11 @@
     .pt-teditor-pages { display: none; }
   }
 
-  .pt-teditor-side { display: grid; gap: 0.6rem; border-radius: var(--pt-radius); background: var(--pt-warn-bg); padding: 1rem 1.125rem; font-size: 0.875rem; }
-  .pt-teditor-side h2 { font-size: 0.9375rem; font-weight: 600; }
-  .pt-teditor-side ul { display: grid; gap: 0.4rem; padding-left: 1.1rem; list-style: disc; }
-  .pt-teditor-legal { border-top: 1px solid color-mix(in oklab, var(--pt-warn) 25%, transparent); padding-top: 0.6rem; font-size: 0.8125rem; }
-  .pt-teditor-source { font-size: 0.8125rem; color: var(--pt-muted); }
+  /* Notes and the disclaimer: under the page, quiet. */
+  .pt-teditor-notes { max-width: 8.5in; margin-inline: auto; width: 100%; display: grid; gap: 0.5rem; border-top: 1px solid var(--pt-line); padding-top: 1rem; font-size: 0.8125rem; line-height: 1.55; color: var(--pt-muted); }
+  .pt-teditor-notes h2 { font-size: 0.8125rem; font-weight: 600; color: var(--pt-ink-soft); }
+  .pt-teditor-notes ul { display: grid; gap: 0.3rem; padding-left: 1.1rem; list-style: disc; }
+  .pt-teditor-pro { justify-self: start; color: var(--pt-ink-soft); text-decoration: underline; text-underline-offset: 3px; }
 
   /* Blanks you click and type into. */
   .pt-blank {
@@ -151,7 +146,7 @@
   .pt-tdoc-grid thead th { background: #f1f1ee; }
   .pt-tdoc-grid tbody th { width: 32%; font-weight: 400; }
   .pt-tdoc-grid tr { height: 1.7em; break-inside: avoid; }
-  .pt-tdoc-foot { margin-top: 1.6em !important; border-top: 1px solid #ddd; padding-top: 0.4em; font-size: 0.75em; color: #6b6b6b; }
+  .pt-tdoc-brand { display: flex; align-items: center; gap: 0.45em; margin-top: 2em !important; font: 500 0.72em/1 var(--font-sans, system-ui), sans-serif; color: #7a7f7b; }
 
   /* Blank lines in the plain document. */
   .pt-tdoc-fill { white-space: pre-line; }

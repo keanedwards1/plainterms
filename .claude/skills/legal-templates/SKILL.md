@@ -24,7 +24,7 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
 
 1. **Fixed text with blanks only.** No branching on answers, no optional clauses, no AI tailoring per user. A blank left empty prints as a line to fill by hand. This keeps the product a form publisher, not legal advice (see Risk below).
 2. Every `{{blank}}` must be a field, every field must be used, and every field sits in exactly one group. The library test enforces this.
-3. Every template has `notes`: plain warnings about when it may not fit (state rules, notarization, who must sign). The page also shows the standard disclaimer, and the Word file and print have the "not a law firm, not legal advice" footer (`DOC_FOOTER`).
+3. Every template has `notes`: plain warnings about when it may not fit (state rules, notarization, who must sign). The page shows a one-line "A general template, not legal advice" under the summary, linking to the notes and the full disclaimer, which sit quietly under the document (not in prime position, not highlighted). The documents themselves carry no disclaimer: their footer has page numbers and, on free plans, the small "Made with PlainTerms" mark (`BRAND_TEXT`, logo PNG drawn in the browser). Pro removes the mark (the page passes `branded` from the account plan; this is cosmetic, not a security boundary).
 4. Don't state state-specific rules as facts (deadlines, caps). Say they vary and tell people to check.
 5. Bump `version` when wording changes. Drafts carry the version they were made from.
 6. Plain English, user-facing only (no developer notes in UI copy). Use `GENERAL_TERMS` for closing clauses.

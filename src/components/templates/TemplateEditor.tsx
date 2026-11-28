@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import SignatureDialog from "@/components/templates/SignatureDialog";
 import TemplateDocument, { type RenderBlank, type RenderSignature } from "@/components/templates/TemplateDocument";
 import { MAX_LENGTH, cleanValue, fileName, fill, readDraft, readSignatures, todayLabel } from "@/lib/templateKit/fill";
-import type { Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
+import type { Branding, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 // Answers and signatures wait here only while someone signs in to download, then are removed.
 // Session storage is per tab and is cleared when the tab closes.
@@ -17,6 +17,27 @@ const MARGINS_PX = 1.5 * 96;
 const noop = () => () => {};
 
 type Mode = "blank" | "fill";
+
+// The PlainTerms mark, drawn to a PNG once for the PDF and Word footers.
+const LOGO_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 307 307"><rect x="5" y="5" width="297" height="297" fill="none" stroke="#e9783a" stroke-width="10"/><path fill="#e9783a" fill-rule="evenodd" d="M39,17H193A22,22 0 0 1 215,39V185A22,22 0 0 1 193,207H39A22,22 0 0 1 17,185V39A22,22 0 0 1 39,17ZM114,92H265A22,22 0 0 1 287,114V265A22,22 0 0 1 265,287H114A22,22 0 0 1 92,265V114A22,22 0 0 1 114,92Z"/></svg>';
+
+function logoPng(): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 96;
+      canvas.height = 96;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(undefined);
+      ctx.drawImage(img, 0, 0, 96, 96);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = () => resolve(undefined);
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(LOGO_SVG)}`;
+  });
+}
 
 const INPUT_TYPE: Partial<Record<TemplateField["type"], string>> = { date: "date", email: "email", phone: "tel" };
 
@@ -59,7 +80,7 @@ function Icon({ d }: { d: string }) {
 const PRINTER = "M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z";
 const DOWNLOAD = "M12 4v11m0 0-4-4m4 4 4-4M5 20h14";
 
-export default function TemplateEditor({ doc, signedIn }: { doc: TemplateDoc; signedIn: boolean }) {
+export default function TemplateEditor({ doc, signedIn, branded }: { doc: TemplateDoc; signedIn: boolean; branded: boolean }) {
   const [mode, setMode] = useState<Mode>("blank");
   const [values, setValues] = useState<TemplateValues>({});
   const [signatures, setSignatures] = useState<Signatures>({});
@@ -197,12 +218,13 @@ export default function TemplateEditor({ doc, signedIn }: { doc: TemplateDoc; si
     setBusy(kind);
     setError(null);
     try {
+      const brand: Branding = { show: branded, logo: branded ? await logoPng() : undefined };
       if (kind === "pdf") {
         const { templatePdf } = await import("@/lib/templateKit/pdf");
-        save(await templatePdf(doc, outValues, outSignatures), fileName(doc, "pdf", filling ? "" : "blank"));
+        save(await templatePdf(doc, outValues, outSignatures, brand), fileName(doc, "pdf", filling ? "" : "blank"));
       } else {
         const { templateDocx } = await import("@/lib/templateKit/docx");
-        save(await templateDocx(doc, outValues, outSignatures), fileName(doc, "docx", filling ? "" : "blank"));
+        save(await templateDocx(doc, outValues, outSignatures, brand), fileName(doc, "docx", filling ? "" : "blank"));
       }
     } catch {
       setError(`The ${kind === "pdf" ? "PDF" : "Word file"} couldn't be made. Try again, or use Print.`);
@@ -292,10 +314,10 @@ export default function TemplateEditor({ doc, signedIn }: { doc: TemplateDoc; si
             <div ref={contentRef}>
               {filling ? (
                 <form onSubmit={(e) => e.preventDefault()} autoComplete="off">
-                  <TemplateDocument doc={doc} values={values} signatures={signatures} renderBlank={renderBlank} renderSignature={renderSignature} />
+                  <TemplateDocument doc={doc} values={values} signatures={signatures} renderBlank={renderBlank} renderSignature={renderSignature} branded={branded} />
                 </form>
               ) : (
-                <TemplateDocument doc={doc} values={{}} />
+                <TemplateDocument doc={doc} values={{}} branded={branded} />
               )}
             </div>
             {Array.from({ length: pages - 1 }, (_, i) => (
@@ -306,26 +328,26 @@ export default function TemplateEditor({ doc, signedIn }: { doc: TemplateDoc; si
           </div>
         </div>
 
-        <aside className="pt-teditor-side" aria-labelledby="before-heading">
-          <h2 id="before-heading">Before you use this</h2>
+        <section id="notes" className="pt-teditor-notes scroll-mt-24" aria-labelledby="notes-heading">
+          <h2 id="notes-heading">Before you use this</h2>
           <ul>
             {doc.notes.map((note) => (
               <li key={note}>{note}</li>
             ))}
           </ul>
-          <p className="pt-teditor-legal">
+          <p>
             PlainTerms is not a law firm, and this template is not legal advice. It is a general starting point that may not fit your
             situation or meet every rule where you live. Read the whole document before you sign it, and talk to a lawyer if a lot is at
             stake.
           </p>
-          {doc.basedOn ? <p className="pt-teditor-source">Based on {doc.basedOn}</p> : null}
-          <p className="pt-teditor-source">
-            {filling
-              ? "Click any highlighted blank to type, and sign where it says Sign. Anything left blank prints as a line."
-              : "Download or print it blank to fill in by hand, or switch to Fill in and sign to type your answers and sign here."}
-          </p>
-          {signedIn ? null : <p className="pt-teditor-source">Downloading needs a free account. Your answers stay on this device and come back after you sign in.</p>}
-        </aside>
+          {doc.basedOn ? <p>Based on {doc.basedOn}</p> : null}
+          {signedIn ? null : <p>Downloading needs a free account. Your answers stay on this device and come back after you sign in.</p>}
+          {branded ? (
+            <a href="/dashboard/billing" className="pt-teditor-pro">
+              Remove the PlainTerms mark from your documents with Pro
+            </a>
+          ) : null}
+        </section>
       </div>
 
       <SignatureDialog
@@ -344,7 +366,7 @@ export default function TemplateEditor({ doc, signedIn }: { doc: TemplateDoc; si
       {mounted
         ? createPortal(
             <div className="pt-print-root">
-              <TemplateDocument doc={doc} values={outValues} signatures={outSignatures} className="pt-tdoc-print" />
+              <TemplateDocument doc={doc} values={outValues} signatures={outSignatures} branded={branded} className="pt-tdoc-print" />
             </div>,
             document.body
           )

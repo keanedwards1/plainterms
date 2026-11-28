@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import TemplateEditor from "@/components/templates/TemplateEditor";
 import { getSession } from "@/lib/auth";
+import { getAccount } from "@/lib/serverApi";
 import { LIBRARY, templateDoc } from "@/lib/templateLibrary";
 import { TEMPLATES } from "@/lib/templates";
 
@@ -29,6 +30,7 @@ export default async function TemplatePage({ params }: Props) {
   if (!doc) notFound();
   const info = TEMPLATES.find((t) => t.slug === slug);
   const session = await getSession();
+  const account = session ? await getAccount(session) : null;
 
   return (
     <main className="pt-page-pad">
@@ -39,8 +41,14 @@ export default async function TemplatePage({ params }: Props) {
           </Link>
           <h1 className="mt-2 text-[clamp(1.75rem,3vw,2.5rem)] leading-[1.05] tracking-[-0.035em]">{info?.name ?? doc.title}</h1>
           <p className="mt-2 max-w-[70ch] text-(--pt-muted)">{doc.summary}</p>
+          <p className="mt-1.5 text-sm text-(--pt-muted)">
+            A general template, not legal advice.{" "}
+            <a href="#notes" className="underline underline-offset-3">
+              Read the notes
+            </a>
+          </p>
         </header>
-        <TemplateEditor doc={doc} signedIn={Boolean(session)} />
+        <TemplateEditor doc={doc} signedIn={Boolean(session)} branded={account?.plan !== "pro"} />
       </div>
     </main>
   );
