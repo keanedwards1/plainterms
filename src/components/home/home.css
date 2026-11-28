@@ -95,6 +95,12 @@
   box-shadow: 6px 6px 0 var(--pt-ink);
 }
 
+/* A template picked from the search: its card is marked. */
+.pt-tpl-grid > li:target .pt-tpl-paper {
+  outline: 3px solid var(--pt-accent);
+  outline-offset: 4px;
+}
+
 .pt-tpl-paper i {
   display: block;
   height: 5px;

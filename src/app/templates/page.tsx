@@ -9,13 +9,6 @@ export const metadata: Metadata = {
   description: "Leases, NDAs, freelance contracts, bills of sale, change orders, lien waivers, demand letters and more, filled in by answering a few questions.",
 };
 
-// Templates the letter writer can already fill.
-const READY: Record<string, string> = {
-  "demand-letter": "/tools/write-a-letter",
-  "security-deposit": "/tools/write-a-letter",
-  "contractor-complaint": "/tools/write-a-letter",
-};
-
 export default function TemplatesPage() {
   return (
     <main className="pt-page-pad">
@@ -31,9 +24,9 @@ export default function TemplatesPage() {
             <h2 id={`g-${group}`} className="text-2xl tracking-[-0.04em]">
               {group}
             </h2>
-            <ul className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+            <ul className="pt-tpl-grid mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
               {TEMPLATES.filter((t) => t.group === group).map((tpl) => {
-                const href = READY[tpl.slug];
+                const href = tpl.href;
                 const inner = (
                   <>
                     <span className="pt-tpl-paper" aria-hidden="true">

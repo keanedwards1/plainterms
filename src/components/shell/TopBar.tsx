@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import AccountMenu from "@/components/AccountMenu";
 import Logo from "@/components/shell/Logo";
 import SearchPanel from "@/components/search/SearchPanel";
+import TemplateSearch from "@/components/search/TemplateSearch";
 
 export type HeaderUser = {
   name: string;
@@ -38,9 +39,7 @@ export default function TopBar({ user }: { user: HeaderUser | null }) {
     <header className="pt-page-pad relative z-20">
       <div className="pt-container-wide pt-topbar">
         <Logo className="min-[820px]:hidden" />
-        {user ? (
-          <SearchPanel />
-        ) : null}
+        {pathname === "/templates" ? <TemplateSearch /> : user ? <SearchPanel /> : null}
         <span className="flex-1" />
         {user ? (
           <>

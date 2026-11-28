@@ -3,8 +3,9 @@
 import "./search.css";
 import { useRouter } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
-import { highlight, searchDocuments, type SearchHit, type Segment } from "@/lib/documentSearch";
+import { highlight, searchDocuments, type SearchHit } from "@/lib/documentSearch";
 import { loadDocumentIndex, peekDocumentIndex } from "@/lib/documentSearchIndex";
+import { Marked, SearchIcon } from "@/components/search/parts";
 
 const RECENT_KEY = "pt.recentSearches";
 const WHERE: Record<SearchHit["where"], string> = {
@@ -35,26 +36,9 @@ function saveRecent(query: string) {
   }
 }
 
-function Marked({ parts }: { parts: Segment[] }) {
-  return (
-    <>
-      {parts.map((p, i) => (p.hit ? <mark key={i}>{p.text}</mark> : <span key={i}>{p.text}</span>))}
-    </>
-  );
-}
-
 function formatDate(iso: string) {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? "" : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(d);
-}
-
-function SearchIcon({ className = "h-4.5 w-4.5" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <circle cx="11" cy="11" r="6" />
-      <path d="m20 20-4.5-4.5" />
-    </svg>
-  );
 }
 
 /**
