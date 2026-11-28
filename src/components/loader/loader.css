@@ -32,26 +32,18 @@
 }
 
 /*
- * Spiral: the squares orbit the centre, spiralling inward while staying upright, and settle into the logo.
+ * Spiral: the squares orbit the centre, spiralling inward while staying upright, and settle into the logo; the
+ * hole where they overlap opens as they lock, and closes again before they spin back out.
  *
  * Built from HTML boxes, not SVG, and animating only transform and opacity, so the browser runs it off the main
- * thread and it stays smooth while the page is busy loading. Sizes are in logo units (--u = 1/307 of the box).
- *
- * The knocked-out overlap uses difference blending: the squares are painted in paper minus accent, so inside the
- * isolated group they cancel to black where they overlap, and the group then differences against the paper
- * background, giving accent where one square is and paper where both are. This assumes a --pt-paper background,
- * as on the splash. Paper #fffdf8 minus accent #e9783a = #1685be.
+ * thread and it stays smooth while the page is busy loading. Colours are painted directly (no blend modes), so
+ * they come out the same in every browser. Sizes are in logo units (--u = 1/307 of the box); positions are
+ * percentages of the box.
  */
 .ld-spiral {
   position: relative;
   display: inline-block;
   flex: none;
-}
-.ld-spiral-ink {
-  position: absolute;
-  inset: 0;
-  isolation: isolate;
-  mix-blend-mode: difference;
 }
 .ld-spiral-frame {
   position: absolute;
@@ -59,30 +51,46 @@
   border: calc(10 * var(--u)) solid var(--pt-accent);
 }
 .ld-sp-a,
-.ld-sp-b {
-  position: absolute;
-  inset: 0;
-  mix-blend-mode: difference;
-  will-change: transform, opacity;
-  animation: ld-sp-orbit 3.35s cubic-bezier(0.3, 0, 0.2, 1) infinite both;
-}
+.ld-sp-b,
 .ld-sp-a2,
 .ld-sp-b2 {
   position: absolute;
   inset: 0;
   will-change: transform;
 }
+.ld-sp-a,
+.ld-sp-b {
+  will-change: transform, opacity;
+  animation: ld-sp-orbit 3.35s cubic-bezier(0.3, 0, 0.2, 1) infinite both;
+}
 .ld-sp-a2 { animation: ld-sp-in-a 3.35s cubic-bezier(0.3, 0, 0.2, 1) infinite both; }
 .ld-sp-b2 { animation: ld-sp-in-b 3.35s cubic-bezier(0.3, 0, 0.2, 1) infinite both; }
 .ld-sp-sq {
   position: absolute;
-  background: #1685be;
+  background: var(--pt-accent);
   border-radius: calc(22 * var(--u));
   will-change: transform;
   animation: ld-sp-upright 3.35s cubic-bezier(0.3, 0, 0.2, 1) infinite both;
 }
 .ld-sp-sq-a { left: 5.537%; top: 5.537%; width: 64.495%; height: 61.889%; }
 .ld-sp-sq-b { left: 29.967%; top: 29.967%; width: 63.518%; height: 63.518%; }
+/* The overlap of the two squares when settled: rounded where it meets a square's corner, square elsewhere. */
+.ld-sp-hole {
+  position: absolute;
+  left: 29.967%;
+  top: 29.967%;
+  width: 40.065%;
+  height: 37.459%;
+  background: var(--pt-paper);
+  border-radius: calc(22 * var(--u)) 0 calc(22 * var(--u)) 0;
+  will-change: transform, opacity;
+  animation: ld-sp-hole 3.35s infinite both;
+}
+@keyframes ld-sp-hole {
+  0%, 47% { opacity: 0; transform: scale(0.4); }
+  54%, 69% { opacity: 1; transform: scale(1); animation-timing-function: ease-in; }
+  73%, 100% { opacity: 0; transform: scale(0.4); }
+}
 
 @keyframes ld-sp-orbit {
   0% { transform: rotate(-420deg); opacity: 0; }
