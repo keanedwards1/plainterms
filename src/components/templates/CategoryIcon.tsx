@@ -2,167 +2,89 @@ import type { TemplateInfo } from "@/lib/templates";
 
 export type Category = TemplateInfo["group"] | "All";
 
-// Two-tone icons: an ink outline over a soft palette fill, drawn on a 32px grid.
-const LINE = {
-  fill: "none",
-  stroke: "var(--pt-ink)",
-  strokeWidth: 1.7,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
+// Line icons on a 24px grid, in the button's text color, to match the rail.
+const PATHS: Record<Category, React.ReactNode> = {
+  All: (
+    <>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+    </>
+  ),
+  "Home and renovation": (
+    <>
+      <path d="M3.5 11 12 4l8.5 7" />
+      <path d="M5.5 9.4V20h13V9.4" />
+      <path d="M10 20v-5.5h4V20" />
+      <path d="M16 6.2V4.5h2v3.3" />
+    </>
+  ),
+  Renting: (
+    <>
+      <circle cx="8" cy="16" r="4" />
+      <path d="m10.9 13.1 8.6-8.6" />
+      <path d="m16.5 7.5 2.2 2.2" />
+      <path d="m14.2 9.8 1.6 1.6" />
+    </>
+  ),
+  "Work and freelancing": (
+    <>
+      <rect x="3" y="7.5" width="18" height="12.5" rx="2" />
+      <path d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5" />
+      <path d="M3 12.5h18" />
+    </>
+  ),
+  "Creators and social media": (
+    <>
+      <rect x="3" y="6.5" width="12.5" height="11" rx="2" />
+      <path d="m15.5 10.5 5-3v9l-5-3" />
+    </>
+  ),
+  Business: (
+    <>
+      <path d="M3.5 20.5h17" />
+      <path d="M6 20.5V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v15.5" />
+      <path d="M15 9.5h3a1 1 0 0 1 1 1v10" />
+      <path d="M9 8h3M9 11.5h3M9 15h3" />
+    </>
+  ),
+  "Buying and selling": (
+    <>
+      <path d="M3.5 4.5v6.3a1 1 0 0 0 .3.7l8.7 8.7a1.5 1.5 0 0 0 2.1 0l5.6-5.6a1.5 1.5 0 0 0 0-2.1l-8.7-8.7a1 1 0 0 0-.7-.3H4.5a1 1 0 0 0-1 1Z" />
+      <circle cx="7.8" cy="7.8" r="1.3" />
+    </>
+  ),
+  "Money and disputes": (
+    <>
+      <rect x="2.5" y="6" width="19" height="12" rx="1.5" />
+      <circle cx="12" cy="12" r="2.75" />
+      <path d="M6 12h.01M18 12h.01" strokeWidth="2.2" />
+    </>
+  ),
+  "Personal and family": (
+    <>
+      <circle cx="9" cy="8" r="3.25" />
+      <path d="M3 19.5a6 6 0 0 1 12 0" />
+      <circle cx="17" cy="9.5" r="2.5" />
+      <path d="M16.2 14.1a4.6 4.6 0 0 1 5.3 4.5" />
+    </>
+  ),
 };
 
-function All() {
+export default function CategoryIcon({ category, className = "h-6 w-6" }: { category: Category; className?: string }) {
   return (
-    <>
-      <rect x="5" y="5" width="9.5" height="9.5" rx="2.2" fill="var(--pt-peach)" />
-      <rect x="17.5" y="5" width="9.5" height="9.5" rx="2.2" fill="var(--pt-sky)" />
-      <rect x="5" y="17.5" width="9.5" height="9.5" rx="2.2" fill="var(--pt-leaf)" />
-      <rect x="17.5" y="17.5" width="9.5" height="9.5" rx="2.2" fill="var(--pt-butter)" />
-      <g {...LINE}>
-        <rect x="5" y="5" width="9.5" height="9.5" rx="2.2" />
-        <rect x="17.5" y="5" width="9.5" height="9.5" rx="2.2" />
-        <rect x="5" y="17.5" width="9.5" height="9.5" rx="2.2" />
-        <rect x="17.5" y="17.5" width="9.5" height="9.5" rx="2.2" />
-      </g>
-    </>
-  );
-}
-
-function Home() {
-  return (
-    <>
-      <path d="M4.5 15 16 5.5 27.5 15" fill="var(--pt-peach)" />
-      <path d="M8 13.2V26.5h16V13.2" fill="var(--pt-surface)" />
-      <rect x="13.5" y="19" width="5" height="7.5" fill="var(--pt-butter)" />
-      <g {...LINE}>
-        <path d="M4.5 15 16 5.5 27.5 15" />
-        <path d="M8 13.2V26.5h16V13.2" />
-        <path d="M13.5 26.5V19h5v7.5" />
-        <path d="M21.5 7.5v3.6" />
-      </g>
-    </>
-  );
-}
-
-function Key() {
-  return (
-    <>
-      <circle cx="11" cy="16" r="6" fill="var(--pt-butter)" />
-      <g {...LINE}>
-        <circle cx="11" cy="16" r="6" />
-        <circle cx="11" cy="16" r="2" />
-        <path d="M17 16h10.5M24 16v4M20.5 16v3" />
-      </g>
-    </>
-  );
-}
-
-function Briefcase() {
-  return (
-    <>
-      <rect x="4.5" y="10" width="23" height="16" rx="2.5" fill="var(--pt-sky)" />
-      <g {...LINE}>
-        <rect x="4.5" y="10" width="23" height="16" rx="2.5" />
-        <path d="M12 10V7.5A1.5 1.5 0 0 1 13.5 6h5A1.5 1.5 0 0 1 20 7.5V10" />
-        <path d="M4.5 16.5h23" />
-        <path d="M14 16.5v2.5h4v-2.5" />
-      </g>
-    </>
-  );
-}
-
-function Creator() {
-  return (
-    <>
-      <rect x="9" y="3.5" width="14" height="25" rx="3" fill="var(--pt-leaf)" />
-      <path d="M14 12.5v7l6-3.5z" fill="var(--pt-accent)" />
-      <g {...LINE}>
-        <rect x="9" y="3.5" width="14" height="25" rx="3" />
-        <path d="M14 7h4" />
-        <path d="M14 12.5v7l6-3.5z" />
-        <path d="M14 24.5h4" />
-      </g>
-    </>
-  );
-}
-
-function Building() {
-  return (
-    <>
-      <rect x="7" y="4.5" width="13" height="22" rx="1.5" fill="var(--pt-sky)" />
-      <rect x="20" y="12" width="6.5" height="14.5" fill="var(--pt-leaf)" />
-      <g {...LINE}>
-        <path d="M7 26.5V6a1.5 1.5 0 0 1 1.5-1.5h10A1.5 1.5 0 0 1 20 6v20.5" />
-        <path d="M20 12h5a1.5 1.5 0 0 1 1.5 1.5v13" />
-        <path d="M4.5 26.5h23" />
-        <path d="M11 9.5h1.5M14.5 9.5H16M11 14h1.5M14.5 14H16M11 18.5h1.5M14.5 18.5H16" />
-        <path d="M12 26.5v-3.5h3v3.5" />
-      </g>
-    </>
-  );
-}
-
-function Tag() {
-  return (
-    <>
-      <path d="M5 6.5V14l12.5 12.5a2 2 0 0 0 2.8 0l6.2-6.2a2 2 0 0 0 0-2.8L14 5H6.5A1.5 1.5 0 0 0 5 6.5Z" fill="var(--pt-butter)" />
-      <g {...LINE}>
-        <path d="M5 6.5V14l12.5 12.5a2 2 0 0 0 2.8 0l6.2-6.2a2 2 0 0 0 0-2.8L14 5H6.5A1.5 1.5 0 0 0 5 6.5Z" />
-        <circle cx="10.5" cy="10.5" r="1.8" />
-      </g>
-    </>
-  );
-}
-
-function Money() {
-  return (
-    <>
-      <rect x="3.5" y="8.5" width="25" height="15" rx="2.5" fill="var(--pt-leaf)" />
-      <circle cx="16" cy="16" r="3.8" fill="var(--pt-surface)" />
-      <g {...LINE}>
-        <rect x="3.5" y="8.5" width="25" height="15" rx="2.5" />
-        <circle cx="16" cy="16" r="3.8" />
-        <path d="M7.5 12.5v0M24.5 19.5v0" strokeWidth="2.4" />
-      </g>
-    </>
-  );
-}
-
-function Family() {
-  return (
-    <>
-      <path d="M4.5 27v-4.5a6.5 6.5 0 0 1 13 0V27Z" fill="var(--pt-peach)" />
-      <circle cx="11" cy="9.5" r="4" fill="var(--pt-peach)" />
-      <path d="M17.5 27v-2.8a4.5 4.5 0 0 1 9 0V27Z" fill="var(--pt-butter)" />
-      <circle cx="22" cy="14.5" r="3" fill="var(--pt-butter)" />
-      <g {...LINE}>
-        <path d="M4.5 27v-4.5a6.5 6.5 0 0 1 13 0V27" />
-        <circle cx="11" cy="9.5" r="4" />
-        <path d="M17.5 27v-2.8a4.5 4.5 0 0 1 9 0V27" />
-        <circle cx="22" cy="14.5" r="3" />
-        <path d="M3 27h26" />
-      </g>
-    </>
-  );
-}
-
-const ICONS: Record<Category, () => React.ReactElement> = {
-  All,
-  "Home and renovation": Home,
-  Renting: Key,
-  "Work and freelancing": Briefcase,
-  "Creators and social media": Creator,
-  Business: Building,
-  "Buying and selling": Tag,
-  "Money and disputes": Money,
-  "Personal and family": Family,
-};
-
-export default function CategoryIcon({ category, className = "h-8 w-8" }: { category: Category; className?: string }) {
-  const Draw = ICONS[category];
-  return (
-    <svg viewBox="0 0 32 32" aria-hidden="true" className={className}>
-      <Draw />
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {PATHS[category]}
     </svg>
   );
 }
