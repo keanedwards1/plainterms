@@ -33,6 +33,7 @@
 
   .pt-teditor-body { display: grid; gap: 1.5rem; }
   .pt-teditor-canvas {
+    container-type: inline-size;
     overflow-x: auto;
     border-radius: var(--pt-radius);
     background: #e8e7e1;
@@ -49,7 +50,8 @@
     font: 400 15px/1.5 "Times New Roman", Times, serif;
     color: #1b1f1d;
   }
-  @media (min-width: 900px) {
+  /* A real Letter page whenever the canvas has room for one (8.5in plus its padding). */
+  @container (min-width: 840px) {
     .pt-tsheet {
       width: 8.5in;
       min-height: calc(var(--pt-pages, 1) * 11in);
@@ -59,7 +61,7 @@
     }
   }
   .pt-tsheet-break { display: none; }
-  @media (min-width: 900px) {
+  @container (min-width: 840px) {
     .pt-tsheet-break {
       position: absolute;
       inset-inline: 0;
@@ -77,9 +79,6 @@
       text-transform: uppercase;
       color: #8d918a;
     }
-  }
-  @media (max-width: 899px) {
-    .pt-teditor-pages { display: none; }
   }
 
   /* Notes and the disclaimer: under the page, quiet. */
@@ -108,7 +107,7 @@
   .pt-blank:hover { background: color-mix(in oklab, var(--pt-butter) 90%, transparent); }
   .pt-blank:focus-visible, .pt-blank:focus { outline: 2px solid var(--pt-ring); outline-offset: 1px; background: #fff; border-bottom-color: var(--pt-ink); }
   .pt-blank-date { min-width: 9.5em; }
-  .pt-blank-long { display: block; width: 100%; margin: 0.2em 0; resize: none; line-height: inherit; white-space: pre-wrap; }
+  .pt-blank-long { display: block; width: 100%; min-height: 4.2em; margin: 0.2em 0; resize: none; line-height: inherit; white-space: pre-wrap; }
 
   /* ---------- The document (editor and print share these) ---------- */
   .pt-tdoc p { margin: 0 0 0.55em; white-space: pre-line; }
@@ -120,6 +119,7 @@
   .pt-tdoc-h { margin: 0.95em 0 0.2em; font: 700 1em/1.35 "Times New Roman", Times, serif; break-after: avoid; }
   .pt-tdoc-ol, .pt-tdoc-ul { margin: 0 0 0.55em; padding-left: 1.5em; display: grid; gap: 0.22em; }
   .pt-tdoc-ol { list-style: decimal; }
+  .pt-tdoc-ol > li, .pt-tdoc-ul > li { min-width: 0; }
   .pt-tdoc-ul { list-style: disc; }
 
   /* "Label: answer" rows, aligned like a form, each with its own line. */
@@ -135,6 +135,8 @@
   /* A standard business letter's opening. */
   .pt-tdoc-letter p { margin: 0 0 1.05em; }
   .pt-tdoc-re { margin-top: 0.2em !important; }
+  .pt-tdoc-re > b { display: block; }
+  .pt-tdoc-re .pt-blank { max-width: calc(100% - 0.5em); }
 
   /* Bordered form boxes, like a printed form. */
   .pt-tdoc-boxes { margin: 0 0 1em; border-top: 1px solid #1b1f1d; border-left: 1px solid #1b1f1d; }
@@ -224,7 +226,7 @@
 
   /* Editor-only: blanks on a ruled line fill it, and the Sign button. */
   /* Fields on a ruled line fill it and never push past it. */
-  .pt-blank-line { width: 100%; min-width: 0; border-bottom: 0; background: transparent; }
+  .pt-blank-line { width: 100%; min-width: 0; field-sizing: fixed; border-bottom: 0; background: transparent; }
   .pt-blank-line.pt-blank-date { min-width: 0; font-size: 0.92em; }
   .pt-blank-line[data-empty] { background: color-mix(in oklab, var(--pt-butter) 45%, transparent); }
   .pt-tdoc-info dd:has(.pt-blank), .pt-tdoc-sigspace:has(.pt-blank) { padding-top: 0.15em; }
@@ -271,8 +273,8 @@
   .pt-tdoc-print { display: none; }
 }
 
-/* Phones: the page reflows, so stack what sits side by side on a Letter page. */
-@media (max-width: 899px) {
+/* Narrow canvas: the page reflows, so stack what sits side by side on a Letter page. */
+@container (max-width: 839px) {
   .pt-tdoc-sign { grid-template-columns: minmax(0, 1fr); }
   .pt-tdoc-boxrow { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)) !important; }
   .pt-tdoc-info { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
@@ -283,6 +285,11 @@
   .pt-tdoc-grid { font-size: 0.8em; }
   .pt-tdoc-grid tbody th { width: 40%; }
   .pt-tip-bubble { max-width: min(15rem, 70vw); }
+}
+
+/* Inline fields shrink to the line on narrow pages rather than push past it. */
+@container (max-width: 839px) {
+  .pt-blank:not(.pt-blank-line):not(.pt-blank-long) { max-width: 100%; field-sizing: fixed; }
 }
 
 /* "Read more" glides down to the notes instead of jumping. */

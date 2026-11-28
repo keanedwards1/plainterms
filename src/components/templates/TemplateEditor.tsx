@@ -88,6 +88,7 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
   const [busy, setBusy] = useState<"pdf" | "word" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pages, setPages] = useState(1);
+  const [paged, setPaged] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const mounted = useSyncExternalStore(noop, () => true, () => false);
@@ -121,12 +122,15 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
     const content = contentRef.current;
     if (!content) return undefined;
     const measure = () => {
-      const paged = window.matchMedia("(min-width: 900px)").matches;
-      setPages(paged ? Math.max(1, Math.ceil((content.offsetHeight + MARGINS_PX - 2) / PAGE_PX)) : 1);
+      // The sheet is a real Letter page (8.5in) only when the canvas has room for one.
+      const isPaged = (sheetRef.current?.offsetWidth ?? 0) >= 8.5 * 96 - 1;
+      setPaged(isPaged);
+      setPages(isPaged ? Math.max(1, Math.ceil((content.offsetHeight + MARGINS_PX - 2) / PAGE_PX)) : 1);
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(content);
+    if (sheetRef.current) ro.observe(sheetRef.current);
     return () => ro.disconnect();
   }, []);
 
@@ -310,9 +314,11 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
           ) : (
             <span className="pt-teditor-pages">Lines for every blank, ready to print and fill in by hand</span>
           )}
-          <span className={pages > 2 ? "pt-teditor-pages pt-teditor-over" : "pt-teditor-pages"}>
-            {pages > 2 ? `${pages} pages: shorten long answers` : `${pages} ${pages === 1 ? "page" : "pages"} · Letter`}
-          </span>
+          {paged ? (
+            <span className={pages > 2 ? "pt-teditor-pages pt-teditor-over" : "pt-teditor-pages"}>
+              {pages > 2 ? `${pages} pages: shorten long answers` : `${pages} ${pages === 1 ? "page" : "pages"} · Letter`}
+            </span>
+          ) : null}
         </div>
 
         <div className="pt-teditor-actions">
@@ -356,7 +362,7 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
                 <TemplateDocument doc={doc} values={{}} branded={branded} upgradeHref="/dashboard/billing" />
               )}
             </div>
-            {Array.from({ length: pages - 1 }, (_, i) => (
+            {Array.from({ length: paged ? pages - 1 : 0 }, (_, i) => (
               <div key={i} className="pt-tsheet-break" style={{ top: `${(i + 1) * PAGE_PX}px` }} aria-hidden="true">
                 <span>Page {i + 2}</span>
               </div>
