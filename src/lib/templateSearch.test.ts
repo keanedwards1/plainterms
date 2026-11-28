@@ -10,26 +10,26 @@ describe("searchTemplates", () => {
   });
 
   it("finds a template by the start of a word in its name", () => {
-    expect(slugs("sub")[0]).toBe("sublease-agreement");
+    expect(slugs("inv")[0]).toBe("invoice");
   });
 
   it("finds a template by another name people use", () => {
     expect(slugs("influencer")[0]).toBe("brand-deal");
     expect(slugs("NDA")[0]).toBe("nda");
-    expect(slugs("IOU")).toContain("promissory-note");
+    expect(slugs("quote")[0]).toBe("estimate");
   });
 
   it("ranks name matches above description matches", () => {
     const hits = slugs("lease");
-    expect(hits.slice(0, 3)).toEqual(["lease-addendum", "residential-lease", "commercial-lease"]);
-    expect(hits).toContain("sublease-agreement");
+    expect(hits[0]).toBe("lease-addendum");
+    expect(hits).toContain("notice-to-vacate");
   });
 
   it("needs every word, and falls back to partial matches", () => {
-    expect(slugs("vehicle sale")).toEqual(["vehicle-bill-of-sale"]);
-    const outcome = searchTemplates("vehicle zebra");
+    expect(slugs("bill sale")).toEqual(["bill-of-sale"]);
+    const outcome = searchTemplates("bill zebra");
     expect(outcome.partial).toBe(true);
-    expect(outcome.hits[0]?.template.slug).toBe("vehicle-bill-of-sale");
+    expect(outcome.hits[0]?.template.slug).toBe("bill-of-sale");
   });
 
   it("searches templates added later", () => {

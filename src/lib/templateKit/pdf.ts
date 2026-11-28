@@ -311,6 +311,53 @@ export async function templatePdf(
         y += 8;
         break;
       }
+      case "table": {
+        const ws = block.widths.map((w) => w * WIDTH);
+        const xs: number[] = [];
+        let edge = M;
+        for (const w of ws) {
+          xs.push(edge);
+          edge += w;
+        }
+        const right = (c: number) => block.align?.[c] === "right";
+        const header = () => {
+          pdf.setFillColor(242, 242, 239);
+          pdf.rect(M, y, WIDTH, 18, "F");
+          block.columns.forEach((c, i) => {
+            font(true, 9.5);
+            pdf.text(c, right(i) ? xs[i] + ws[i] - 5 : xs[i] + 5, y + 12.5, right(i) ? { align: "right" } : undefined);
+            pdf.setLineWidth(0.5);
+            pdf.rect(xs[i], y, ws[i], 18);
+          });
+          y += 18;
+        };
+        ensure(18 + 21 * Math.min(3, block.rows.length));
+        header();
+        for (const row of block.rows) {
+          if (y + 21 > BOTTOM) {
+            pdf.addPage();
+            y = M;
+            header();
+          }
+          row.forEach((cell, i) => {
+            pdf.setLineWidth(0.5);
+            pdf.rect(xs[i], y, ws[i], 21);
+            const value = fill(cell, doc, values)
+              .map((p) => (p.kind === "text" ? p.text : p.value))
+              .join("")
+              .replace(/\n/g, " ")
+              .trim();
+            if (value) {
+              font(false, 10);
+              const text = (pdf.splitTextToSize(value, ws[i] - 10) as string[])[0] ?? "";
+              pdf.text(text, right(i) ? xs[i] + ws[i] - 5 : xs[i] + 5, y + 14, right(i) ? { align: "right" } : undefined);
+            }
+          });
+          y += 21;
+        }
+        y += 10;
+        break;
+      }
       case "grid": {
         const firstW = WIDTH * 0.32;
         const restW = (WIDTH - firstW) / (block.columns.length - 1);

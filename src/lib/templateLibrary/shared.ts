@@ -24,3 +24,26 @@ export const LETTER_FIELDS: TemplateField[] = [
   { id: "yourAddress", label: "Your address", type: "long", placeholder: "48 Willow Ave, Apt 2\nPortland, OR 97214" },
   { id: "letterDate", label: "Date of the letter", type: "date" },
 ];
+
+/**
+ * Numbered line items for invoices, estimates and purchase orders: description, quantity, rate and
+ * amount for each row, as fields and as the rows of a `table` block.
+ */
+export function lineItems(count = 5) {
+  const fields: TemplateField[] = [];
+  const rows: string[][] = [];
+  for (let n = 1; n <= count; n++) {
+    fields.push(
+      { id: `item${n}`, label: `Item ${n}`, type: "text", placeholder: n === 1 ? "Logo design" : "" },
+      { id: `qty${n}`, label: `Qty ${n}`, type: "number", placeholder: n === 1 ? "1" : "" },
+      { id: `rate${n}`, label: `Rate ${n}`, type: "money", placeholder: n === 1 ? "1200" : "" },
+      { id: `amount${n}`, label: `Amount ${n}`, type: "money", placeholder: n === 1 ? "1200" : "" }
+    );
+    rows.push([`{{item${n}}}`, `{{qty${n}}}`, `{{rate${n}}}`, `{{amount${n}}}`]);
+  }
+  return {
+    fields,
+    ids: fields.map((f) => f.id),
+    table: { t: "table" as const, columns: ["Description", "Qty", "Rate", "Amount"], widths: [0.52, 0.1, 0.18, 0.2], align: ["left", "right", "right", "right"] as ("left" | "right")[], rows },
+  };
+}

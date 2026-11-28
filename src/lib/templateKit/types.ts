@@ -33,6 +33,11 @@ export type Block =
   | { t: "amounts"; rows: { label: string; value: string; total?: boolean }[] }
   /** The top of a standard business letter: sender, date, recipient and a bold "Re:" line. */
   | { t: "letter"; from: string; date: string; to: string; re: string }
+  /**
+   * A table whose cells can hold blanks, like invoice line items. `widths` are fractions of the page
+   * width; `align` puts a column's text on the right (amounts). An empty cell string is left blank.
+   */
+  | { t: "table"; columns: string[]; widths: number[]; align?: ("left" | "right")[]; rows: string[][] }
   /** A contract section with its heading run into the text: "1. Payment. The client will…" */
   | { t: "clause"; title: string; text: string };
 

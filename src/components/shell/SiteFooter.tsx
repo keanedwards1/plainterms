@@ -18,7 +18,7 @@ const COLUMNS = [
     title: "Templates",
     links: [
       { href: "/templates#change-order", label: "Change order" },
-      { href: "/templates#lien-waiver", label: "Lien waivers" },
+      { href: "/templates#invoice", label: "Invoice" },
       { href: "/templates#demand-letter", label: "Demand letter" },
       { href: "/templates#lease-addendum", label: "Lease addendum" },
       { href: "/templates", label: "All templates" },

@@ -297,6 +297,41 @@ export async function templateDocx(
         );
         break;
       }
+      case "table": {
+        const widths = block.widths.map((w) => Math.round(w * TEXT_WIDTH));
+        const cell = (text: string, i: number, head = false) =>
+          new TableCell({
+            width: { size: widths[i], type: WidthType.DXA },
+            margins: { top: 40, bottom: 40, left: 80, right: 80 },
+            shading: head ? { fill: "F2F2EF" } : undefined,
+            children: [
+              new Paragraph({
+                alignment: block.align?.[i] === "right" ? AlignmentType.RIGHT : AlignmentType.LEFT,
+                children: [new TextRun({ text, bold: head, size: head ? 19 : 20 })],
+              }),
+            ],
+          });
+        children.push(
+          new Table({
+              layout: TableLayoutType.FIXED,
+            width: { size: TEXT_WIDTH, type: WidthType.DXA },
+            columnWidths: widths,
+            rows: [
+              new TableRow({ tableHeader: true, children: block.columns.map((c, i) => cell(c, i, true)) }),
+              ...block.rows.map(
+                (row) =>
+                  new TableRow({
+                    cantSplit: true,
+                    height: { value: 400, rule: "atLeast" },
+                    children: row.map((c, i) => cell(textOf(c).replace(/\n/g, " "), i)),
+                  })
+              ),
+            ],
+          }),
+          new Paragraph({ spacing: { after: 100 }, children: [] })
+        );
+        break;
+      }
       case "grid": {
         const firstW = Math.round(TEXT_WIDTH * 0.32);
         const restW = Math.round((TEXT_WIDTH - firstW) / (block.columns.length - 1));

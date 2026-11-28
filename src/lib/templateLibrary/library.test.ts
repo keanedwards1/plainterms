@@ -29,6 +29,8 @@ function textsOf(block: Block): string[] {
       return [block.from, block.date, block.to, block.re];
     case "clause":
       return [block.title, block.text];
+    case "table":
+      return [...block.columns, ...block.rows.flat()];
   }
 }
 

@@ -240,6 +240,36 @@ function BlockView({
           </tbody>
         </table>
       );
+    case "table":
+      return (
+        <table className="pt-tdoc-table">
+          <colgroup>
+            {block.widths.map((w, i) => (
+              <col key={i} style={{ width: `${w * 100}%` }} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr>
+              {block.columns.map((c, i) => (
+                <th key={c} scope="col" className={block.align?.[i] === "right" ? "pt-tdoc-right" : undefined}>
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {block.rows.map((row, r) => (
+              <tr key={r}>
+                {row.map((cell, c) => (
+                  <td key={c} className={block.align?.[c] === "right" ? "pt-tdoc-right" : undefined}>
+                    <Text text={cell} at={`${at}.${r}.${c}`} ctx={ctx} where="line" />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
     case "grid":
       return (
         <table className="pt-tdoc-grid">

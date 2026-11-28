@@ -12,7 +12,7 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
 | What | Where |
 |---|---|
 | Template list, groups, search keywords, `WRITTEN_TEMPLATES` | `src/lib/templates.ts` |
-| Template text (server-only; one file per category) | `src/lib/templateLibrary/*.ts`, registry in `index.ts` |
+| Template text (server-only; one file per category, plus `everyday.ts`; `lineItems()` in `shared.ts` builds invoice-style tables) | `src/lib/templateLibrary/*.ts`, registry in `index.ts` |
 | Shared clauses (`GENERAL_TERMS`, `GOVERNING_STATE`, `LETTER_FIELDS`) | `src/lib/templateLibrary/shared.ts` |
 | Types, filling, validation, Word and PDF export (`docx.ts`, `pdf.ts` with jsPDF, both loaded on click) | `src/lib/templateKit/` |
 | Fill-in page (document-style editor with a Blank template / Fill in and sign switch, blank by default; click a blank to type; `SignatureDialog.tsx` draws or types a signature; a plain copy is portalled into `<body>` for printing) | `src/app/templates/[slug]/page.tsx`, `src/components/templates/TemplateEditor.tsx`, `TemplateDocument.tsx`, `templates.css` |
@@ -41,6 +41,11 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
 To add a template: write it in the right category file, add the slug to `WRITTEN_TEMPLATES`, run `npx vitest run src/lib/templateLibrary`.
 
 ## Held back (do not write without a lawyer's review or state-specific versions)
+
+These are in `LATER_TEMPLATES` in `src/lib/templates.ts` (not shown on the site). To bring one back: write it, move its entry into `TEMPLATES`, add the slug to `WRITTEN_TEMPLATES`. Their slots are filled for now by everyday documents in `src/lib/templateLibrary/everyday.ts` (punch list, contractor license request, repair request, move-out checklist, late payment reminder, resignation letter, DMCA takedown, invoice, estimate, purchase order, testimonial permission, cancellation letter, meeting minutes, price increase notice, payment receipt, credit report dispute, itemized bill request, pet sitting agreement, car use permission).
+
+Also for later, from licensed sources: Common Paper's CC BY 4.0 business contracts (Professional Services, Cloud Service, Pilot, Software License) with credit.
+
 
 Power of attorney, lien waivers, residential and commercial leases, sublease, home improvement contract, LLC operating agreement, founder agreement, partnership agreement, IP assignment, privacy policy, terms of service, job offer letter, independent contractor agreement, promissory note, settlement agreement, vehicle bill of sale, talent management, nanny agreement.
 
