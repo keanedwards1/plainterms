@@ -95,12 +95,11 @@ export type InfoRow = { label: string; text: string };
 const INFO_LINE = /^([^{}\n:]{1,40}): (\{\{[a-zA-Z][a-zA-Z0-9_]*\}\})$/;
 
 /**
- * A paragraph made only of "Label: {{blank}}" lines reads better as aligned fields with full-width
- * lines, like a form. Returns those rows, or null for an ordinary paragraph.
+ * A paragraph made only of "Label: {{blank}}" lines (even just one) reads better as aligned fields with
+ * their own lines, like a form. Returns those rows, or null for an ordinary paragraph.
  */
 export function infoRows(text: string): InfoRow[] | null {
   const lines = text.split("\n");
-  if (lines.length < 2) return null;
   const rows: InfoRow[] = [];
   for (const line of lines) {
     const m = INFO_LINE.exec(line.trim());
@@ -119,9 +118,18 @@ export function isSignatureImage(value: unknown): value is string {
   return typeof value === "string" && value.length < MAX_SIGNATURE_CHARS && /^data:image\/png;base64,[A-Za-z0-9+/]+=*$/.test(value);
 }
 
-/** Today's date, spelled out, in the signer's own time zone. */
-export function todayLabel(now = new Date()): string {
-  return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(now);
+/** Today's date as YYYY-MM-DD, in the signer's own time zone. */
+export function todayIso(now = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+/** A signature date as it prints: "March 5, 2027". */
+export function signDateLabel(mark: SignatureMark | undefined): string {
+  if (!mark?.signedOn) return "";
+  const m = DATE.exec(mark.signedOn);
+  const month = m ? MONTHS[Number(m[2]) - 1] : undefined;
+  return m && month ? `${month} ${Number(m[3])}, ${m[1]}` : "";
 }
 
 /** Signatures from outside the editor (the sign-in handoff): only real signer slots, PNG images and short dates. */
@@ -133,7 +141,10 @@ export function readSignatures(doc: TemplateDoc, input: unknown): Signatures {
     const block = m ? doc.body[Number(m[1])] : undefined;
     if (!m || !block || block.t !== "sign" || !block.parties[Number(m[2])]) continue;
     const { image, signedOn } = (mark ?? {}) as Partial<SignatureMark>;
-    if (isSignatureImage(image) && typeof signedOn === "string" && signedOn.length <= 40) out[key] = { image, signedOn };
+    const okImage = image === undefined || isSignatureImage(image);
+    const date = typeof signedOn === "string" && DATE.test(signedOn) ? signedOn : undefined;
+    if (!okImage || (!image && !date)) continue;
+    out[key] = { ...(image ? { image } : {}), ...(date ? { signedOn: date } : {}) };
   }
   return out;
 }

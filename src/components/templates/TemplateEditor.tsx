@@ -4,8 +4,8 @@ import "./templates.css";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import SignatureDialog from "@/components/templates/SignatureDialog";
-import TemplateDocument, { type RenderBlank, type RenderSignature } from "@/components/templates/TemplateDocument";
-import { MAX_LENGTH, cleanValue, fileName, fill, readDraft, readSignatures, todayLabel } from "@/lib/templateKit/fill";
+import TemplateDocument, { type RenderBlank, type RenderSignDate, type RenderSignature } from "@/components/templates/TemplateDocument";
+import { MAX_LENGTH, cleanValue, fileName, fill, readDraft, readSignatures, todayIso } from "@/lib/templateKit/fill";
 import type { Branding, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 // Answers and signatures wait here only while someone signs in to download, then are removed.
@@ -145,7 +145,7 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
   };
   const renderSignature: RenderSignature = (key, role) => {
     const mark = signatures[key];
-    if (mark) {
+    if (mark?.image) {
       return (
         <span className="pt-sigset">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -156,7 +156,9 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
             onClick={() =>
               setSignatures((prev) => {
                 const next = { ...prev };
-                delete next[key];
+                const { signedOn } = next[key] ?? {};
+                if (signedOn) next[key] = { signedOn };
+                else delete next[key];
                 return next;
               })
             }
@@ -180,12 +182,34 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
     );
   };
 
+  const renderSignDate: RenderSignDate = (key, role) => {
+    const value = signatures[key]?.signedOn ?? "";
+    return (
+      <input
+        type="date"
+        value={value}
+        aria-label={`Date signed by ${role}`}
+        className="pt-blank pt-blank-line pt-blank-date"
+        data-blank={`sign-date-${key}`}
+        data-empty={value ? undefined : "true"}
+        onChange={(e) => {
+          const v = /^\d{4}-\d{2}-\d{2}$/.test(e.target.value) ? e.target.value : "";
+          setSignatures((prev) => {
+            const next = { ...prev, [key]: { ...prev[key], signedOn: v || undefined } };
+            if (!next[key].image && !next[key].signedOn) delete next[key];
+            return next;
+          });
+        }}
+      />
+    );
+  };
+
   const filling = mode === "fill";
   const outValues = filling ? values : {};
   const outSignatures = filling ? signatures : {};
   const filled = doc.fields.filter((f) => values[f.id]?.trim()).length;
   const signerCount = doc.body.reduce((n, b) => n + (b.t === "sign" ? b.parties.length : 0), 0);
-  const signedCount = Object.keys(signatures).length;
+  const signedCount = Object.values(signatures).filter((m) => m.image).length;
 
   // Jump to the next empty blank after the one in focus, wrapping to the top.
   const nextBlank = () => {
@@ -320,7 +344,7 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
             <div ref={contentRef}>
               {filling ? (
                 <form onSubmit={(e) => e.preventDefault()} autoComplete="off">
-                  <TemplateDocument doc={doc} values={values} signatures={signatures} renderBlank={renderBlank} renderSignature={renderSignature} branded={branded} upgradeHref="/dashboard/billing" />
+                  <TemplateDocument doc={doc} values={values} signatures={signatures} renderBlank={renderBlank} renderSignature={renderSignature} renderSignDate={renderSignDate} branded={branded} upgradeHref="/dashboard/billing" />
                 </form>
               ) : (
                 <TemplateDocument doc={doc} values={{}} branded={branded} upgradeHref="/dashboard/billing" />
@@ -347,7 +371,7 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
             stake.
           </p>
           {doc.basedOn ? <p>Based on {doc.basedOn}</p> : null}
-          {signedIn ? null : <p>Downloading needs a free account. Your answers stay on this device and come back after you sign in.</p>}
+          {signedIn ? null : <p>Downloading needs a free account. While you sign in, your answers are kept in this browser tab only, and they come back when you return.</p>}
           {branded ? (
             <p>
               Free documents include a small PlainTerms mark.{" "}
@@ -365,7 +389,7 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
         suggestedName={signing?.name ?? ""}
         onClose={() => setSigning(null)}
         onAdopt={(image) => {
-          if (signing) setSignatures((prev) => ({ ...prev, [signing.key]: { image, signedOn: todayLabel() } }));
+          if (signing) setSignatures((prev) => ({ ...prev, [signing.key]: { image, signedOn: prev[signing.key]?.signedOn || todayIso() } }));
           setSigning(null);
         }}
       />

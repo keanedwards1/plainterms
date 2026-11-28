@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BRAND_TEXT, LINE_INCHES, bracketed, clauseTitle, fill, infoRows, rowField, runIn, signKey, type Piece } from "@/lib/templateKit/fill";
+import { BRAND_TEXT, LINE_INCHES, bracketed, clauseTitle, fill, infoRows, rowField, runIn, signDateLabel, signKey, type Piece } from "@/lib/templateKit/fill";
 import { LogoMark } from "@/components/shell/Logo";
 import type { Block, Signatures, TemplateDoc, TemplateValues } from "@/lib/templateKit/types";
 
@@ -7,6 +7,8 @@ type Blank = Extract<Piece, { kind: "blank" }>;
 export type RenderBlank = (blank: Blank, key: string, where: "inline" | "line") => ReactNode;
 /** What goes on a signature line in the editor (a "Sign" button, or the signature with a way to remove it). */
 export type RenderSignature = (key: string, role: string) => ReactNode;
+/** What goes on the date line beside a signature in the editor (a date field). */
+export type RenderSignDate = (key: string, role: string) => ReactNode;
 
 /**
  * A blank as it prints. Inline: the answer, or a line to write on (three lines for longer answers), or
@@ -61,12 +63,14 @@ function BlockView({
   ctx,
   signatures,
   renderSignature,
+  renderSignDate,
 }: {
   block: Block;
   index: number;
   ctx: Ctx;
   signatures: Signatures;
   renderSignature?: RenderSignature;
+  renderSignDate?: RenderSignDate;
 }) {
   const at = String(index);
   switch (block.t) {
@@ -152,7 +156,7 @@ function BlockView({
                     <div className="pt-tdoc-sigspace pt-tdoc-sigspace-tall">
                       {renderSignature ? (
                         renderSignature(key, party.role)
-                      ) : mark ? (
+                      ) : mark?.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={mark.image} alt={`${party.role} signature`} className="pt-tdoc-sigimg" />
                       ) : null}
@@ -160,7 +164,9 @@ function BlockView({
                     <span className="pt-tdoc-cap">Signature</span>
                   </div>
                   <div className="pt-tdoc-sigcell pt-tdoc-sigcell-date">
-                    <div className="pt-tdoc-sigspace pt-tdoc-sigspace-tall">{mark ? <span className="pt-tdoc-fill">{mark.signedOn}</span> : null}</div>
+                    <div className="pt-tdoc-sigspace pt-tdoc-sigspace-tall">
+                      {renderSignDate ? renderSignDate(key, party.role) : signDateLabel(mark) ? <span className="pt-tdoc-fill">{signDateLabel(mark)}</span> : null}
+                    </div>
                     <span className="pt-tdoc-cap">Date</span>
                   </div>
                 </div>
@@ -271,6 +277,7 @@ export default function TemplateDocument({
   signatures = {},
   renderBlank,
   renderSignature,
+  renderSignDate,
   branded = true,
   upgradeHref,
   className = "",
@@ -280,6 +287,7 @@ export default function TemplateDocument({
   signatures?: Signatures;
   renderBlank?: RenderBlank;
   renderSignature?: RenderSignature;
+  renderSignDate?: RenderSignDate;
   /** Shows the small PlainTerms mark at the end (free plans). */
   branded?: boolean;
   /** In the editor, the mark links here with a short explainer about removing it. */
@@ -290,7 +298,7 @@ export default function TemplateDocument({
   return (
     <article className={`pt-tdoc ${className}`} aria-label={doc.title} data-clarity-mask="true">
       {doc.body.map((block, i) => (
-        <BlockView key={i} block={block} index={i} ctx={ctx} signatures={signatures} renderSignature={renderSignature} />
+        <BlockView key={i} block={block} index={i} ctx={ctx} signatures={signatures} renderSignature={renderSignature} renderSignDate={renderSignDate} />
       ))}
       {branded && upgradeHref ? (
         <p className="pt-tdoc-brandrow">

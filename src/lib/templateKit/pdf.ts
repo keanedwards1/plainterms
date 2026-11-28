@@ -1,4 +1,4 @@
-import { BRAND_TEXT, LINE_INCHES, bracketed, clauseTitle, fill, infoRows, isSignatureImage, rowField, runIn, signKey, type Piece } from "@/lib/templateKit/fill";
+import { BRAND_TEXT, LINE_INCHES, bracketed, clauseTitle, fill, infoRows, isSignatureImage, rowField, runIn, signDateLabel, signKey, type Piece } from "@/lib/templateKit/fill";
 import type { Branding, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 // US Letter in points, 0.75in margins, 11pt Times.
@@ -355,18 +355,20 @@ export async function templatePdf(
           const top = y;
           block.parties.slice(i, i + 2).forEach((party, j) => {
             const x = M + j * (colW + gap);
-            const sigW = colW * 0.66;
-            const dateX = x + colW * 0.72;
+            const sigW = colW * 0.6;
+            const dateX = x + colW * 0.66;
             font(true, 9.5);
             pdf.text(party.role.toUpperCase(), x, top + 10, { charSpace: 0.6 });
             const mark = signatures[signKey(index, i + j)];
-            if (mark && isSignatureImage(mark.image)) {
+            if (mark?.image && isSignatureImage(mark.image)) {
               const props = pdf.getImageProperties(mark.image);
               const h = Math.min(32, (props.height / props.width) * sigW);
               const w = (props.width / props.height) * h;
               pdf.addImage(mark.image, "PNG", x + 2, top + 41 - h, Math.min(w, sigW - 4), h);
+            }
+            if (signDateLabel(mark)) {
               font(false);
-              pdf.text(mark.signedOn, dateX, top + 38);
+              pdf.text(signDateLabel(mark), dateX, top + 38);
             }
             pdf.setLineWidth(0.7);
             pdf.line(x, top + 42, x + sigW, top + 42);

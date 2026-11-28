@@ -6,9 +6,6 @@
   .pt-teditor { display: grid; gap: 0.75rem; }
 
   .pt-teditor-bar {
-    position: sticky;
-    top: 0.5rem;
-    z-index: 10;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -16,8 +13,7 @@
     gap: 0.5rem 1rem;
     border: 1px solid var(--pt-line);
     border-radius: var(--pt-radius);
-    background: color-mix(in oklab, var(--pt-surface) 94%, transparent);
-    backdrop-filter: blur(8px);
+    background: var(--pt-surface);
     padding: 0.5rem 0.5rem 0.5rem 1rem;
     box-shadow: 0 1px 2px var(--pt-shadow);
   }
@@ -160,7 +156,7 @@
   .pt-tdoc-sign { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4em 2.2em; margin-top: 1.2em; }
   .pt-tdoc-signer { display: grid; gap: 0.35em; break-inside: avoid; }
   .pt-tdoc-role { margin: 0 0 0.2em !important; font-weight: 700; font-size: 0.86em; letter-spacing: 0.06em; text-transform: uppercase; }
-  .pt-tdoc-sigrow { display: grid; grid-template-columns: minmax(0, 1fr) 30%; gap: 0.9em; }
+  .pt-tdoc-sigrow { display: grid; grid-template-columns: minmax(0, 1fr) 34%; gap: 0.9em; }
   .pt-tdoc-sigcell { display: grid; gap: 0.15em; }
   .pt-tdoc-sigspace { display: flex; align-items: flex-end; min-height: 1.7em; border-bottom: 1px solid #1b1f1d; padding-bottom: 0.1em; }
   .pt-tdoc-sigspace-tall { min-height: 3.1em; }
@@ -269,6 +265,11 @@
 
   /* The plain copy that prints. Hidden on screen. */
   .pt-tdoc-print { display: none; }
+}
+
+/* "Read more" glides down to the notes instead of jumping. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.pt-teditor) { scroll-behavior: smooth; }
 }
 
 /* Print or "Save as PDF": US Letter, only the plain copy of the document. */

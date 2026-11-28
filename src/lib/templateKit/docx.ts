@@ -1,4 +1,4 @@
-import { BRAND_TEXT, LINE_INCHES, bracketed, clauseTitle, fill, infoRows, isSignatureImage, rowField, runIn, signKey, type Piece } from "@/lib/templateKit/fill";
+import { BRAND_TEXT, LINE_INCHES, bracketed, clauseTitle, fill, infoRows, isSignatureImage, rowField, runIn, signDateLabel, signKey, type Piece } from "@/lib/templateKit/fill";
 import type { Block, Branding, SignatureMark, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 /** An empty inline blank prints as a line to write on, sized to the kind of answer. */
@@ -85,7 +85,7 @@ export async function templateDocx(
   };
 
   const signatureImage = (mark: SignatureMark | undefined) => {
-    if (!mark || !isSignatureImage(mark.image)) return [] as InstanceType<typeof ImageRun>[];
+    if (!mark?.image || !isSignatureImage(mark.image)) return [] as InstanceType<typeof ImageRun>[];
     const bytes = base64Bytes(mark.image);
     const { width, height } = pngSize(bytes);
     const h = 40;
@@ -137,8 +137,8 @@ export async function templateDocx(
         const gap = 500;
         const colW = Math.round((TEXT_WIDTH - gap) / 2);
         const R = colW + gap;
-        const sigEnd = Math.round(colW * 0.66);
-        const dateStart = Math.round(colW * 0.72);
+        const sigEnd = Math.round(colW * 0.6);
+        const dateStart = Math.round(colW * 0.66);
         const tabs = [
           { type: TabStopType.LEFT, position: dateStart },
           { type: TabStopType.LEFT, position: R },
@@ -165,7 +165,7 @@ export async function templateDocx(
             }),
             // Signatures and dates sit just above their lines.
             new Paragraph({
-              spacing: { before: markL || markR ? 120 : 420, after: 0 },
+              spacing: { before: markL?.image || markR?.image ? 120 : 420, after: 0 },
               keepNext: true,
               tabStops: [
                 { type: TabStopType.LEFT, position: dateStart },
@@ -174,8 +174,8 @@ export async function templateDocx(
               ],
               children: [
                 ...signatureImage(markL),
-                new TextRun(`\t${markL?.signedOn ?? ""}`),
-                ...(right ? [new TextRun("\t"), ...signatureImage(markR), new TextRun(`\t${markR?.signedOn ?? ""}`)] : []),
+                new TextRun(`\t${signDateLabel(markL)}`),
+                ...(right ? [new TextRun("\t"), ...signatureImage(markR), new TextRun(`\t${signDateLabel(markR)}`)] : []),
               ],
             }),
             new Paragraph({ spacing: { before: 0, after: 0 }, keepNext: true, tabStops: tabs, children: [new TextRun(pair ? `${sigLine}\t${sigLine}` : sigLine)] }),

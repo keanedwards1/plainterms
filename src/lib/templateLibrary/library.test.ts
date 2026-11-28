@@ -119,7 +119,7 @@ const exampleValues = (doc: TemplateDoc) =>
   Object.fromEntries(doc.fields.map((f) => [f.id, f.type === "date" ? "2027-03-05" : f.placeholder || f.label]));
 const allSigned = (doc: TemplateDoc) =>
   Object.fromEntries(
-    doc.body.flatMap((b, i) => (b.t === "sign" ? b.parties.map((_, j) => [`${i}.${j}`, { image: SIG, signedOn: "March 5, 2027" }]) : []))
+    doc.body.flatMap((b, i) => (b.t === "sign" ? b.parties.map((_, j) => [`${i}.${j}`, { image: SIG, signedOn: "2027-03-05" }]) : []))
   );
 
 describe("PDF download", () => {
@@ -152,14 +152,17 @@ describe("signatures", () => {
   it("keeps only real signer slots with PNG images", () => {
     expect(
       readSignatures(doc, {
-        [`${signIndex}.0`]: { image: SIG, signedOn: "March 5, 2027" },
+        [`${signIndex}.0`]: { image: SIG, signedOn: "2027-03-05" },
         [`${signIndex}.9`]: { image: SIG, signedOn: "x" },
         "0.0": { image: SIG, signedOn: "x" },
         [`${signIndex}.1`]: { image: "javascript:alert(1)", signedOn: "x" },
         evil: { image: SIG, signedOn: "x" },
       })
-    ).toEqual({ [`${signIndex}.0`]: { image: SIG, signedOn: "March 5, 2027" } });
+    ).toEqual({ [`${signIndex}.0`]: { image: SIG, signedOn: "2027-03-05" } });
     expect(readSignatures(doc, "nope")).toEqual({});
+    // A date on its own is kept; a date that isn't YYYY-MM-DD is dropped.
+    expect(readSignatures(doc, { [`${signIndex}.1`]: { signedOn: "2027-03-05" } })).toEqual({ [`${signIndex}.1`]: { signedOn: "2027-03-05" } });
+    expect(readSignatures(doc, { [`${signIndex}.1`]: { signedOn: "<b>soon</b>" } })).toEqual({});
   });
 
   it("only accepts PNG data URLs", () => {
@@ -176,7 +179,8 @@ describe("form rows", () => {
       { label: "Owner", text: "{{b}}" },
     ]);
     expect(infoRows("Date: {{a}}\nBetween {{b}} and {{c}}")).toBeNull();
-    expect(infoRows("Date: {{a}}")).toBeNull();
+    expect(infoRows("Date: {{a}}")).toEqual([{ label: "Date", text: "{{a}}" }]);
+    expect(infoRows("Paid: {{a}}.")).toBeNull();
   });
 });
 

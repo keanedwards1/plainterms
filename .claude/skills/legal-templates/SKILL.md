@@ -74,6 +74,8 @@ This is research, not legal advice.
 - Answers never leave the browser. No server route receives template answers today.
 - Answers are rendered only as React text nodes and docx `TextRun`s. Never use `dangerouslySetInnerHTML`, HTML strings or templating that produces markup.
 - Any draft from outside the component (session storage now, the account later) goes through `readDraft`: matching slug, known field ids only, strings only, `cleanValue` length caps and control-character stripping.
+- Signature dates are editable fields beside each signature (YYYY-MM-DD, filled with today when someone signs). A single `Label: {{blank}}` paragraph is a full-width form row.
+- The page tells signed-out users their answers are kept "in this browser tab only" during sign-in: that is exactly what session storage does (lost if the tab closes or sign-up continues in another tab). Keep that wording accurate.
 - The sign-in handoff stores the draft (answers, signatures, mode) in `sessionStorage` (`pt.templateDraft`, per tab) and deletes it as soon as it's restored. Restored signatures go through `readSignatures`: real signer slots only, PNG data URLs only (`isSignatureImage`, size-capped), short date strings.
 - Signatures are drawn or typed into a canvas in the browser and exported as PNG. They never leave the device except inside the file the person downloads. This is a self-signing tool: there is no audit trail or sending to other signers. Don't describe it as more than that.
 - The document (with its editable blanks) carries `data-clarity-mask="true"`. Don't send answers to analytics. Meta pixel "automatic advanced matching" must stay off in Events Manager, because it can read form fields.
