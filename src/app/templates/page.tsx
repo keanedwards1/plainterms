@@ -4,7 +4,7 @@ import "@/components/home/home.css";
 
 export const metadata: Metadata = {
   title: "Templates",
-  description: "Leases, NDAs, freelance contracts, bills of sale, change orders, lien waivers, demand letters and more, filled in by answering a few questions.",
+  description: "Change orders, invoices, NDAs, freelance and creator agreements, bills of sale, demand letters and more. Fill in the blanks, sign and download.",
 };
 
 export default function TemplatesPage() {

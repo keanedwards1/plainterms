@@ -5,7 +5,7 @@ import { SoonChip } from "@/components/tools/ToolHeader";
 
 export const metadata: Metadata = {
   title: "Tools",
-  description: "Review a contract, explain a letter, compare versions, write a letter and more.",
+  description: "Review a contract, write a letter, fill in a template and more.",
 };
 
 const TOOLS = [
@@ -14,7 +14,7 @@ const TOOLS = [
   { icon: "letter", name: "Explain a letter", line: "What a notice wants from you, the reply date and your options.", href: "/tools/explain-a-letter", ready: false },
   { icon: "compare", name: "Compare versions", line: "Every change between two drafts, marked better or worse for you.", href: "/tools/compare-versions", ready: false },
   { icon: "ask", name: "Ask a question", line: "Answers about your document that point to the clause.", href: "/tools/ask", ready: false },
-  { icon: "template", name: "Fill a template", line: "Change orders, lien waivers, lease addenda and more.", href: "/templates", ready: false },
+  { icon: "template", name: "Templates", line: "Change orders, invoices, NDAs, roommate agreements and more, ready to fill in and sign.", href: "/templates", ready: true },
   { icon: "dates", name: "Deadlines", line: "Every date in your documents on one calendar.", href: "/deadlines", ready: false },
   { icon: "check", name: "Check a contractor", line: "License, insurance and deposit checks before you pay.", href: "/tools/check-a-contractor", ready: false },
 ];

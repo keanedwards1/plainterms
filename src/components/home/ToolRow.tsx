@@ -7,7 +7,7 @@ export const TOOLS = [
   { key: "compare", name: "Compare versions", href: "/tools/compare-versions" },
   { key: "ask", name: "Ask a question", href: "/tools/ask" },
   { key: "write", name: "Write a letter", href: "/tools/write-a-letter" },
-  { key: "template", name: "Fill a template", href: "/templates" },
+  { key: "template", name: "Templates", href: "/templates" },
   { key: "dates", name: "Deadlines", href: "/deadlines" },
   { key: "check", name: "Check a contractor", href: "/tools/check-a-contractor" },
 ] as const;
