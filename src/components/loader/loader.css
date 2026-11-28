@@ -24,50 +24,90 @@
   .ld-tiles rect[class*="-tile"] { animation: none; transform: none; opacity: 1; fill: var(--pt-accent); }
 }
 
-/* The two-square logo (Mark), and Spiral, the loader used by the first-visit splash. */
+/* The two-square logo (Mark) used by the loader explorations. */
 .ld-mark {
   display: inline-grid;
   place-items: center;
   color: var(--pt-accent);
 }
 
-/* Spiral: the squares orbit the centre, spiralling inward while staying upright, and settle into the logo. */
+/*
+ * Spiral: the squares orbit the centre, spiralling inward while staying upright, and settle into the logo.
+ *
+ * Built from HTML boxes, not SVG, and animating only transform and opacity, so the browser runs it off the main
+ * thread and it stays smooth while the page is busy loading. Sizes are in logo units (--u = 1/307 of the box).
+ *
+ * The knocked-out overlap uses difference blending: the squares are painted in paper minus accent, so inside the
+ * isolated group they cancel to black where they overlap, and the group then differences against the paper
+ * background, giving accent where one square is and paper where both are. This assumes a --pt-paper background,
+ * as on the splash. Paper #fffdf8 minus accent #e9783a = #1685be.
+ */
+.ld-spiral {
+  position: relative;
+  display: inline-block;
+  flex: none;
+}
+.ld-spiral-ink {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  mix-blend-mode: difference;
+}
+.ld-spiral-frame {
+  position: absolute;
+  inset: 0;
+  border: calc(10 * var(--u)) solid var(--pt-accent);
+}
 .ld-sp-a,
 .ld-sp-b {
-  transform-box: view-box;
-  transform-origin: 50% 50%;
-  animation: ld-sp-orbit 4s cubic-bezier(0.3, 0, 0.2, 1) infinite both;
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: difference;
+  will-change: transform, opacity;
+  animation: ld-sp-orbit 3.35s cubic-bezier(0.3, 0, 0.2, 1) infinite both;
 }
-.ld-sp-a2 { animation: ld-sp-in-a 4s cubic-bezier(0.3, 0, 0.2, 1) infinite both; }
-.ld-sp-b2 { animation: ld-sp-in-b 4s cubic-bezier(0.3, 0, 0.2, 1) infinite both; }
-.ld-sp-a3,
-.ld-sp-b3 {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ld-sp-upright 4s cubic-bezier(0.3, 0, 0.2, 1) infinite both;
+.ld-sp-a2,
+.ld-sp-b2 {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
 }
+.ld-sp-a2 { animation: ld-sp-in-a 3.35s cubic-bezier(0.3, 0, 0.2, 1) infinite both; }
+.ld-sp-b2 { animation: ld-sp-in-b 3.35s cubic-bezier(0.3, 0, 0.2, 1) infinite both; }
+.ld-sp-sq {
+  position: absolute;
+  background: #1685be;
+  border-radius: calc(22 * var(--u));
+  will-change: transform;
+  animation: ld-sp-upright 3.35s cubic-bezier(0.3, 0, 0.2, 1) infinite both;
+}
+.ld-sp-sq-a { left: 5.537%; top: 5.537%; width: 64.495%; height: 61.889%; }
+.ld-sp-sq-b { left: 29.967%; top: 29.967%; width: 63.518%; height: 63.518%; }
+
 @keyframes ld-sp-orbit {
   0% { transform: rotate(-420deg); opacity: 0; }
-  12% { opacity: 1; }
-  45%, 74% { transform: rotate(0deg); opacity: 1; animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
+  14% { opacity: 1; }
+  54%, 69% { transform: rotate(0deg); opacity: 1; animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
   100% { transform: rotate(300deg); opacity: 0; }
 }
 @keyframes ld-sp-upright {
   0% { transform: rotate(420deg); }
-  45%, 74% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
+  54%, 69% { transform: rotate(0deg); animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
   100% { transform: rotate(-300deg); }
 }
+/* 110 logo units out along the diagonal; percentages of the full-size box, 110 / 307. */
 @keyframes ld-sp-in-a {
-  0% { transform: translate(-110px, -110px); }
-  45%, 74% { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
-  100% { transform: translate(-110px, -110px); }
+  0% { transform: translate(-35.83%, -35.83%); }
+  54%, 69% { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
+  100% { transform: translate(-35.83%, -35.83%); }
 }
 @keyframes ld-sp-in-b {
-  0% { transform: translate(110px, 110px); }
-  45%, 74% { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
-  100% { transform: translate(110px, 110px); }
+  0% { transform: translate(35.83%, 35.83%); }
+  54%, 69% { transform: translate(0, 0); animation-timing-function: cubic-bezier(0.7, 0, 0.8, 0.6); }
+  100% { transform: translate(35.83%, 35.83%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ld-mark * { animation: none !important; transform: none !important; opacity: 1 !important; }
+  .ld-spiral * { animation: none !important; transform: none !important; opacity: 1 !important; }
 }
