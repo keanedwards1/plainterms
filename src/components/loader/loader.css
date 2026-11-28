@@ -1,0 +1,25 @@
+/* The tile-built logo loader (Scatter) used by the first-visit splash. */
+
+.ld-tiles {
+  display: inline-grid;
+  place-items: center;
+  color: var(--pt-accent);
+}
+.ld-tiles rect[class*="-tile"] {
+  fill: var(--pt-accent);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Scatter */
+.ld-sc-tile { animation: ld-sc 3.4s cubic-bezier(0.6, 0, 0.3, 1) var(--d) infinite both; }
+@keyframes ld-sc {
+  0% { transform: translate(var(--sx), var(--sy)) rotate(var(--rs)) scale(0.3); opacity: 0; fill: var(--c); }
+  34% { transform: none; opacity: 1; fill: var(--pt-accent); }
+  72% { transform: none; opacity: 1; fill: var(--pt-accent); animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.4); }
+  100% { transform: translate(var(--ex), var(--ey)) rotate(var(--re)) scale(0.3); opacity: 0; fill: var(--c); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ld-tiles rect[class*="-tile"] { animation: none; transform: none; opacity: 1; fill: var(--pt-accent); }
+}

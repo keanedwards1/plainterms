@@ -3,6 +3,19 @@
 import { useEffect, useState, type ComponentType } from "react";
 import LogoLoader from "@/components/LogoLoader";
 import MosaicLoader from "./MosaicLoader";
+import SwapLoader from "./SwapLoader";
+import {
+  DockClampLoader,
+  DockConvergeLoader,
+  DockSettleLoader,
+  DockSpinLoader,
+  FrameClickLoader,
+  FrameDropLoader,
+  FrameSettleLoader,
+  FrameSlideLoader,
+} from "./DockLoaders";
+import { DockLoader, InterlockLoader, LayersLoader, MagnetLoader, SlicesLoader, SpiralLoader } from "./PartsLoaders";
+import { EmergeLoader, FlipboardLoader, RainLoader, RippleLoader, ScatterLoader, SnakeLoader } from "./TileLoaders";
 import TraceLoader from "./TraceLoader";
 import "./loaders.css";
 
@@ -10,9 +23,9 @@ type Loader = ComponentType<{ size?: number }>;
 
 const OPTIONS: { key: string; name: string; note: string; Loader: Loader }[] = [
   {
-    key: "current",
-    name: "Current",
-    note: "The two squares slide apart and back together on a loop.",
+    key: "original",
+    name: "Original",
+    note: "The previous splash: the two squares slide apart and back together on a loop.",
     Loader: LogoLoader,
   },
   {
@@ -26,6 +39,132 @@ const OPTIONS: { key: string; name: string; note: string; Loader: Loader }[] = [
     name: "B · Mosaic",
     note: "The mark assembles from tiles in the Meadow palette, settling to orange, with a soft wave of colour passing through while it waits.",
     Loader: MosaicLoader,
+  },
+  {
+    key: "swap",
+    name: "C · Swap",
+    note: "The squares slide all the way through each other and trade corners, then trade back. The mark nearly vanishes as they cross.",
+    Loader: SwapLoader,
+  },
+  {
+    key: "dock",
+    name: "D · Dock",
+    note: "The frame arrives as four corner brackets that lock together, then one square slides in from each side and docks.",
+    Loader: DockLoader,
+  },
+  {
+    key: "dock-clamp",
+    name: "D2 · Dock: Clamp",
+    note: "Reversed order: the squares slide in and dock first, then the four corners clamp in around them and give them a little squeeze.",
+    Loader: DockClampLoader,
+  },
+  {
+    key: "dock-converge",
+    name: "D3 · Dock: Converge",
+    note: "Every part flies in from its own corner at almost the same moment, with a springy overshoot, like a quick implosion.",
+    Loader: DockConvergeLoader,
+  },
+  {
+    key: "dock-spin",
+    name: "D4 · Dock: Spin-in",
+    note: "The corners swing into place, pivoting on their tips, and the squares drop in from above and below with a bounce.",
+    Loader: DockSpinLoader,
+  },
+  {
+    key: "dock-settle",
+    name: "D5 · Dock: Settle",
+    note: "Dock's assembly plays once, then the finished logo holds with a slow breath (corners easing out, squares easing apart) instead of coming apart.",
+    Loader: DockSettleLoader,
+  },
+  {
+    key: "frame-slide",
+    name: "E1 · Whole frame: Slide",
+    note: "The frame stays whole and still. The squares slide in from behind its left and right edges, overshoot a touch and dock, then slide back out.",
+    Loader: FrameSlideLoader,
+  },
+  {
+    key: "frame-drop",
+    name: "E2 · Whole frame: Drop",
+    note: "The frame stays whole. One square drops in from behind the top edge and the other rises from the bottom, each landing with a small bounce.",
+    Loader: FrameDropLoader,
+  },
+  {
+    key: "frame-click",
+    name: "E3 · Whole frame: Click",
+    note: "The squares glide in from their own corners, and the instant they lock, the whole logo gives one firm click.",
+    Loader: FrameClickLoader,
+  },
+  {
+    key: "frame-settle",
+    name: "E4 · Whole frame: Settle",
+    note: "Slide plays once, then the finished logo holds, with the squares slowly breathing apart and back together while the page loads.",
+    Loader: FrameSettleLoader,
+  },
+  {
+    key: "magnet",
+    name: "E · Magnet",
+    note: "The squares strain toward each other from opposite corners, then snap together with a flash in the gap, and pull apart again.",
+    Loader: MagnetLoader,
+  },
+  {
+    key: "spiral",
+    name: "F · Spiral",
+    note: "The squares orbit the centre, spiralling inward while staying upright, and settle into the mark. Then they spin back out.",
+    Loader: SpiralLoader,
+  },
+  {
+    key: "slices",
+    name: "G · Slices",
+    note: "The finished mark is cut into strips that slide in from alternating sides and line up into the logo.",
+    Loader: SlicesLoader,
+  },
+  {
+    key: "interlock",
+    name: "H · Interlock",
+    note: "The mark's two L-shaped halves tumble in from opposite sides and click together around the hole.",
+    Loader: InterlockLoader,
+  },
+  {
+    key: "layers",
+    name: "I · Layers",
+    note: "The frame, then each square, drops in from in front of the screen and lands in place, then they recede.",
+    Loader: LayersLoader,
+  },
+  {
+    key: "scatter",
+    name: "J · Scatter (live)",
+    note: "Tiles fly in from all over, spinning, and lock into the mark. Then it blows apart and does it again.",
+    Loader: ScatterLoader,
+  },
+  {
+    key: "rain",
+    name: "K · Rain",
+    note: "Tiles fall into the frame and stack up from the bottom row with a little bounce, then the whole mark drains away.",
+    Loader: RainLoader,
+  },
+  {
+    key: "ripple",
+    name: "L · Ripple",
+    note: "The mark stays whole while rings spread out from the hole in the middle, turning tiles into colourful diamonds as they pass.",
+    Loader: RippleLoader,
+  },
+  {
+    key: "flipboard",
+    name: "M · Flipboard",
+    note: "Every tile flips like an airport departure board, through two palette colours, before landing on orange.",
+    Loader: FlipboardLoader,
+  },
+  {
+    key: "snake",
+    name: "N · Snake",
+    note: "The mark sits faint while a bright head winds back and forth through every tile, leaving a fading tail of colour.",
+    Loader: SnakeLoader,
+  },
+  {
+    key: "emerge",
+    name: "O · Emerge",
+    note: "The frame starts packed with colourful tiles. Everything that isn't the mark shrinks away, leaving it standing in orange.",
+    Loader: EmergeLoader,
   },
 ];
 

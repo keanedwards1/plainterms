@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import LogoLoader from "@/components/LogoLoader";
+import ScatterLoader from "@/components/loader/ScatterLoader";
 
 // Once per page load: coming back to the home page from inside the site skips the splash.
 let shown = false;
 
-const MIN_VISIBLE_MS = 700;
+// Long enough for the tiles to finish flying in and lock into the logo before the fade starts.
+const MIN_VISIBLE_MS = 1500;
 const FADE_MS = 450;
 
 /** The first-visit splash: the animated logo over a blank page, fading out once the page is ready. */
@@ -30,7 +31,7 @@ export default function HomeSplash() {
   if (state === "gone") return null;
   return (
     <div className="pt-splash" data-state={state} aria-hidden="true">
-      <LogoLoader size={72} />
+      <ScatterLoader size={72} />
     </div>
   );
 }
