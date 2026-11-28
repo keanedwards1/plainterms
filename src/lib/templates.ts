@@ -6,6 +6,8 @@ export type TemplateInfo = {
     | "Home and renovation"
     | "Renting"
     | "Work and freelancing"
+    | "Creators and social media"
+    | "Business"
     | "Buying and selling"
     | "Money and disputes"
     | "Personal and family";
@@ -15,6 +17,8 @@ export const TEMPLATE_GROUPS: TemplateInfo["group"][] = [
   "Home and renovation",
   "Renting",
   "Work and freelancing",
+  "Creators and social media",
+  "Business",
   "Buying and selling",
   "Money and disputes",
   "Personal and family",
@@ -44,7 +48,28 @@ export const TEMPLATES: TemplateInfo[] = [
   { slug: "statement-of-work", name: "Statement of work", line: "The tasks, deliverables and dates for one project.", group: "Work and freelancing" },
   { slug: "nda", name: "Non-disclosure agreement", line: "Keeps what you share private, one way or both, for a set time.", group: "Work and freelancing" },
   { slug: "job-offer-letter", name: "Job offer letter", line: "Role, pay, start date and benefits on one page.", group: "Work and freelancing" },
-  { slug: "photo-release", name: "Photo and video release", line: "Permission to use someone's picture or recording, and where you can use it.", group: "Work and freelancing" },
+
+  // Creators and social media
+  { slug: "brand-deal", name: "Brand deal agreement", line: "Posts, platforms, dates, pay and approval rounds for a sponsored campaign.", group: "Creators and social media" },
+  { slug: "ugc-agreement", name: "UGC creator agreement", line: "Videos or photos made for a brand's own channels and ads, with usage rights.", group: "Creators and social media" },
+  { slug: "content-license", name: "Content usage license", line: "Who can use your post, where, for how long and for what fee.", group: "Creators and social media" },
+  { slug: "photo-release", name: "Photo and video release", line: "Permission to use someone's picture or recording, and where you can use it.", group: "Creators and social media" },
+  { slug: "creator-collab", name: "Creator collaboration agreement", line: "Two or more creators make something together and split what it earns.", group: "Creators and social media" },
+  { slug: "social-media-manager", name: "Social media management agreement", line: "Accounts, posting schedule, monthly fee and who keeps the logins.", group: "Creators and social media" },
+  { slug: "affiliate-agreement", name: "Affiliate agreement", line: "Commission rate, tracking, payout dates and the rules for promoting.", group: "Creators and social media" },
+  { slug: "talent-management", name: "Talent management agreement", line: "What a manager does for you, their cut and how either side can end it.", group: "Creators and social media" },
+
+  // Business
+  { slug: "services-agreement", name: "Services agreement", line: "The terms for doing work for a business client: scope, fees, payment and liability.", group: "Business" },
+  { slug: "partnership-agreement", name: "Partnership agreement", line: "Who puts in what, how profits split and what happens if a partner leaves.", group: "Business" },
+  { slug: "llc-operating-agreement", name: "LLC operating agreement", line: "Ownership, voting, profits and exit rules for the members of an LLC.", group: "Business" },
+  { slug: "founder-agreement", name: "Founder agreement", line: "Equity split, vesting, roles and who owns the idea and the code.", group: "Business" },
+  { slug: "ip-assignment", name: "IP assignment", line: "Moves ownership of work, code or designs to you or your company.", group: "Business" },
+  { slug: "letter-of-intent", name: "Letter of intent", line: "The main terms of a deal both sides agree on before the full contract.", group: "Business" },
+  { slug: "commercial-lease", name: "Commercial lease", line: "Rent, term, build-out and repairs for an office, shop or warehouse.", group: "Business" },
+  { slug: "referral-agreement", name: "Referral agreement", line: "Pays a fee or commission for clients someone sends your way.", group: "Business" },
+  { slug: "terms-of-service", name: "Website terms of service", line: "The rules for using your site or app, and the limits of your liability.", group: "Business" },
+  { slug: "privacy-policy", name: "Privacy policy", line: "What data your site or app collects, why, and who it's shared with.", group: "Business" },
 
   // Buying and selling
   { slug: "bill-of-sale", name: "Bill of sale", line: "Records a private sale: what was sold, the price, the date and that it's sold as is.", group: "Buying and selling" },
