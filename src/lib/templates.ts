@@ -17,6 +17,21 @@ export type TemplateInfo = {
     | "Personal and family";
 };
 
+/**
+ * Templates written and ready to fill in at /templates/[slug]. Must match the server-only library
+ * in src/lib/templateLibrary (a test checks), kept separate so the list page stays small.
+ */
+export const WRITTEN_TEMPLATES = new Set([
+  "change-order", "completion-sign-off", "contractor-complaint",
+  "lease-addendum", "roommate-agreement", "move-in-checklist", "lead-paint-disclosure", "notice-to-vacate", "security-deposit",
+  "freelance-contract", "statement-of-work", "nda",
+  "brand-deal", "ugc-agreement", "content-license", "photo-release", "creator-collab", "social-media-manager", "affiliate-agreement",
+  "services-agreement", "letter-of-intent", "referral-agreement",
+  "bill-of-sale", "consignment-agreement",
+  "demand-letter", "payment-plan", "debt-dispute-letter", "debt-stop-contact",
+  "child-travel-consent",
+]);
+
 export const TEMPLATE_GROUPS: TemplateInfo["group"][] = [
   "Home and renovation",
   "Renting",
@@ -34,7 +49,7 @@ export const TEMPLATES: TemplateInfo[] = [
   { slug: "change-order", name: "Change order", line: "Extra work, its price and the new finish date, signed before it starts.", keywords: "extra work contractor renovation", group: "Home and renovation" },
   { slug: "lien-waiver", name: "Conditional lien waiver", line: "Your contractor gives up lien rights once your payment clears.", keywords: "lien release mechanics lien contractor payment", group: "Home and renovation" },
   { slug: "completion-sign-off", name: "Final payment and sign-off", line: "Confirms the work is done before the last payment goes out.", keywords: "final payment completion certificate punch list", group: "Home and renovation" },
-  { slug: "contractor-complaint", name: "Complaint to a contractor", line: "Puts the problem, the fix you want and your deadline in writing.", href: "/tools/write-a-letter", keywords: "builder renovation problem dispute", group: "Home and renovation" },
+  { slug: "contractor-complaint", name: "Complaint to a contractor", line: "Puts the problem, the fix you want and your deadline in writing.", keywords: "builder renovation problem dispute", group: "Home and renovation" },
 
   // Renting
   { slug: "residential-lease", name: "Residential lease", line: "Rent, deposit, length of stay and house rules for a home or apartment.", keywords: "rental agreement tenancy apartment landlord tenant", group: "Renting" },
@@ -44,7 +59,7 @@ export const TEMPLATES: TemplateInfo[] = [
   { slug: "move-in-checklist", name: "Move-in condition checklist", line: "A room-by-room record of the place on day one, so the deposit isn't a fight later.", keywords: "inspection condition report move out", group: "Renting" },
   { slug: "lead-paint-disclosure", name: "Lead paint disclosure", line: "The federal lead notice every lease needs for a home built before 1978.", keywords: "lead based paint epa", group: "Renting" },
   { slug: "notice-to-vacate", name: "Notice of moving out", line: "Tells your landlord in writing the date you're leaving.", keywords: "move out notice end lease termination", group: "Renting" },
-  { slug: "security-deposit", name: "Security deposit request", line: "Asks a landlord for your deposit back, with your state's deadline.", href: "/tools/write-a-letter", keywords: "landlord deposit back refund tenant", group: "Renting" },
+  { slug: "security-deposit", name: "Security deposit request", line: "Asks a landlord for your deposit back, with your state's deadline.", keywords: "landlord deposit back refund tenant", group: "Renting" },
 
   // Work and freelancing
   { slug: "freelance-contract", name: "Freelance contract", line: "What you'll deliver, what it costs, when you get paid and who owns the work.", keywords: "freelancer contractor client agreement", group: "Work and freelancing" },
@@ -81,18 +96,23 @@ export const TEMPLATES: TemplateInfo[] = [
   { slug: "consignment-agreement", name: "Consignment agreement", line: "A shop sells your item and you split the price.", keywords: "consign resale shop", group: "Buying and selling" },
 
   // Money and disputes
-  { slug: "demand-letter", name: "Demand letter", line: "What you are owed, by when, and what happens if it isn't paid.", href: "/tools/write-a-letter", keywords: "owed money collect pay small claims", group: "Money and disputes" },
+  { slug: "demand-letter", name: "Demand letter", line: "What you are owed, by when, and what happens if it isn't paid.", keywords: "owed money collect pay small claims", group: "Money and disputes" },
   { slug: "promissory-note", name: "Promissory note", line: "A loan in writing: how much, any interest, and when it's paid back.", keywords: "loan iou borrow lend", group: "Money and disputes" },
   { slug: "payment-plan", name: "Payment plan agreement", line: "Who pays what, on which dates, and what a missed payment means.", keywords: "installments installment agreement", group: "Money and disputes" },
   { slug: "settlement-agreement", name: "Settlement agreement", line: "Ends a dispute: who pays what, and neither side takes it further.", keywords: "release of claims dispute", group: "Money and disputes" },
-  { slug: "debt-dispute-letter", name: "Debt dispute letter", line: "Tells a debt collector the debt isn't yours, or asks them to prove it.", keywords: "debt collector validation not my debt", group: "Money and disputes" },
-  { slug: "debt-stop-contact", name: "Stop contact letter", line: "Tells a debt collector to stop calling, or to talk only to your lawyer.", keywords: "debt collector cease and desist stop calling", group: "Money and disputes" },
+  { slug: "debt-dispute-letter", name: "Debt dispute letter", line: "Disputes a debt and asks the collector to prove it before you pay.", keywords: "debt collector validation not my debt", group: "Money and disputes" },
+  { slug: "debt-stop-contact", name: "Stop contact letter", line: "Tells a debt collector to stop contacting you about a debt.", keywords: "debt collector cease and desist stop calling", group: "Money and disputes" },
 
   // Personal and family
   { slug: "power-of-attorney", name: "Power of attorney", line: "Lets someone you trust handle your money or paperwork for you.", keywords: "poa", group: "Personal and family" },
   { slug: "child-travel-consent", name: "Child travel consent", line: "Lets your child travel with another adult, signed by the parents.", keywords: "minor travel consent letter", group: "Personal and family" },
   { slug: "nanny-agreement", name: "Nanny agreement", line: "Hours, pay, duties and time off for in-home child care.", keywords: "babysitter childcare au pair", group: "Personal and family" },
 ];
+
+// Written templates open their own page, unless a template sets its own href.
+for (const t of TEMPLATES) {
+  if (!t.href && WRITTEN_TEMPLATES.has(t.slug)) t.href = `/templates/${t.slug}`;
+}
 
 export const HOME_TEMPLATES = TEMPLATES.filter((t) =>
   ["change-order", "lien-waiver", "demand-letter", "security-deposit", "lease-addendum", "payment-plan"].includes(t.slug),

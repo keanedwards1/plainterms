@@ -8,6 +8,10 @@ There is no sample report or how-it-works page any more; the home page is the ap
 
 **`/preview/[id]` is deliberately exempt.** It is a single-page free readout (real risk score, health snapshot, red-flag titles, next steps, one rewrite example) ending in one checkout CTA — no tabs, no locked/blurred placeholders, no mid-content unlock prompts. See `src/components/PreviewUnlockPanel.tsx`. Do not restore the old tabbed/locked preview.
 
+## Legal templates
+
+Before writing, editing or adding a template, or changing the template pages, download or draft storage, load the `legal-templates` skill (`.claude/skills/legal-templates/SKILL.md`). It holds the licensing research, the held-back list, the fixed-text-with-blanks rule and the security rules.
+
 ## No developer-facing copy on the live UI
 
 Never add copy intended for the developer (e.g. explaining how features work, noting what's internal). All text that appears in the UI is user-facing only.
