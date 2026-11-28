@@ -64,14 +64,12 @@ export default function TemplateSearch() {
       router.push(template.href);
       return;
     }
-    // Not fillable yet: take them to its card on this page.
-    if (window.location.hash === `#${template.slug}`) {
-      document.getElementById(template.slug)?.scrollIntoView({ block: "center", behavior: "smooth" });
-    } else {
-      // A real hash change (not router.push) so the browser scrolls to the card and :target marks it.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign(`#${template.slug}`);
-    }
+    // Not fillable yet: take them to its card on this page. A real hash change (not router.push), so the
+    // browser scrolls to the card, :target marks it, and a filtered-out category opens again. Clearing
+    // the hash first makes picking the same template twice still count as a change.
+    if (window.location.hash) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign(`#${template.slug}`);
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
