@@ -4,7 +4,7 @@ import { GENERAL_TERMS, GOVERNING_STATE } from "@/lib/templateLibrary/shared";
 export const BUSINESS_LIBRARY: TemplateDoc[] = [
   {
     slug: "services-agreement",
-    version: 1,
+    version: 2,
     title: "Services Agreement",
     summary: "The main terms for doing ongoing work for a business client: scope, fees, invoices, ownership and liability.",
     fields: [
@@ -28,23 +28,29 @@ export const BUSINESS_LIBRARY: TemplateDoc[] = [
     ],
     body: [
       { t: "title", text: "Services Agreement" },
-      { t: "p", text: "This agreement, dated {{agreementDate}}, is between {{providerName}}, of {{providerAddress}} (the provider), and {{clientName}}, of {{clientAddress}} (the client)." },
-      { t: "h", text: "1. Services" },
-      { t: "p", text: "The provider will provide these services:\n{{services}}\nSpecific projects may be described in statements of work signed by both parties. Each one is part of this agreement." },
-      { t: "h", text: "2. Fees and payment" },
-      { t: "p", text: "{{fees}}\nThe provider will invoice the client, and invoices are due within {{paymentDays}} days. Late payments: {{lateFee}}. The client pays pre-approved expenses at cost. Fees do not include sales tax, which the client pays where it applies. If the client disputes part of an invoice in good faith, it will pay the rest on time and tell the provider why in writing." },
-      { t: "h", text: "3. Term and ending" },
-      { t: "p", text: "This agreement lasts {{termMonths}} months from its date and then renews month to month. Either party may end it with {{noticeDays}} days' written notice, or right away if the other seriously breaks it and does not fix it within 15 days of written notice. The client pays for services provided up to the end date." },
-      { t: "h", text: "4. Ownership" },
-      { t: "p", text: "Once paid, the client owns the final deliverables made specifically for it. The provider keeps its earlier materials, tools, methods and know-how, and gives the client a permanent, non-exclusive license to use any of them included in the deliverables." },
-      { t: "h", text: "5. Confidentiality" },
-      { t: "p", text: "Each party will keep the other's non-public information confidential, use it only for this agreement, and return or destroy it when asked, except as the law requires." },
-      { t: "h", text: "6. Independent business" },
-      { t: "p", text: "The provider is an independent business, not an employee, partner or agent of the client, and is responsible for its own staff, taxes and insurance." },
-      { t: "h", text: "7. Warranty" },
-      { t: "p", text: "The provider will do the work in a professional, competent way. If it does not, the client will say so in writing within 30 days of delivery and the provider will redo the work at no charge. Otherwise, the provider makes no other promises about the services." },
-      { t: "h", text: "8. Limit of liability" },
-      { t: "p", text: "Neither party is liable for indirect, special or lost-profit damages. Each party's total liability under this agreement is limited to the fees paid or owed in the 12 months before the claim. These limits do not apply to unpaid fees, breaches of confidentiality, or fraud, gross negligence or willful misconduct." },
+      {
+        t: "boxes",
+        rows: [
+          [
+            { label: "Provider", value: "{{providerName}}" },
+            { label: "Client", value: "{{clientName}}" },
+          ],
+          [
+            { label: "Address", value: "{{providerAddress}}" },
+            { label: "Address", value: "{{clientAddress}}" },
+          ],
+          [{ label: "Agreement date", value: "{{agreementDate}}" }],
+        ],
+      },
+      { t: "p", text: "This agreement is made on the agreement date above between the provider and the client named above." },
+      { t: "clause", title: "1. Services", text: "The provider will provide these services:\n{{services}}\nSpecific projects may be described in statements of work signed by both parties. Each one is part of this agreement." },
+      { t: "clause", title: "2. Fees and payment", text: "{{fees}}\nThe provider will invoice the client, and invoices are due within {{paymentDays}} days. Late payments: {{lateFee}}. The client pays pre-approved expenses at cost. Fees do not include sales tax, which the client pays where it applies. If the client disputes part of an invoice in good faith, it will pay the rest on time and tell the provider why in writing." },
+      { t: "clause", title: "3. Term and ending", text: "This agreement lasts {{termMonths}} months from its date and then renews month to month. Either party may end it with {{noticeDays}} days' written notice, or right away if the other seriously breaks it and does not fix it within 15 days of written notice. The client pays for services provided up to the end date." },
+      { t: "clause", title: "4. Ownership", text: "Once paid, the client owns the final deliverables made specifically for it. The provider keeps its earlier materials, tools, methods and know-how, and gives the client a permanent, non-exclusive license to use any of them included in the deliverables." },
+      { t: "clause", title: "5. Confidentiality", text: "Each party will keep the other's non-public information confidential, use it only for this agreement, and return or destroy it when asked, except as the law requires." },
+      { t: "clause", title: "6. Independent business", text: "The provider is an independent business, not an employee, partner or agent of the client, and is responsible for its own staff, taxes and insurance." },
+      { t: "clause", title: "7. Warranty", text: "The provider will do the work in a professional, competent way. If it does not, the client will say so in writing within 30 days of delivery and the provider will redo the work at no charge. Otherwise, the provider makes no other promises about the services." },
+      { t: "clause", title: "8. Limit of liability", text: "Neither party is liable for indirect, special or lost-profit damages. Each party's total liability under this agreement is limited to the fees paid or owed in the 12 months before the claim. These limits do not apply to unpaid fees, breaches of confidentiality, or fraud, gross negligence or willful misconduct." },
       { t: "h", text: "9. General" },
       { t: "ol", items: [...GENERAL_TERMS, "Notices. Formal notices must be in writing and sent to the addresses above, or to an email address a party gives for notices."] },
       { t: "sign", parties: [{ role: "Provider", name: "{{providerName}}" }, { role: "Client", name: "{{clientName}}" }] },
@@ -56,7 +62,7 @@ export const BUSINESS_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "letter-of-intent",
-    version: 1,
+    version: 2,
     title: "Letter of Intent",
     summary: "The main terms both sides agree on before writing the full contract. Mostly not binding.",
     fields: [
@@ -78,14 +84,10 @@ export const BUSINESS_LIBRARY: TemplateDoc[] = [
       { t: "title", text: "Letter of Intent" },
       { t: "p", text: "Date: {{letterDate}}\nBetween: {{partyAName}} and {{partyBName}}" },
       { t: "p", text: "This letter sets out the main terms the parties intend to include in a final agreement about the deal below. It is a starting point for negotiation." },
-      { t: "h", text: "1. The deal" },
-      { t: "p", text: "{{transaction}}" },
-      { t: "h", text: "2. Main terms" },
-      { t: "p", text: "{{keyTerms}}" },
-      { t: "h", text: "3. Next steps" },
-      { t: "p", text: "{{nextSteps}}\nThe parties aim to sign a final agreement by {{targetDate}}." },
-      { t: "h", text: "4. What is binding" },
-      { t: "p", text: "Sections 1 to 3 are not binding. No party has to complete the deal unless and until both sign a final agreement. Only the following are binding:" },
+      { t: "clause", title: "1. The deal", text: "{{transaction}}" },
+      { t: "clause", title: "2. Main terms", text: "{{keyTerms}}" },
+      { t: "clause", title: "3. Next steps", text: "{{nextSteps}}\nThe parties aim to sign a final agreement by {{targetDate}}." },
+      { t: "clause", title: "4. What is binding", text: "Sections 1 to 3 are not binding. No party has to complete the deal unless and until both sign a final agreement. Only the following are binding:" },
       { t: "ol", items: [
         "Confidentiality. Each party will keep the terms of this letter and the other party's non-public information confidential.",
         "Exclusive talks. For {{exclusiveDays}} days from the date of this letter, neither party will negotiate the same deal with anyone else. If this is 0, there is no exclusivity.",
@@ -99,7 +101,7 @@ export const BUSINESS_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "referral-agreement",
-    version: 1,
+    version: 2,
     title: "Referral Agreement",
     summary: "Pays someone a fee or commission for clients they send your way.",
     fields: [
@@ -118,15 +120,21 @@ export const BUSINESS_LIBRARY: TemplateDoc[] = [
     ],
     body: [
       { t: "title", text: "Referral Agreement" },
-      { t: "p", text: "This agreement, dated {{agreementDate}}, is between {{companyName}} (the company) and {{referrerName}} (the referrer)." },
-      { t: "h", text: "1. Referrals" },
-      { t: "p", text: "The referrer may introduce potential clients to the company for: {{servicesReferred}}. A referral counts when the referrer introduces the client in writing (an email to the company is enough), the client was not already a client or in talks with the company, and the client signs up within 6 months of the introduction." },
-      { t: "h", text: "2. Fee" },
-      { t: "p", text: "For each referral that counts, the company will pay: {{referralFee}}. Payment: {{paymentTiming}}, with a statement showing how the fee was worked out. The fee is based on amounts the client actually pays, less refunds." },
-      { t: "h", text: "3. How referrals are made" },
-      { t: "p", text: "The referrer is not an employee, agent or partner of the company, cannot sign anything or make promises for it, and will describe the company's services accurately. The company decides whether to take on any client. The referrer will tell referred clients it may receive a fee where the law or its profession requires it." },
-      { t: "h", text: "4. Term" },
-      { t: "p", text: "This agreement lasts {{termMonths}} months. Either party may end it earlier with written notice. Fees for referrals made before the end date are still paid as above." },
+      {
+        t: "boxes",
+        rows: [
+          [
+            { label: "Company", value: "{{companyName}}" },
+            { label: "Referrer", value: "{{referrerName}}" },
+          ],
+          [{ label: "Agreement date", value: "{{agreementDate}}" }],
+        ],
+      },
+      { t: "p", text: "This agreement is made on the agreement date above between the company and the referrer named above." },
+      { t: "clause", title: "1. Referrals", text: "The referrer may introduce potential clients to the company for: {{servicesReferred}}. A referral counts when the referrer introduces the client in writing (an email to the company is enough), the client was not already a client or in talks with the company, and the client signs up within 6 months of the introduction." },
+      { t: "clause", title: "2. Fee", text: "For each referral that counts, the company will pay: {{referralFee}}. Payment: {{paymentTiming}}, with a statement showing how the fee was worked out. The fee is based on amounts the client actually pays, less refunds." },
+      { t: "clause", title: "3. How referrals are made", text: "The referrer is not an employee, agent or partner of the company, cannot sign anything or make promises for it, and will describe the company's services accurately. The company decides whether to take on any client. The referrer will tell referred clients it may receive a fee where the law or its profession requires it." },
+      { t: "clause", title: "4. Term", text: "This agreement lasts {{termMonths}} months. Either party may end it earlier with written notice. Fees for referrals made before the end date are still paid as above." },
       { t: "h", text: "5. General" },
       { t: "ol", items: GENERAL_TERMS },
       { t: "sign", parties: [{ role: "Company", name: "{{companyName}}" }, { role: "Referrer", name: "{{referrerName}}" }] },
@@ -138,7 +146,7 @@ export const BUSINESS_LIBRARY: TemplateDoc[] = [
 export const SELLING_LIBRARY: TemplateDoc[] = [
   {
     slug: "bill-of-sale",
-    version: 1,
+    version: 2,
     title: "Bill of Sale",
     summary: "Records a private sale of personal property: what was sold, the price, the date, and that it's sold as is.",
     fields: [
@@ -157,13 +165,28 @@ export const SELLING_LIBRARY: TemplateDoc[] = [
     ],
     body: [
       { t: "title", text: "Bill of Sale" },
-      { t: "p", text: "On {{saleDate}}, {{sellerName}}, of {{sellerAddress}} (the seller), sells to {{buyerName}}, of {{buyerAddress}} (the buyer), the following item:\n{{itemDescription}}" },
-      { t: "h", text: "1. Price" },
-      { t: "p", text: "The buyer has paid the seller {{price}}, by {{paymentMethod}}, and the seller confirms receiving it." },
-      { t: "h", text: "2. Ownership" },
-      { t: "p", text: "The seller confirms that they own the item, have the right to sell it, and that no one else has a claim or loan against it." },
-      { t: "h", text: "3. Sold as is" },
-      { t: "p", text: "The item is sold as is, where is, with all faults. The seller makes no promises about its condition or fitness for any purpose beyond what is written in this bill of sale. The buyer has had the chance to inspect it." },
+      {
+        t: "boxes",
+        rows: [
+          [
+            { label: "Seller", value: "{{sellerName}}" },
+            { label: "Buyer", value: "{{buyerName}}" },
+          ],
+          [
+            { label: "Seller's address", value: "{{sellerAddress}}" },
+            { label: "Buyer's address", value: "{{buyerAddress}}" },
+          ],
+          [
+            { label: "Date of sale", value: "{{saleDate}}" },
+            { label: "Price", value: "{{price}}" },
+            { label: "Paid by", value: "{{paymentMethod}}" },
+          ],
+        ],
+      },
+      { t: "clause", title: "1. Item sold", text: "{{itemDescription}}" },
+      { t: "clause", title: "2. Sale and payment", text: "The seller sells the item described above to the buyer for the price above. The buyer has paid that price in full, and the seller confirms receiving it." },
+      { t: "clause", title: "3. Ownership", text: "The seller confirms that they own the item, have the right to sell it, and that no one else has a claim or loan against it." },
+      { t: "clause", title: "4. Sold as is", text: "The item is sold as is, where is, with all faults. The seller makes no promises about its condition or fitness for any purpose beyond what is written in this bill of sale. The buyer has had the chance to inspect it." },
       { t: "sign", parties: [{ role: "Seller", name: "{{sellerName}}" }, { role: "Buyer", name: "{{buyerName}}" }] },
     ],
     notes: [
@@ -173,7 +196,7 @@ export const SELLING_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "consignment-agreement",
-    version: 1,
+    version: 2,
     title: "Consignment Agreement",
     summary: "A shop sells your items for you, and you split the price.",
     fields: [
@@ -195,15 +218,25 @@ export const SELLING_LIBRARY: TemplateDoc[] = [
     ],
     body: [
       { t: "title", text: "Consignment Agreement" },
-      { t: "p", text: "This agreement, dated {{agreementDate}}, is between {{consignorName}} ({{consignorContact}}), the owner, and {{shopName}}, of {{shopAddress}}, the shop." },
-      { t: "h", text: "1. Items" },
-      { t: "p", text: "The owner leaves these items with the shop to sell:\n{{items}}\nThe shop will not sell an item below its minimum price without the owner's written approval." },
-      { t: "h", text: "2. Ownership and care" },
-      { t: "p", text: "The owner keeps ownership of each item until it is sold. The shop will take reasonable care of the items, and is responsible for loss, theft or damage while they are in its care." },
-      { t: "h", text: "3. Split and payment" },
-      { t: "p", text: "Split: {{split}}. Payment: {{payoutTiming}}, with a list of what sold and for how much. The shop collects and pays any sales tax." },
-      { t: "h", text: "4. Period and unsold items" },
-      { t: "p", text: "The shop will offer the items for {{periodDays}} days from the date of this agreement. Unsold items: {{unsoldItems}}. The owner may take back unsold items at any time with 3 days' notice." },
+      {
+        t: "boxes",
+        rows: [
+          [
+            { label: "Owner of the items", value: "{{consignorName}}" },
+            { label: "Shop", value: "{{shopName}}" },
+          ],
+          [
+            { label: "Email or phone", value: "{{consignorContact}}" },
+            { label: "Shop's address", value: "{{shopAddress}}" },
+          ],
+          [{ label: "Agreement date", value: "{{agreementDate}}" }],
+        ],
+      },
+      { t: "p", text: "This agreement is made on the agreement date above between the owner and the shop named above." },
+      { t: "clause", title: "1. Items", text: "The owner leaves these items with the shop to sell:\n{{items}}\nThe shop will not sell an item below its minimum price without the owner's written approval." },
+      { t: "clause", title: "2. Ownership and care", text: "The owner keeps ownership of each item until it is sold. The shop will take reasonable care of the items, and is responsible for loss, theft or damage while they are in its care." },
+      { t: "clause", title: "3. Split and payment", text: "Split: {{split}}. Payment: {{payoutTiming}}, with a list of what sold and for how much. The shop collects and pays any sales tax." },
+      { t: "clause", title: "4. Period and unsold items", text: "The shop will offer the items for {{periodDays}} days from the date of this agreement. Unsold items: {{unsoldItems}}. The owner may take back unsold items at any time with 3 days' notice." },
       { t: "h", text: "5. General" },
       { t: "ol", items: GENERAL_TERMS },
       { t: "sign", parties: [{ role: "Owner", name: "{{consignorName}}" }, { role: "Shop", name: "{{shopName}}" }] },

@@ -4,7 +4,7 @@ import { LETTER_FIELDS } from "@/lib/templateLibrary/shared";
 export const RENTING_LIBRARY: TemplateDoc[] = [
   {
     slug: "lease-addendum",
-    version: 1,
+    version: 2,
     title: "Lease Addendum",
     summary: "Adds one change to an existing lease, signed by the landlord and every tenant.",
     fields: [
@@ -22,10 +22,8 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
     body: [
       { t: "title", text: "Lease Addendum" },
       { t: "p", text: "This addendum changes the lease dated {{leaseDate}} between {{landlordName}} (the landlord) and {{tenantNames}} (the tenants) for {{propertyAddress}}." },
-      { t: "h", text: "1. The change" },
-      { t: "p", text: "Starting {{effectiveDate}}, the lease is changed as follows:\n{{changeText}}" },
-      { t: "h", text: "2. Everything else stays the same" },
-      { t: "p", text: "All other terms of the lease stay in effect. If this addendum and the lease conflict, this addendum controls on the point it covers." },
+      { t: "clause", title: "1. The change", text: "Starting {{effectiveDate}}, the lease is changed as follows:\n{{changeText}}" },
+      { t: "clause", title: "2. Everything else stays the same", text: "All other terms of the lease stay in effect. If this addendum and the lease conflict, this addendum controls on the point it covers." },
       { t: "sign", parties: [{ role: "Landlord", name: "{{landlordName}}" }, { role: "Tenant" }, { role: "Tenant" }] },
     ],
     notes: [
@@ -35,7 +33,7 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "roommate-agreement",
-    version: 1,
+    version: 2,
     title: "Roommate Agreement",
     summary: "How roommates split rent and bills, share the space and handle someone moving out.",
     fields: [
@@ -62,19 +60,14 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
       { t: "title", text: "Roommate Agreement" },
       { t: "p", text: "This agreement is between {{roommateNames}} (the roommates), who share {{propertyAddress}}. It starts on {{startDate}}." },
       { t: "p", text: "This agreement is only between the roommates. It does not change the lease with the landlord, and it does not change what each roommate owes the landlord under that lease." },
-      { t: "h", text: "1. Rent" },
-      { t: "p", text: "{{rentSplit}}" },
+      { t: "clause", title: "1. Rent", text: "{{rentSplit}}" },
       { t: "p", text: "Rent is due to the landlord by {{rentDueDate}}. Payment to the landlord: {{rentCollector}}." },
-      { t: "h", text: "2. Bills" },
-      { t: "p", text: "{{billsSplit}}" },
-      { t: "h", text: "3. Security deposit" },
-      { t: "p", text: "{{depositSplit}}. When the deposit comes back, any deductions for damage come out of the share of the roommate who caused it. Deductions nobody caused are shared equally." },
+      { t: "clause", title: "2. Bills", text: "{{billsSplit}}" },
+      { t: "clause", title: "3. Security deposit", text: "{{depositSplit}}. When the deposit comes back, any deductions for damage come out of the share of the roommate who caused it. Deductions nobody caused are shared equally." },
       { t: "h", text: "4. Living together" },
       { t: "ol", items: ["Quiet hours: {{quietHours}}.", "Guests: {{guests}}.", "Cleaning: {{chores}}", "Each roommate's bedroom is their own space. Others do not go in without asking.", "Food and belongings are not shared unless the owner says so.", "Any damage a roommate or their guest causes is that roommate's to pay for."] },
-      { t: "h", text: "5. Moving out" },
-      { t: "p", text: "A roommate who wants to move out will give the others at least {{noticeDays}} days' written notice. They keep paying their share of rent and bills until the end of that notice, or until a replacement the others and the landlord accept moves in, whichever comes first." },
-      { t: "h", text: "6. Disagreements" },
-      { t: "p", text: "The roommates will try to settle disagreements by talking them through first. This agreement is governed by the laws of the State of {{governingState}}." },
+      { t: "clause", title: "5. Moving out", text: "A roommate who wants to move out will give the others at least {{noticeDays}} days' written notice. They keep paying their share of rent and bills until the end of that notice, or until a replacement the others and the landlord accept moves in, whichever comes first." },
+      { t: "clause", title: "6. Disagreements", text: "The roommates will try to settle disagreements by talking them through first. This agreement is governed by the laws of the State of {{governingState}}." },
       { t: "sign", parties: [{ role: "Roommate" }, { role: "Roommate" }, { role: "Roommate" }] },
     ],
     notes: [
@@ -84,7 +77,7 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "move-in-checklist",
-    version: 2,
+    version: 3,
     title: "Move-In Condition Checklist",
     summary: "A room-by-room record of the place on move-in day, signed by tenant and landlord.",
     fields: [
@@ -98,7 +91,17 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
     groups: [{ title: "The rental", fields: ["tenantNames", "landlordName", "propertyAddress", "inspectionDate", "keysGiven", "meterReadings"] }],
     body: [
       { t: "title", text: "Move-In Condition Checklist" },
-      { t: "p", text: "Rental address: {{propertyAddress}}\nTenants: {{tenantNames}}\nLandlord: {{landlordName}}\nInspection date: {{inspectionDate}}" },
+      {
+        t: "boxes",
+        rows: [
+          [{ label: "Rental address", value: "{{propertyAddress}}" }],
+          [
+            { label: "Tenants", value: "{{tenantNames}}" },
+            { label: "Landlord or manager", value: "{{landlordName}}" },
+          ],
+          [{ label: "Inspection date", value: "{{inspectionDate}}" }],
+        ],
+      },
       { t: "p", text: "Write the condition of each item (for example: new, good, worn, damaged) and describe any damage, stains or marks. Take dated photos of anything you note." },
       { t: "h", text: "Living areas" },
       { t: "grid", columns: ["Item", "Condition at move-in", "Notes"], rows: ["Walls and ceilings", "Floors and carpet", "Windows, screens and blinds", "Doors and locks", "Lights, switches and outlets", "Heating and air conditioning", "Smoke and carbon monoxide alarms"] },
@@ -110,7 +113,15 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
       { t: "grid", columns: ["Item", "Condition at move-in", "Notes"], rows: ["Walls, ceiling and floor", "Closet and doors", "Windows, lights and outlets"] },
       { t: "h", text: "Other" },
       { t: "grid", columns: ["Item", "Condition at move-in", "Notes"], rows: ["Washer and dryer", "Water heater", "Patio or balcony", "Garage or parking", "Yard"] },
-      { t: "p", text: "Keys and remotes handed over: {{keysGiven}}\nMeter readings: {{meterReadings}}" },
+      {
+        t: "boxes",
+        rows: [
+          [
+            { label: "Keys and remotes handed over", value: "{{keysGiven}}" },
+            { label: "Meter readings", value: "{{meterReadings}}" },
+          ],
+        ],
+      },
       { t: "p", text: "Both parties agree this checklist describes the condition of the rental on the inspection date. The tenants are not responsible for anything noted here as already damaged or worn." },
       { t: "sign", parties: [{ role: "Tenant(s)" }, { role: "Landlord or manager", name: "{{landlordName}}" }] },
     ],
@@ -122,7 +133,7 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "lead-paint-disclosure",
-    version: 1,
+    version: 2,
     title: "Disclosure of Information on Lead-Based Paint and/or Lead-Based Paint Hazards",
     summary: "The federal lead disclosure a landlord gives a tenant before renting housing built before 1978.",
     fields: [
@@ -133,7 +144,7 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
     groups: [{ title: "The rental", fields: ["propertyAddress", "knownHazards", "recordsList"] }],
     body: [
       { t: "title", text: "Disclosure of Information on Lead-Based Paint and/or Lead-Based Paint Hazards" },
-      { t: "p", text: "Property: {{propertyAddress}}" },
+      { t: "boxes", rows: [[{ label: "Property address", value: "{{propertyAddress}}" }]] },
       { t: "h", text: "Lead Warning Statement" },
       { t: "p", text: "Housing built before 1978 may contain lead-based paint. Lead from paint, paint chips, and dust can pose health hazards if not managed properly. Lead exposure is especially harmful to young children and pregnant women. Before renting pre-1978 housing, lessors must disclose the presence of known lead-based paint and/or lead-based paint hazards in the dwelling. Lessees must also receive a federally approved pamphlet on lead poisoning prevention." },
       { t: "h", text: "Lessor's Disclosure" },
@@ -157,7 +168,8 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "notice-to-vacate",
-    version: 1,
+    blanks: "brackets",
+    version: 2,
     title: "Notice of Moving Out",
     summary: "Tells your landlord in writing the date you're leaving and where to send your deposit.",
     fields: [
@@ -174,10 +186,7 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
       { title: "Moving out", fields: ["propertyAddress", "moveOutDate", "forwardingAddress"] },
     ],
     body: [
-      { t: "p", text: "{{yourName}}\n{{yourAddress}}" },
-      { t: "p", text: "{{letterDate}}" },
-      { t: "p", text: "{{landlordName}}\n{{landlordAddress}}" },
-      { t: "p", text: "Re: Notice of moving out of {{propertyAddress}}" },
+      { t: "letter", from: "{{yourName}}\n{{yourAddress}}", date: "{{letterDate}}", to: "{{landlordName}}\n{{landlordAddress}}", re: "Notice of moving out of {{propertyAddress}}" },
       { t: "p", text: "Dear {{landlordName}}," },
       { t: "p", text: "This letter is my written notice that I will move out of {{propertyAddress}} on {{moveOutDate}}." },
       { t: "p", text: "Please let me know when you would like to do a move-out inspection. I would like to be there for it." },
@@ -191,7 +200,8 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "security-deposit",
-    version: 1,
+    blanks: "brackets",
+    version: 2,
     title: "Security Deposit Request",
     summary: "Asks your former landlord to return your deposit with an itemized list of any deductions.",
     fields: [
@@ -209,10 +219,7 @@ export const RENTING_LIBRARY: TemplateDoc[] = [
       { title: "The deposit", fields: ["propertyAddress", "moveOutDate", "depositAmount", "replyBy"] },
     ],
     body: [
-      { t: "p", text: "{{yourName}}\n{{yourAddress}}" },
-      { t: "p", text: "{{letterDate}}" },
-      { t: "p", text: "{{landlordName}}\n{{landlordAddress}}" },
-      { t: "p", text: "Re: Return of security deposit for {{propertyAddress}}" },
+      { t: "letter", from: "{{yourName}}\n{{yourAddress}}", date: "{{letterDate}}", to: "{{landlordName}}\n{{landlordAddress}}", re: "Return of security deposit for {{propertyAddress}}" },
       { t: "p", text: "Dear {{landlordName}}," },
       { t: "p", text: "I moved out of {{propertyAddress}} on {{moveOutDate}} and returned the keys. I paid a security deposit of {{depositAmount}}." },
       { t: "p", text: "Please return my deposit, along with an itemized list of any deductions and receipts for any repairs, within the time your state's law requires. Please send it to the address above." },

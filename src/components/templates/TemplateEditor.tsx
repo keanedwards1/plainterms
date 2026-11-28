@@ -166,11 +166,18 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
         </span>
       );
     }
+    const tipId = `sign-tip-${key.replace(".", "-")}`;
     return (
-      <button type="button" className="pt-sign-btn" onClick={() => setSigning({ key, role, name: nameFor(key) })}>
-        <Icon d="M4 18c3-1 5-9 8-9 2 0 0 7 3 7 1.5 0 2.5-2 4-2M4 21h16" />
-        Sign as {role}
-      </button>
+      <span className="pt-tip">
+        <button type="button" className="pt-sign-btn" aria-describedby={tipId} onClick={() => setSigning({ key, role, name: nameFor(key) })}>
+          <Icon d="M4 18c3-1 5-9 8-9 2 0 0 7 3 7 1.5 0 2.5-2 4-2M4 21h16" />
+          Sign as {role}
+        </button>
+        <span id={tipId} role="tooltip" className="pt-tip-bubble">
+          <b>Sign only on your own line</b>
+          Each person signs for themselves. After you sign, send the document to the other party so they can add their signature. Don&apos;t sign for anyone else unless they have authorized you to.
+        </span>
+      </span>
     );
   };
 
@@ -314,10 +321,10 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
             <div ref={contentRef}>
               {filling ? (
                 <form onSubmit={(e) => e.preventDefault()} autoComplete="off">
-                  <TemplateDocument doc={doc} values={values} signatures={signatures} renderBlank={renderBlank} renderSignature={renderSignature} branded={branded} />
+                  <TemplateDocument doc={doc} values={values} signatures={signatures} renderBlank={renderBlank} renderSignature={renderSignature} branded={branded} upgradeHref="/dashboard/billing" />
                 </form>
               ) : (
-                <TemplateDocument doc={doc} values={{}} branded={branded} />
+                <TemplateDocument doc={doc} values={{}} branded={branded} upgradeHref="/dashboard/billing" />
               )}
             </div>
             {Array.from({ length: pages - 1 }, (_, i) => (
@@ -342,11 +349,6 @@ export default function TemplateEditor({ doc, signedIn, branded }: { doc: Templa
           </p>
           {doc.basedOn ? <p>Based on {doc.basedOn}</p> : null}
           {signedIn ? null : <p>Downloading needs a free account. Your answers stay on this device and come back after you sign in.</p>}
-          {branded ? (
-            <a href="/dashboard/billing" className="pt-teditor-pro">
-              Remove the PlainTerms mark from your documents with Pro
-            </a>
-          ) : null}
         </section>
       </div>
 

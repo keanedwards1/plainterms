@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { cleanValue, displayValue, fileName, fill, infoRows, isSignatureImage, readDraft, readSignatures, tokensIn } from "@/lib/templateKit/fill";
+import { cleanValue, displayValue, fileName, fill, infoRows, isSignatureImage, readDraft, readSignatures, runIn, tokensIn } from "@/lib/templateKit/fill";
 import type { Block, TemplateDoc } from "@/lib/templateKit/types";
 import { LIBRARY } from "@/lib/templateLibrary";
 import { TEMPLATES, WRITTEN_TEMPLATES } from "@/lib/templates";
@@ -20,6 +20,14 @@ function textsOf(block: Block): string[] {
       return block.parties.flatMap((p) => [p.role, p.name ?? ""]);
     case "grid":
       return [...block.columns, ...block.rows];
+    case "boxes":
+      return block.rows.flatMap((r) => r.flatMap((c) => [c.label, c.value]));
+    case "amounts":
+      return block.rows.flatMap((r) => [r.label, r.value]);
+    case "letter":
+      return [block.from, block.date, block.to, block.re];
+    case "clause":
+      return [block.title, block.text];
   }
 }
 
@@ -168,5 +176,13 @@ describe("form rows", () => {
     ]);
     expect(infoRows("Date: {{a}}\nBetween {{b}} and {{c}}")).toBeNull();
     expect(infoRows("Date: {{a}}")).toBeNull();
+  });
+});
+
+describe("list titles", () => {
+  it("bolds short leading titles only", () => {
+    expect(runIn("Whole agreement. This agreement is the complete agreement.")).toEqual({ title: "Whole agreement.", rest: "This agreement is the complete agreement." });
+    expect(runIn("Food and belongings are not shared unless the owner says so.")).toBeNull();
+    expect(runIn("is or becomes public through no fault of the recipient;")).toBeNull();
   });
 });

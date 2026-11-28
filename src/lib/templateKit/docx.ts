@@ -1,4 +1,4 @@
-import { BRAND_TEXT, LINE_INCHES, fill, infoRows, isSignatureImage, rowField, signKey, type Piece } from "@/lib/templateKit/fill";
+import { BRAND_TEXT, LINE_INCHES, bracketed, clauseTitle, fill, infoRows, isSignatureImage, rowField, runIn, signKey, type Piece } from "@/lib/templateKit/fill";
 import type { Block, Branding, SignatureMark, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 /** An empty inline blank prints as a line to write on, sized to the kind of answer. */
@@ -31,7 +31,7 @@ export async function templateDocx(
   brand: Branding = { show: true }
 ): Promise<Blob> {
   const d = await import("docx");
-  const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, PageNumber, TabStopType } = d;
+  const { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, Footer, Table, TableRow, TableCell, WidthType, BorderStyle, PageNumber, TabStopType, TableLayoutType } = d;
 
   const INCH = 1440;
   const LINE = 252; // 1.05 line spacing
@@ -47,7 +47,7 @@ export async function templateDocx(
   const runs = (text: string, opts: { bold?: boolean; size?: number } = {}) => {
     const out: Run[] = [];
     for (const piece of fill(text, doc, values)) {
-      const chunk = piece.kind === "text" ? piece.text : piece.value || blankLine(piece);
+      const chunk = piece.kind === "text" ? piece.text : piece.value || (doc.blanks === "brackets" ? bracketed(piece.field) : blankLine(piece));
       chunk.split("\n").forEach((line, i) => out.push(new TextRun({ text: line, bold: opts.bold, size: opts.size, break: i > 0 ? 1 : undefined })));
     }
     return out;
@@ -60,7 +60,7 @@ export async function templateDocx(
   const paragraph = (text: string) => {
     // A paragraph that is a single long blank, left empty, becomes writing lines.
     const pieces = fill(text, doc, values);
-    if (pieces.length === 1 && pieces[0].kind === "blank" && pieces[0].field.type === "long" && !pieces[0].value) {
+    if (doc.blanks !== "brackets" && pieces.length === 1 && pieces[0].kind === "blank" && pieces[0].field.type === "long" && !pieces[0].value) {
       children.push(...writingLines(), new Paragraph({ spacing: { after: 100 }, children: [] }));
       return;
     }
@@ -121,7 +121,10 @@ export async function templateDocx(
             new Paragraph({
               spacing: { after: 60, line: LINE },
               indent: { left: 360, hanging: 260 },
-              children: [new TextRun(block.t === "ol" ? `${i + 1}.\t` : "•\t"), ...runs(item)],
+              children: [
+                new TextRun(block.t === "ol" ? `${i + 1}.\t` : "•\t"),
+                ...(runIn(item) ? [new TextRun({ text: `${runIn(item)?.title} `, bold: true }), ...runs(runIn(item)?.rest ?? "")] : runs(item)),
+              ],
             })
           )
         );
@@ -200,6 +203,97 @@ export async function templateDocx(
         }
         break;
       }
+      case "clause": {
+        const pieces = fill(block.text, doc, values);
+        const onlyLines = doc.blanks !== "brackets" && pieces.length === 1 && pieces[0].kind === "blank" && pieces[0].field.type === "long" && !pieces[0].value;
+        const title = clauseTitle(block.title, onlyLines);
+        if (onlyLines) {
+          children.push(new Paragraph({ spacing: { before: 120, after: 0 }, keepNext: true, children: [new TextRun({ text: title, bold: true })] }), ...writingLines());
+        } else {
+          children.push(new Paragraph({ spacing: { before: 60, after: 100, line: LINE }, children: [new TextRun({ text: `${title} `, bold: true }), ...runs(block.text)] }));
+        }
+        break;
+      }
+      case "letter":
+        children.push(
+          new Paragraph({ spacing: { after: 200, line: LINE }, children: runs(block.from) }),
+          new Paragraph({ spacing: { after: 200, line: LINE }, children: runs(block.date) }),
+          new Paragraph({ spacing: { after: 200, line: LINE }, children: runs(block.to) }),
+          new Paragraph({ spacing: { after: 200, line: LINE }, children: [new TextRun({ text: "Re: ", bold: true }), ...runs(block.re, { bold: true })] })
+        );
+        break;
+      case "boxes": {
+        const BOX = { style: BorderStyle.SINGLE, size: 6, color: "1B1F1D" };
+        for (const row of block.rows) {
+          const w = Math.floor(TEXT_WIDTH / row.length);
+          children.push(
+            new Table({
+              layout: TableLayoutType.FIXED,
+              width: { size: w * row.length, type: WidthType.DXA },
+              columnWidths: row.map(() => w),
+              rows: [
+                new TableRow({
+                  cantSplit: true,
+                  height: { value: 620, rule: "atLeast" },
+                  children: row.map(
+                    (cell) =>
+                      new TableCell({
+                        width: { size: w, type: WidthType.DXA },
+                        borders: { top: BOX, bottom: BOX, left: BOX, right: BOX },
+                        margins: { top: 50, bottom: 60, left: 100, right: 100 },
+                        children: [
+                          new Paragraph({ children: [new TextRun({ text: cell.label.toUpperCase(), bold: true, size: 14, color: "6B6B6B", characterSpacing: 10 })] }),
+                          new Paragraph({ spacing: { before: 40 }, children: [new TextRun(textOf(cell.value))] }),
+                        ],
+                      })
+                  ),
+                }),
+              ],
+            })
+          );
+        }
+        children.push(new Paragraph({ spacing: { after: 160 }, children: [] }));
+        break;
+      }
+      case "amounts": {
+        const valueW = 2600;
+        const LINE_BORDER = { style: BorderStyle.SINGLE, size: 6, color: "1B1F1D" };
+        const NONE = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+        children.push(
+          new Table({
+              layout: TableLayoutType.FIXED,
+            width: { size: TEXT_WIDTH, type: WidthType.DXA },
+            columnWidths: [TEXT_WIDTH - valueW, valueW],
+            borders: { top: NONE, bottom: NONE, left: NONE, right: NONE, insideHorizontal: NONE, insideVertical: NONE },
+            rows: block.rows.map(
+              (row) =>
+                new TableRow({
+                  cantSplit: true,
+                  children: [
+                    new TableCell({
+                      width: { size: TEXT_WIDTH - valueW, type: WidthType.DXA },
+                      borders: { top: NONE, bottom: NONE, left: NONE, right: NONE },
+                      margins: { top: 80, bottom: 20 },
+                      children: [new Paragraph({ children: [new TextRun({ text: row.label, bold: row.total })] })],
+                    }),
+                    new TableCell({
+                      width: { size: valueW, type: WidthType.DXA },
+                      borders: { top: row.total ? LINE_BORDER : NONE, left: NONE, right: NONE, bottom: { ...LINE_BORDER, size: row.total ? 12 : 6 } },
+                      margins: { top: 80, bottom: 20, right: 60 },
+                      children: [
+                        textOf(row.value)
+                          ? new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: textOf(row.value), bold: row.total })] })
+                          : new Paragraph({ children: [new TextRun({ text: "$", bold: row.total })] }),
+                      ],
+                    }),
+                  ],
+                })
+            ),
+          }),
+          new Paragraph({ spacing: { after: 120 }, children: [] })
+        );
+        break;
+      }
       case "grid": {
         const firstW = Math.round(TEXT_WIDTH * 0.32);
         const restW = Math.round((TEXT_WIDTH - firstW) / (block.columns.length - 1));
@@ -213,6 +307,7 @@ export async function templateDocx(
           });
         children.push(
           new Table({
+              layout: TableLayoutType.FIXED,
             width: { size: TEXT_WIDTH, type: WidthType.DXA },
             columnWidths: widths,
             rows: [

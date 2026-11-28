@@ -4,7 +4,7 @@ import { LETTER_FIELDS } from "@/lib/templateLibrary/shared";
 export const HOME_LIBRARY: TemplateDoc[] = [
   {
     slug: "change-order",
-    version: 2,
+    version: 3,
     title: "Change Order",
     summary: "Records extra or different work on a job, its price and the new finish date, signed before the work starts.",
     fields: [
@@ -30,19 +30,38 @@ export const HOME_LIBRARY: TemplateDoc[] = [
       { title: "Price and time", fields: ["originalPrice", "previousChanges", "changePrice", "newPrice", "paymentTerms", "daysAdded", "newFinishDate"] },
     ],
     body: [
-      { t: "title", text: "Change Order No. {{changeNumber}}" },
-      { t: "p", text: "Date: {{changeDate}}\nOwner: {{ownerName}}\nContractor: {{contractorName}}\nProject address: {{projectAddress}}\nOriginal contract dated: {{originalContractDate}}" },
+      { t: "title", text: "Change Order" },
+      {
+        t: "boxes",
+        rows: [
+          [
+            { label: "Change order no.", value: "{{changeNumber}}" },
+            { label: "Date", value: "{{changeDate}}" },
+            { label: "Original contract date", value: "{{originalContractDate}}" },
+          ],
+          [
+            { label: "Owner", value: "{{ownerName}}" },
+            { label: "Contractor", value: "{{contractorName}}" },
+          ],
+          [{ label: "Project address", value: "{{projectAddress}}" }],
+        ],
+      },
       { t: "p", text: "The owner and the contractor agree to change the work under the original contract as described below. Everything else in the original contract stays the same." },
-      { t: "h", text: "1. Description of the change" },
-      { t: "p", text: "{{changeDescription}}" },
+      { t: "clause", title: "1. Description of the change", text: "{{changeDescription}}" },
       { t: "p", text: "Reason for the change: {{changeReason}}" },
-      { t: "h", text: "2. Price" },
-      { t: "p", text: "Original contract price: {{originalPrice}}\nEarlier change orders: {{previousChanges}}\nThis change order: {{changePrice}}\nNew contract price: {{newPrice}}" },
+      { t: "h", text: "2. Change in contract price" },
+      {
+        t: "amounts",
+        rows: [
+          { label: "Original contract price", value: "{{originalPrice}}" },
+          { label: "Net change from earlier change orders", value: "{{previousChanges}}" },
+          { label: "Price of this change order", value: "{{changePrice}}" },
+          { label: "New contract price", value: "{{newPrice}}", total: true },
+        ],
+      },
       { t: "p", text: "This change will be paid: {{paymentTerms}}." },
-      { t: "h", text: "3. Schedule" },
-      { t: "p", text: "This change adds {{daysAdded}} days to the schedule. The new finish date is {{newFinishDate}}." },
-      { t: "h", text: "4. Agreement" },
-      { t: "p", text: "The contractor will not start the changed work until both parties have signed this change order. The price above is the full price for this change, including labor, materials, permits and cleanup, unless stated otherwise in the description." },
+      { t: "clause", title: "3. Change in contract time", text: "This change adds {{daysAdded}} days to the schedule. The new finish date is {{newFinishDate}}." },
+      { t: "clause", title: "4. Agreement", text: "The contractor will not start the changed work until both parties have signed this change order. The price above is the full price for this change, including labor, materials, permits and cleanup, unless stated otherwise in the description." },
       { t: "sign", parties: [{ role: "Owner", name: "{{ownerName}}" }, { role: "Contractor", name: "{{contractorName}}" }] },
     ],
     notes: [
@@ -52,7 +71,7 @@ export const HOME_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "completion-sign-off",
-    version: 1,
+    version: 2,
     title: "Final Payment and Sign-Off",
     summary: "Confirms the work is finished, lists anything left to fix, and records the final payment.",
     fields: [
@@ -74,18 +93,26 @@ export const HOME_LIBRARY: TemplateDoc[] = [
     ],
     body: [
       { t: "title", text: "Final Payment and Sign-Off" },
-      { t: "p", text: "Owner: {{ownerName}}\nContractor: {{contractorName}}\nProject address: {{projectAddress}}\nContract dated: {{contractDate}}\nWork: {{workDescription}}" },
-      { t: "h", text: "1. Final walk-through" },
-      { t: "p", text: "The owner and the contractor walked through the finished work on {{inspectionDate}}. Except for the items listed below, the owner accepts the work as complete." },
-      { t: "h", text: "2. Items still to fix" },
-      { t: "p", text: "{{punchList}}" },
+      {
+        t: "boxes",
+        rows: [
+          [
+            { label: "Owner", value: "{{ownerName}}" },
+            { label: "Contractor", value: "{{contractorName}}" },
+          ],
+          [
+            { label: "Project address", value: "{{projectAddress}}" },
+            { label: "Contract date", value: "{{contractDate}}" },
+          ],
+          [{ label: "Work", value: "{{workDescription}}" }],
+        ],
+      },
+      { t: "clause", title: "1. Final walk-through", text: "The owner and the contractor walked through the finished work on {{inspectionDate}}. Except for the items listed below, the owner accepts the work as complete." },
+      { t: "clause", title: "2. Items still to fix", text: "{{punchList}}" },
       { t: "p", text: "The contractor will finish these items by {{punchListDate}} at no extra cost." },
-      { t: "h", text: "3. Final payment" },
-      { t: "p", text: "The owner will make the final payment of {{finalAmount}}. Before or when receiving it, the contractor will give the owner lien releases from the contractor and from every subcontractor and supplier who worked on or delivered materials to the project." },
-      { t: "h", text: "4. Warranty and documents" },
-      { t: "p", text: "Warranty: {{warrantyTerms}}. The contractor will give the owner any manufacturer warranties, manuals, permits and final inspection sign-offs for the work." },
-      { t: "h", text: "5. What this does not change" },
-      { t: "p", text: "Signing this does not end the warranty, and does not waive the owner's rights for problems that could not reasonably be seen at the walk-through." },
+      { t: "clause", title: "3. Final payment", text: "The owner will make the final payment of {{finalAmount}}. Before or when receiving it, the contractor will give the owner lien releases from the contractor and from every subcontractor and supplier who worked on or delivered materials to the project." },
+      { t: "clause", title: "4. Warranty and documents", text: "Warranty: {{warrantyTerms}}. The contractor will give the owner any manufacturer warranties, manuals, permits and final inspection sign-offs for the work." },
+      { t: "clause", title: "5. What this does not change", text: "Signing this does not end the warranty, and does not waive the owner's rights for problems that could not reasonably be seen at the walk-through." },
       { t: "sign", parties: [{ role: "Owner", name: "{{ownerName}}" }, { role: "Contractor", name: "{{contractorName}}" }] },
     ],
     notes: [
@@ -95,7 +122,8 @@ export const HOME_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "contractor-complaint",
-    version: 1,
+    blanks: "brackets",
+    version: 2,
     title: "Complaint to a Contractor",
     summary: "Puts the problem, the fix you want and your deadline in writing.",
     fields: [
@@ -116,10 +144,7 @@ export const HOME_LIBRARY: TemplateDoc[] = [
       { title: "The problem", fields: ["projectAddress", "contractDate", "workDescription", "problem", "fixWanted", "fixBy", "enclosures"] },
     ],
     body: [
-      { t: "p", text: "{{yourName}}\n{{yourAddress}}" },
-      { t: "p", text: "{{letterDate}}" },
-      { t: "p", text: "{{contractorName}}\n{{contractorAddress}}" },
-      { t: "p", text: "Re: Work at {{projectAddress}}, contract dated {{contractDate}}" },
+      { t: "letter", from: "{{yourName}}\n{{yourAddress}}", date: "{{letterDate}}", to: "{{contractorName}}\n{{contractorAddress}}", re: "Work at {{projectAddress}}, contract dated {{contractDate}}" },
       { t: "p", text: "Dear {{contractorName}}," },
       { t: "p", text: "I hired you for {{workDescription}} at {{projectAddress}} under our contract dated {{contractDate}}. I am writing because the work has a problem that needs to be fixed." },
       { t: "p", text: "{{problem}}" },

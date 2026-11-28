@@ -90,7 +90,6 @@
   .pt-teditor-notes { max-width: 8.5in; margin-inline: auto; width: 100%; display: grid; gap: 0.5rem; border-top: 1px solid var(--pt-line); padding-top: 1rem; font-size: 0.8125rem; line-height: 1.55; color: var(--pt-muted); }
   .pt-teditor-notes h2 { font-size: 0.8125rem; font-weight: 600; color: var(--pt-ink-soft); }
   .pt-teditor-notes ul { display: grid; gap: 0.3rem; padding-left: 1.1rem; list-style: disc; }
-  .pt-teditor-pro { justify-self: start; color: var(--pt-ink-soft); text-decoration: underline; text-underline-offset: 3px; }
 
   /* Blanks you click and type into. */
   .pt-blank {
@@ -130,6 +129,30 @@
   .pt-tdoc-info dt { padding-top: 0.35em; }
   .pt-tdoc-info dd { min-height: 1.6em; margin: 0; border-bottom: 1px solid #1b1f1d; padding: 0.35em 0 0.05em; }
 
+  /* Contract sections with the heading run into the text. */
+  .pt-tdoc-clause { margin: 0.45em 0 0.55em !important; }
+  .pt-tdoc-clause > b { font-weight: 700; }
+
+  /* A standard business letter's opening. */
+  .pt-tdoc-letter p { margin: 0 0 1.05em; }
+  .pt-tdoc-re { margin-top: 0.2em !important; }
+
+  /* Bordered form boxes, like a printed form. */
+  .pt-tdoc-boxes { margin: 0 0 1em; border-top: 1px solid #1b1f1d; border-left: 1px solid #1b1f1d; }
+  .pt-tdoc-boxrow { display: grid; }
+  .pt-tdoc-box { display: grid; align-content: start; gap: 0.15em; min-height: 3.05em; border-right: 1px solid #1b1f1d; border-bottom: 1px solid #1b1f1d; padding: 0.3em 0.5em 0.35em; }
+  .pt-tdoc-boxlabel { font: 700 0.62em/1.2 var(--font-sans, system-ui), sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: #5f6461; }
+  .pt-tdoc-boxvalue { min-height: 1.35em; }
+
+  /* Money table: amounts right-aligned on their own lines, total in bold. */
+  .pt-tdoc-amounts { width: 100%; margin: 0.15em 0 0.7em; border-collapse: collapse; }
+  .pt-tdoc-amounts th { padding: 0.35em 0 0.1em; text-align: left; font-weight: 400; }
+  .pt-tdoc-amounts td { width: 2.1in; border-bottom: 1px solid #1b1f1d; padding: 0.35em 0.2em 0.1em; text-align: right; }
+  .pt-tdoc-amounts td:empty::before, .pt-tdoc-amounts td:not(:has(*))::before { content: "$"; float: left; }
+  .pt-tdoc-total th { font-weight: 700; }
+  .pt-tdoc-total td { border-top: 1px solid #1b1f1d; border-bottom-width: 2px; font-weight: 700; }
+  .pt-tdoc-amounts .pt-blank { text-align: right; }
+
   /* Signatures: role, signature and date lines, printed name. Two signers per row. */
   .pt-tdoc-sign { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4em 2.2em; margin-top: 1.2em; }
   .pt-tdoc-signer { display: grid; gap: 0.35em; break-inside: avoid; }
@@ -146,10 +169,44 @@
   .pt-tdoc-grid thead th { background: #f1f1ee; }
   .pt-tdoc-grid tbody th { width: 32%; font-weight: 400; }
   .pt-tdoc-grid tr { height: 1.7em; break-inside: avoid; }
+  /* Tooltips: shown above on hover and keyboard focus. */
+  .pt-tip { position: relative; display: inline-flex; }
+  .pt-tip-bubble {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    z-index: 20;
+    width: max-content;
+    max-width: 17rem;
+    display: grid;
+    gap: 0.25rem;
+    border-radius: 8px;
+    background: var(--pt-ink);
+    padding: 0.6rem 0.75rem;
+    font: 400 0.78rem/1.45 var(--font-sans, system-ui), sans-serif;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #f3f5f2;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    transition: opacity 140ms ease, transform 140ms ease;
+  }
+  .pt-tip-bubble b { font-weight: 600; color: #fff; }
+  .pt-tip-bubble::after { content: ""; position: absolute; top: 100%; left: 1.1rem; border: 6px solid transparent; border-top-color: var(--pt-ink); }
+  .pt-tip:hover .pt-tip-bubble, .pt-tip:focus-within .pt-tip-bubble { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) { .pt-tip-bubble { transition: none; } }
+
+  .pt-tdoc-brandrow { margin-top: 2em !important; }
+  .pt-tdoc-brandrow .pt-tdoc-brand { margin-top: 0 !important; text-decoration: none; border-radius: 4px; }
+  .pt-tdoc-brandrow .pt-tdoc-brand:hover { color: var(--pt-ink); }
+  .pt-tdoc-brandrow .pt-tdoc-brand:focus-visible { outline: 2px solid var(--pt-ring); outline-offset: 3px; }
   .pt-tdoc-brand { display: flex; align-items: center; gap: 0.45em; margin-top: 2em !important; font: 500 0.72em/1 var(--font-sans, system-ui), sans-serif; color: #7a7f7b; }
 
   /* Blank lines in the plain document. */
   .pt-tdoc-fill { white-space: pre-line; }
+  .pt-tdoc-bracket { color: #3f4a46; }
   .pt-tdoc-blank { display: inline-block; min-width: 2.1in; height: 1em; border-bottom: 1px solid #1b1f1d; vertical-align: -0.2em; }
   .pt-tdoc-blank-number { min-width: 0.7in; }
   .pt-tdoc-blank-money { min-width: 1.25in; }

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BRAND_TEXT, LINE_INCHES, fill, infoRows, rowField, signKey, type Piece } from "@/lib/templateKit/fill";
+import { BRAND_TEXT, LINE_INCHES, bracketed, clauseTitle, fill, infoRows, rowField, runIn, signKey, type Piece } from "@/lib/templateKit/fill";
 import { LogoMark } from "@/components/shell/Logo";
 import type { Block, Signatures, TemplateDoc, TemplateValues } from "@/lib/templateKit/types";
 
@@ -9,29 +9,38 @@ export type RenderBlank = (blank: Blank, key: string, where: "inline" | "line") 
 export type RenderSignature = (key: string, role: string) => ReactNode;
 
 /**
- * A blank as it prints. Inline: the answer, or a line to write on (three lines for longer answers).
- * On a ruled line (form rows, printed names): just the answer, since the line is already drawn.
+ * A blank as it prints. Inline: the answer, or a line to write on (three lines for longer answers), or
+ * "[Label]" in letters. On a ruled line (form rows, printed names): just the answer, since the line is drawn.
  */
-const staticBlank: RenderBlank = (piece, key, where) => {
-  if (piece.value) {
-    return (
-      <span key={key} className="pt-tdoc-fill">
-        {piece.value}
-      </span>
-    );
-  }
-  if (where === "line") return null;
-  if (piece.field.type === "long") {
-    return (
-      <span key={key} className="pt-tdoc-lines" aria-label={piece.field.label}>
-        <i />
-        <i />
-        <i />
-      </span>
-    );
-  }
-  return <span key={key} className={`pt-tdoc-blank pt-tdoc-blank-${piece.field.type}`} aria-label={piece.field.label} />;
-};
+function staticBlankFor(brackets: boolean): RenderBlank {
+  return function staticBlank(piece, key, where) {
+    if (piece.value) {
+      return (
+        <span key={key} className="pt-tdoc-fill">
+          {piece.value}
+        </span>
+      );
+    }
+    if (where === "line") return null;
+    if (brackets) {
+      return (
+        <span key={key} className="pt-tdoc-bracket">
+          {bracketed(piece.field)}
+        </span>
+      );
+    }
+    if (piece.field.type === "long") {
+      return (
+        <span key={key} className="pt-tdoc-lines" aria-label={piece.field.label}>
+          <i />
+          <i />
+          <i />
+        </span>
+      );
+    }
+    return <span key={key} className={`pt-tdoc-blank pt-tdoc-blank-${piece.field.type}`} aria-label={piece.field.label} />;
+  };
+}
 
 type Ctx = { doc: TemplateDoc; values: TemplateValues; blank: RenderBlank };
 
@@ -107,11 +116,20 @@ function BlockView({
       const List = block.t;
       return (
         <List className={block.t === "ol" ? "pt-tdoc-ol" : "pt-tdoc-ul"}>
-          {block.items.map((item, i) => (
-            <li key={i}>
-              <Text text={item} at={`${at}.${i}`} ctx={ctx} />
-            </li>
-          ))}
+          {block.items.map((item, i) => {
+            const lead = runIn(item);
+            return (
+              <li key={i}>
+                {lead ? (
+                  <>
+                    <b>{lead.title}</b> <Text text={lead.rest} at={`${at}.${i}`} ctx={ctx} />
+                  </>
+                ) : (
+                  <Text text={item} at={`${at}.${i}`} ctx={ctx} />
+                )}
+              </li>
+            );
+          })}
         </List>
       );
     }
@@ -150,6 +168,67 @@ function BlockView({
           })}
         </div>
       );
+    case "clause": {
+      const pieces = fill(block.text, ctx.doc, ctx.values);
+      const standalone = pieces.length === 1 && pieces[0].kind === "blank" && pieces[0].field.type === "long";
+      const title = clauseTitle(block.title, standalone);
+      return (
+        <p className="pt-tdoc-clause">
+          <b>{title}</b> <Text text={block.text} at={at} ctx={ctx} />
+        </p>
+      );
+    }
+    case "letter":
+      return (
+        <div className="pt-tdoc-letter">
+          <p>
+            <Text text={block.from} at={`${at}.f`} ctx={ctx} />
+          </p>
+          <p>
+            <Text text={block.date} at={`${at}.d`} ctx={ctx} />
+          </p>
+          <p>
+            <Text text={block.to} at={`${at}.t`} ctx={ctx} />
+          </p>
+          <p className="pt-tdoc-re">
+            <b>
+              Re: <Text text={block.re} at={`${at}.r`} ctx={ctx} />
+            </b>
+          </p>
+        </div>
+      );
+    case "boxes":
+      return (
+        <div className="pt-tdoc-boxes">
+          {block.rows.map((row, r) => (
+            <div key={r} className="pt-tdoc-boxrow" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
+              {row.map((cell, c) => (
+                <div key={c} className="pt-tdoc-box">
+                  <span className="pt-tdoc-boxlabel">{cell.label}</span>
+                  <span className="pt-tdoc-boxvalue">
+                    <Text text={cell.value} at={`${at}.${r}.${c}`} ctx={ctx} where="line" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      );
+    case "amounts":
+      return (
+        <table className="pt-tdoc-amounts">
+          <tbody>
+            {block.rows.map((row, i) => (
+              <tr key={i} className={row.total ? "pt-tdoc-total" : undefined}>
+                <th scope="row">{row.label}</th>
+                <td>
+                  <Text text={row.value} at={`${at}.${i}`} ctx={ctx} where="line" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
     case "grid":
       return (
         <table className="pt-tdoc-grid">
@@ -185,9 +264,10 @@ export default function TemplateDocument({
   doc,
   values,
   signatures = {},
-  renderBlank = staticBlank,
+  renderBlank,
   renderSignature,
   branded = true,
+  upgradeHref,
   className = "",
 }: {
   doc: TemplateDoc;
@@ -197,15 +277,28 @@ export default function TemplateDocument({
   renderSignature?: RenderSignature;
   /** Shows the small PlainTerms mark at the end (free plans). */
   branded?: boolean;
+  /** In the editor, the mark links here with a short explainer about removing it. */
+  upgradeHref?: string;
   className?: string;
 }) {
-  const ctx: Ctx = { doc, values, blank: renderBlank };
+  const ctx: Ctx = { doc, values, blank: renderBlank ?? staticBlankFor(doc.blanks === "brackets") };
   return (
     <article className={`pt-tdoc ${className}`} aria-label={doc.title} data-clarity-mask="true">
       {doc.body.map((block, i) => (
         <BlockView key={i} block={block} index={i} ctx={ctx} signatures={signatures} renderSignature={renderSignature} />
       ))}
-      {branded ? (
+      {branded && upgradeHref ? (
+        <p className="pt-tdoc-brandrow">
+          <a href={upgradeHref} className="pt-tdoc-brand pt-tip" aria-describedby={`${doc.slug}-brand-tip`}>
+            <LogoMark className="h-[1.1em] w-[1.1em] text-(--pt-accent)" />
+            {BRAND_TEXT}
+            <span id={`${doc.slug}-brand-tip`} role="tooltip" className="pt-tip-bubble">
+              <b>Remove this mark with Pro</b>
+              Free documents include this small PlainTerms mark. With Pro, your PDFs, Word files and printouts carry no PlainTerms branding.
+            </span>
+          </a>
+        </p>
+      ) : branded ? (
         <p className="pt-tdoc-brand">
           <LogoMark className="h-[1.1em] w-[1.1em] text-(--pt-accent)" />
           {BRAND_TEXT}

@@ -151,3 +151,16 @@ export function rowField(doc: TemplateDoc, row: InfoRow): TemplateField | undefi
   const id = tokensIn(row.text)[0];
   return doc.fields.find((f) => f.id === id);
 }
+
+/** The placeholder an empty blank prints as in a letter: "[Your name]". */
+export const bracketed = (field: TemplateField) => `[${field.label}]`;
+
+/** A clause heading: adds a closing period, except over writing lines where it stands alone. */
+export const clauseTitle = (title: string, standalone = false) => (standalone || /[.:?!]$/.test(title) ? title : `${title}.`);
+
+/** A list term that starts with a short title ("Whole agreement. This agreement…") gets that title in bold. */
+export function runIn(item: string): { title: string; rest: string } | null {
+  const m = /^([A-Z][A-Za-z'’ -]{1,38})\. ([\s\S]+)$/.exec(item);
+  if (!m || m[1].split(" ").length > 5) return null;
+  return { title: `${m[1]}.`, rest: m[2] };
+}

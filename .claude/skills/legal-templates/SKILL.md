@@ -30,7 +30,12 @@ PlainTerms offers fixed-text legal templates with blanks. People fill the blanks
 6. Plain English, user-facing only (no developer notes in UI copy). Use `GENERAL_TERMS` for closing clauses.
 7. Creator templates keep the FTC Endorsement Guides disclosure clause. The NDA keeps the 18 U.S.C. § 1833(b) whistleblower notice.
 8. **US Letter, 1 page normally, 2 pages at most.** Print, PDF and Word all use 8.5 x 11 in with 0.75 in margins and 11pt Times. The "PDF download" test builds every template's real PDF, blank and filled with example answers and all signatures, and fails above 2 pages. Short documents (letters, change order, bill of sale) should stay on 1 page blank. Trim wording or make short answers `text` instead of `long` before adding length.
-9. **Layout conventions** (rendered the same in the page, PDF and Word): a paragraph made only of `Label: {{blank}}` lines becomes aligned form rows with ruled lines; a `long` blank left empty becomes three writing lines; signers sit two per row with signature, date and printed-name lines; the title can hold a blank (e.g. `Change Order No. {{changeNumber}}`).
+9. **Lay documents out the traditional way, per document type**, with these blocks (rendered the same on the page, in the PDF and in Word):
+   - Contracts: a `boxes` cover with the parties (and address or contact) and the agreement date, one opening sentence ("This agreement is made on the agreement date above between…"), then `clause` sections with run-in bold headings ("1. Payment. The client will…"). Closing terms (`GENERAL_TERMS`) are a list whose short leading titles print bold.
+   - Forms (change order, sign-off, bill of sale, checklist, SOW, travel consent): `boxes` for the who/when/where details, `amounts` for money (right-aligned with a bold total), `clause` sections.
+   - Letters: a `letter` block (sender, date, recipient, bold Re line) and `blanks: "brackets"`, so empty blanks print as `[Your name]` instead of lines.
+   - A `long` blank left empty prints as three writing lines; form-row lines are sized to the answer (`LINE_INCHES`); signers sit two per row with signature, date and printed-name lines. Government forms (EPA lead disclosure) keep their own headings and wording.
+10. **Signing tooltip:** each Sign button explains that people sign only their own line and send the document to the other party. Keep that wording plain and never suggest signing for someone else.
 
 To add a template: write it in the right category file, add the slug to `WRITTEN_TEMPLATES`, run `npx vitest run src/lib/templateLibrary`.
 

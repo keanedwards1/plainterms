@@ -13,7 +13,8 @@ const COLLECTOR_FIELDS = [
 export const MONEY_LIBRARY: TemplateDoc[] = [
   {
     slug: "demand-letter",
-    version: 1,
+    blanks: "brackets",
+    version: 2,
     title: "Demand Letter",
     summary: "Asks for money you're owed by a set date, before you go to small claims court.",
     fields: [
@@ -32,10 +33,7 @@ export const MONEY_LIBRARY: TemplateDoc[] = [
       { title: "What you're owed", fields: ["whatHappened", "amountOwed", "payBy", "howToPay", "enclosures"] },
     ],
     body: [
-      { t: "p", text: "{{yourName}}\n{{yourAddress}}" },
-      { t: "p", text: "{{letterDate}}" },
-      { t: "p", text: "{{recipientName}}\n{{recipientAddress}}" },
-      { t: "p", text: "Re: Demand for payment of {{amountOwed}}" },
+      { t: "letter", from: "{{yourName}}\n{{yourAddress}}", date: "{{letterDate}}", to: "{{recipientName}}\n{{recipientAddress}}", re: "Demand for payment of {{amountOwed}}" },
       { t: "p", text: "Dear {{recipientName}}," },
       { t: "p", text: "{{whatHappened}}" },
       { t: "p", text: "You owe me {{amountOwed}}. Please pay this amount by {{payBy}}, by {{howToPay}}." },
@@ -51,7 +49,7 @@ export const MONEY_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "payment-plan",
-    version: 1,
+    version: 2,
     title: "Payment Plan Agreement",
     summary: "Who pays what, on which dates, and what happens if a payment is missed.",
     fields: [
@@ -71,15 +69,21 @@ export const MONEY_LIBRARY: TemplateDoc[] = [
     ],
     body: [
       { t: "title", text: "Payment Plan Agreement" },
-      { t: "p", text: "This agreement, dated {{agreementDate}}, is between {{creditorName}} (the creditor) and {{debtorName}} (the debtor)." },
-      { t: "h", text: "1. The amount" },
-      { t: "p", text: "The debtor owes the creditor {{totalAmount}} for: {{debtReason}}. The debtor agrees this amount is owed." },
-      { t: "h", text: "2. Payments" },
-      { t: "p", text: "The debtor will pay as follows:\n{{schedule}}\nPayments: {{paymentMethod}}. The debtor may pay more, or pay off the rest early, at any time without penalty. The creditor will give a written receipt for each payment on request." },
-      { t: "h", text: "3. Missed payments" },
-      { t: "p", text: "A payment more than {{graceDays}} days late is missed. If a payment is missed, the creditor will give the debtor written notice and 10 days to catch up. If the debtor does not, the full unpaid balance becomes due right away, and the creditor may take any lawful steps to collect it." },
-      { t: "h", text: "4. While the plan is followed" },
-      { t: "p", text: "As long as the debtor makes the payments, the creditor will not take legal action or other collection steps for this debt. When everything is paid, the debt is fully settled, and the creditor will confirm that in writing." },
+      {
+        t: "boxes",
+        rows: [
+          [
+            { label: "Creditor (owed the money)", value: "{{creditorName}}" },
+            { label: "Debtor (paying)", value: "{{debtorName}}" },
+          ],
+          [{ label: "Agreement date", value: "{{agreementDate}}" }],
+        ],
+      },
+      { t: "p", text: "This agreement is made on the agreement date above between the creditor and the debtor named above." },
+      { t: "clause", title: "1. The amount", text: "The debtor owes the creditor {{totalAmount}} for: {{debtReason}}. The debtor agrees this amount is owed." },
+      { t: "clause", title: "2. Payments", text: "The debtor will pay as follows:\n{{schedule}}\nPayments: {{paymentMethod}}. The debtor may pay more, or pay off the rest early, at any time without penalty. The creditor will give a written receipt for each payment on request." },
+      { t: "clause", title: "3. Missed payments", text: "A payment more than {{graceDays}} days late is missed. If a payment is missed, the creditor will give the debtor written notice and 10 days to catch up. If the debtor does not, the full unpaid balance becomes due right away, and the creditor may take any lawful steps to collect it." },
+      { t: "clause", title: "4. While the plan is followed", text: "As long as the debtor makes the payments, the creditor will not take legal action or other collection steps for this debt. When everything is paid, the debt is fully settled, and the creditor will confirm that in writing." },
       { t: "h", text: "5. General" },
       { t: "ol", items: GENERAL_TERMS },
       { t: "sign", parties: [{ role: "Creditor", name: "{{creditorName}}" }, { role: "Debtor", name: "{{debtorName}}" }] },
@@ -91,7 +95,8 @@ export const MONEY_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "debt-dispute-letter",
-    version: 1,
+    blanks: "brackets",
+    version: 2,
     title: "Debt Dispute Letter",
     summary: "Disputes a debt a collector says you owe, and asks them to prove it before you pay anything.",
     fields: [...LETTER_FIELDS, ...COLLECTOR_FIELDS],
@@ -100,10 +105,7 @@ export const MONEY_LIBRARY: TemplateDoc[] = [
       { title: "The collector", fields: ["collectorName", "collectorAddress", "accountNumber", "contactMethod", "contactDate", "debtDescription"] },
     ],
     body: [
-      { t: "p", text: "{{yourName}}\n{{yourAddress}}" },
-      { t: "p", text: "{{letterDate}}" },
-      { t: "p", text: "{{collectorName}}\n{{collectorAddress}}" },
-      { t: "p", text: "Re: Account {{accountNumber}}" },
+      { t: "letter", from: "{{yourName}}\n{{yourAddress}}", date: "{{letterDate}}", to: "{{collectorName}}\n{{collectorAddress}}", re: "Account {{accountNumber}}" },
       { t: "p", text: "Dear {{collectorName}}," },
       { t: "p", text: "I am responding to your contact about a debt you are trying to collect. You contacted me by {{contactMethod}} on {{contactDate}} and identified the debt as: {{debtDescription}}" },
       { t: "p", text: "I dispute this debt. Please treat it as disputed, and do not report it to any credit bureau without also reporting that it is disputed. Please send me the following so I can understand your claim:" },
@@ -129,7 +131,8 @@ export const MONEY_LIBRARY: TemplateDoc[] = [
   },
   {
     slug: "debt-stop-contact",
-    version: 1,
+    blanks: "brackets",
+    version: 2,
     title: "Letter Telling a Debt Collector to Stop Contacting You",
     summary: "Tells a debt collector to stop contacting you about a debt, and records that you dispute it.",
     fields: [...LETTER_FIELDS, ...COLLECTOR_FIELDS],
@@ -138,10 +141,7 @@ export const MONEY_LIBRARY: TemplateDoc[] = [
       { title: "The collector", fields: ["collectorName", "collectorAddress", "accountNumber", "contactMethod", "contactDate", "debtDescription"] },
     ],
     body: [
-      { t: "p", text: "{{yourName}}\n{{yourAddress}}" },
-      { t: "p", text: "{{letterDate}}" },
-      { t: "p", text: "{{collectorName}}\n{{collectorAddress}}" },
-      { t: "p", text: "Re: Account {{accountNumber}}" },
+      { t: "letter", from: "{{yourName}}\n{{yourAddress}}", date: "{{letterDate}}", to: "{{collectorName}}\n{{collectorAddress}}", re: "Account {{accountNumber}}" },
       { t: "p", text: "Dear {{collectorName}}," },
       { t: "p", text: "I am responding to your contact about a debt you are trying to collect. You contacted me by {{contactMethod}} on {{contactDate}} and identified the debt as: {{debtDescription}}" },
       { t: "p", text: "Please stop all communication with me and with this address about this debt." },
@@ -160,7 +160,7 @@ export const MONEY_LIBRARY: TemplateDoc[] = [
 export const PERSONAL_LIBRARY: TemplateDoc[] = [
   {
     slug: "child-travel-consent",
-    version: 1,
+    version: 2,
     title: "Child Travel Consent",
     summary: "Parents or guardians give permission for a child to travel with another adult or alone.",
     fields: [
@@ -184,14 +184,37 @@ export const PERSONAL_LIBRARY: TemplateDoc[] = [
     ],
     body: [
       { t: "title", text: "Child Travel Consent" },
-      { t: "p", text: "We, {{parentNames}}, of {{parentAddress}}, are the parents or legal guardians of {{childName}}, born {{childBirthDate}} (passport number, if any: {{childPassport}})." },
-      { t: "p", text: "We give permission for our child to travel with {{travelerName}} (phone {{travelerContact}}) to {{destination}}, leaving on {{departDate}} and returning on {{returnDate}}." },
-      { t: "p", text: "Travel details:\n{{travelDetails}}" },
-      { t: "p", text: "We also give permission for {{travelerName}} to consent to emergency medical care for our child during this trip if we cannot be reached." },
-      { t: "p", text: "Questions about this consent can be directed to us at: {{parentContact}}." },
+      {
+        t: "boxes",
+        rows: [
+          [
+            { label: "Child's full name", value: "{{childName}}" },
+            { label: "Date of birth", value: "{{childBirthDate}}" },
+            { label: "Passport no. (if traveling abroad)", value: "{{childPassport}}" },
+          ],
+          [
+            { label: "Parents or guardians", value: "{{parentNames}}" },
+            { label: "Phone and email", value: "{{parentContact}}" },
+          ],
+          [{ label: "Parents' address", value: "{{parentAddress}}" }],
+          [
+            { label: "Traveling with", value: "{{travelerName}}" },
+            { label: "Their phone", value: "{{travelerContact}}" },
+          ],
+          [
+            { label: "Destination", value: "{{destination}}" },
+            { label: "Leaving on", value: "{{departDate}}" },
+            { label: "Returning on", value: "{{returnDate}}" },
+          ],
+        ],
+      },
+      { t: "clause", title: "1. Consent", text: "We are the parents or legal guardians of the child named above. We give permission for the child to travel with the adult named above to the destination and on the dates above." },
+      { t: "clause", title: "2. Travel details", text: "{{travelDetails}}" },
+      { t: "clause", title: "3. Medical care", text: "We also give permission for the adult named above to consent to emergency medical care for the child during this trip if we cannot be reached." },
+      { t: "clause", title: "4. Contact", text: "Anyone with questions about this consent may contact us using the phone and email above." },
       { t: "sign", parties: [{ role: "Parent or guardian" }, { role: "Parent or guardian" }] },
       { t: "h", text: "Notary acknowledgment" },
-      { t: "p", text: "If you have this signed in front of a notary, the notary will add their own certificate for your state here or on an attached page." },
+      { t: "p", text: "If this is signed in front of a notary, the notary will attach their own certificate for your state." },
     ],
     notes: [
       "Border officials and airlines may ask for this, especially for international trips. Many recommend having it notarized.",

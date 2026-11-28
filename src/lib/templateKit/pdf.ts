@@ -1,4 +1,4 @@
-import { BRAND_TEXT, LINE_INCHES, fill, infoRows, isSignatureImage, rowField, signKey, type Piece } from "@/lib/templateKit/fill";
+import { BRAND_TEXT, LINE_INCHES, bracketed, clauseTitle, fill, infoRows, isSignatureImage, rowField, runIn, signKey, type Piece } from "@/lib/templateKit/fill";
 import type { Branding, Signatures, TemplateDoc, TemplateField, TemplateValues } from "@/lib/templateKit/types";
 
 // US Letter in points, 0.75in margins, 11pt Times.
@@ -59,6 +59,7 @@ export async function templatePdf(
     for (const piece of fill(text, doc, values) as Piece[]) {
       if (piece.kind === "text") words(piece.text);
       else if (piece.value) words(piece.value);
+      else if (doc.blanks === "brackets") words(bracketed(piece.field));
       else if (piece.field.type === "long") out.push({ kind: "lines" });
       else out.push({ kind: "blank", width: BLANK_PT[piece.field.type] });
     }
@@ -209,11 +210,91 @@ export async function templatePdf(
           ensure(LINE);
           font(false);
           pdf.text(block.t === "ol" ? `${i + 1}.` : "•", M + 4, y + SIZE * 0.82);
-          flow(tokens(item), M + 20, WIDTH - 20);
+          const lead = runIn(item);
+          flow(lead ? [...tokens(lead.title, true), { kind: "space" }, { kind: "space" }, ...tokens(lead.rest)] : tokens(item), M + 20, WIDTH - 20);
           y += 3;
         });
         y += 4;
         break;
+      case "clause": {
+        const body = tokens(block.text);
+        ensure(LINE * 2);
+        y += 3;
+        if (body.length === 1 && body[0].kind === "lines") {
+          flow(tokens(clauseTitle(block.title, true), true), M, WIDTH);
+          flow(body, M, WIDTH);
+        } else {
+          flow([...tokens(clauseTitle(block.title), true), { kind: "space" }, { kind: "space" }, ...body], M, WIDTH);
+        }
+        y += 5;
+        break;
+      }
+      case "letter":
+        flow(tokens(block.from), M, WIDTH);
+        y += 10;
+        flow(tokens(block.date), M, WIDTH);
+        y += 10;
+        flow(tokens(block.to), M, WIDTH);
+        y += 10;
+        flow([{ kind: "word", text: "Re:", bold: true }, { kind: "space" }, ...tokens(block.re, true)], M, WIDTH);
+        y += 12;
+        break;
+      case "boxes": {
+        pdf.setLineWidth(0.6);
+        for (const row of block.rows) {
+          const cellW = WIDTH / row.length;
+          font(false, SIZE);
+          const texts = row.map((cell) => {
+            const value = fill(cell.value, doc, values)
+              .map((p) => (p.kind === "text" ? p.text : p.value))
+              .join("")
+              .trim();
+            return value ? ((pdf.splitTextToSize(value, cellW - 12) as string[]).slice(0, 3)) : [];
+          });
+          const h = Math.max(34, 20 + Math.max(0, ...texts.map((t) => t.length)) * 13);
+          ensure(h);
+          row.forEach((cell, c) => {
+            const x = M + c * cellW;
+            pdf.rect(x, y, cellW, h);
+            font(true, 7);
+            pdf.setTextColor(SOFT);
+            pdf.text(cell.label.toUpperCase(), x + 6, y + 10, { charSpace: 0.4 });
+            pdf.setTextColor(INK);
+            font(false, SIZE);
+            texts[c].forEach((line, i) => pdf.text(line, x + 6, y + 24 + i * 13));
+          });
+          y += h;
+        }
+        y += 12;
+        break;
+      }
+      case "amounts": {
+        const valueW = 150;
+        for (const row of block.rows) {
+          ensure(22);
+          const base = y + 14;
+          if (row.total) {
+            pdf.setLineWidth(0.6);
+            pdf.line(RIGHT - valueW, y + 1, RIGHT, y + 1);
+          }
+          font(Boolean(row.total), SIZE);
+          pdf.text(row.label, M, base);
+          const value = fill(row.value, doc, values)
+            .map((p) => (p.kind === "text" ? p.text : p.value))
+            .join("")
+            .trim();
+          if (value) pdf.text(value, RIGHT - 4, base, { align: "right" });
+          else {
+            font(false, SIZE);
+            pdf.text("$", RIGHT - valueW + 4, base);
+          }
+          pdf.setLineWidth(row.total ? 1.2 : 0.6);
+          pdf.line(RIGHT - valueW, base + 3, RIGHT, base + 3);
+          y += 22;
+        }
+        y += 8;
+        break;
+      }
       case "grid": {
         const firstW = WIDTH * 0.32;
         const restW = (WIDTH - firstW) / (block.columns.length - 1);
