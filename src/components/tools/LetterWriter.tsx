@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, useSyncExternalStore } from "react";
 
 type Field = { key: string; label: string; placeholder: string; long?: boolean };
 
@@ -64,8 +64,16 @@ const KINDS: Kind[] = [
   },
 ];
 
-function today() {
-  return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(new Date());
+const noop = () => () => {};
+
+/**
+ * Today's date for the top of the letter. The server can't know the visitor's time zone, so while the page
+ * hydrates this uses the UTC date (matching the server's HTML), then the visitor's local date straight after.
+ */
+function today(local: boolean) {
+  return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: local ? undefined : "UTC" }).format(
+    new Date(),
+  );
 }
 
 export default function LetterWriter() {
@@ -74,12 +82,13 @@ export default function LetterWriter() {
   const [name, setName] = useState("");
   const [copied, setCopied] = useState(false);
   const formId = useId();
+  const local = useSyncExternalStore(noop, () => true, () => false);
   const kind = KINDS.find((k) => k.key === kindKey) ?? KINDS[0];
 
   const paragraphs = useMemo(() => kind.body(values), [kind, values]);
   const plainText = useMemo(
-    () => [today(), "", values.to || "", "", kind.subject(values), "", ...paragraphs.flatMap((p) => [p, ""]), "Sincerely,", name || "[Your name]"].join("\n"),
-    [kind, values, paragraphs, name],
+    () => [today(local), "", values.to || "", "", kind.subject(values), "", ...paragraphs.flatMap((p) => [p, ""]), "Sincerely,", name || "[Your name]"].join("\n"),
+    [local, kind, values, paragraphs, name],
   );
 
   async function copy() {
@@ -148,7 +157,7 @@ export default function LetterWriter() {
 
         <div>
           <article className="pt-letter pt-framed grid gap-4 bg-white px-7 py-9 leading-relaxed sm:px-11 sm:py-11" aria-label="Your letter">
-            <p className="text-(--pt-muted)">{today()}</p>
+            <p className="text-(--pt-muted)">{today(local)}</p>
             <p>{values.to || <span className="rounded bg-(--pt-line) px-1 text-transparent">Recipient name</span>}</p>
             <p className="font-semibold">{kind.subject(values)}</p>
             {paragraphs.map((p, i) => (
